@@ -1,0 +1,6 @@
+# Build output locations for the recompiled binary and its PDB.
+project: .
+targets:
+  HOVER:
+    path: build/hover.exe
+    pdb: build/hover.pdb

@@ -1,0 +1,385 @@
+jjjj
+jjjj
+jjjjj
+Ljjjjjjjj
+jjjh
+jjjh
+Ljjj
+jjjjjjh
+Ljjjj
+jjjj
+jjjj
+jjjjj
+jjjj
+jjjj
+jjjjh
+Ljjh
+jjjjj
+jjjjj
+jjjj
+jjjj
+jjjjj
+Ljjj
+ydQ@1$
+$1@Qdy
+Good Get Position
+CMixit
+Show Debug Dialogs
+Reset Remix
+Stereo
+No Devices
+Max Channels = %d
+Number of Pause Blocks (%d-%d):
+Playback Device:
+Playback Frequency (11,22,44):
+Size of WaveBlocks (%d-%d):
+Number of WaveBlocks (%d-%d):
+&Cancel
+WavMix32 Settings (Ver %X.%X Static)
+         (((((                  H
+L(null)
+About Hover!
+MS Sans Serif
+Hover! Version 1.0.9.5
+Copyright 
+ 1994-1995  Microsoft Co.
+Build M7 03/13/95
+Enter High Score
+MS Sans Serif
+Congratulations on a stellar game!
+Enter your name into the High Score list.
+Quick Help
+MS Sans Serif
+Instructions
+To start a game, click Start Game from the Game menu, or press F2.
+The object of the game is to collect all your opponents' blue flags before they collect all your red flags.
+Use the arrow keys to maneuver your Hover 950. To change the maneuvering keys, press F8.
+To pause the game and use the menus, press F3.
+Skip Quick Help at Startup
+Please Wait
+MS Sans Serif
+Loading Level 
+MS Sans Serif
+VS_VERSION_INFO
+StringFileInfo
+040904b0
+CompanyName
+Microsoft Corporation
+FileDescription
+Hover!
+FileVersion
+1.0.000
+InternalName
+HOVER
+LegalCopyright
+Copyright 
+ 1994-1995 Microsoft Corporation
+OriginalFilename
+HOVER.EXE
+ProductName
+HOVER!
+ProductVersion
+4.0.000
+VarFileInfo
+Translation
+Customize Game
+MS Sans Serif
+&Speed && Detail
+Less Speed
+More Speed
+msctls_trackbar32
+Generic1
+More Detail
+Less Detail
+Vehicle Controls
+&Easy
+&Intermediate
+&Difficult
+Mirror Option
+Show Rear &View
+dFZ(
+Maze Type
+Se&quential
+&Random
+dsZ-
+Map Options
+Rotate &Map
+Rotate &Craft
+Cancel
+Player Controls
+MS Sans Serif
+Movement
+Keyboard
+&Set Keys...
+&Joystick
+&Calibrate...
+Objects
+J&ump
+O?47
+&Wall
+OR45
+C&loak
+Of48
+Cancel
+&Default
+Sound Options
+MS Sans Serif
+Effects
+&Music
+&Game Sounds
+&Engine
+&Sound Effects Mixing
+Cancel
+Start At
+MS Sans Serif
+Level
+&Start At:
+msctls_updown32
+Generic1
+Scoring
+Completed Level:
+100,000
+Each Captured Flag:
+100,000
+Each Remaining Flag:
+100,000
+Game Settings
+Vehicle Controls:
+Easy
+Maze Type:
+Random
+Cancel
+&Customize...
+Keyboard Settings
+MS Sans Serif
+F&orward && Left
+&Forward
+For&ward && Right
+&Left
+&Right
+R&everse && Left
+KZ7	
+Re&verse
+KI74
+Rever&se && Right
+Cancel
+&Default
+High Scores
+MS Sans Serif
+XXXXXXXXXXXXXXXXXXXXXXXXXX
+9,999,999,999
+XXXXXXXXXXXXXXXXXXXXXXXXXX
+9,999,999,999
+XXXXXXXXXXXXXXXXXXXXXXXXXX
+9,999,999,999
+XXXXXXXXXXXXXXXXXXXXXXXXXX
+9,999,999,999
+XXXXXXXXXXXXXXXXXXXXXXXXXX
+9,999,999,999
+XXXXXXXXXXXXXXXXXXXXXXXXXX
+9,999,999,999
+XXXXXXXXXXXXXXXXXXXXXXXXXX
+9,999,999,999
+XXXXXXXXXXXXXXXXXXXXXXXXXX
+9,999,999,999
+XXXXXXXXXXXXXXXXXXXXXXXXXX
+9,999,999,999
+XXXXXXXXXXXXXXXXXXXXXXXXXX
+9,999,999,999
+XXXXXXXXXXXXXXXXXXXXXXXXXX
+9,999,999,999
+XXXXXXXXXXXXXXXXXXXXXXXXXX
+9,999,999,999
+XXXXXXXXXXXXXXXXXXXXXXXXXX
+9,999,999,999
+XXXXXXXXXXXXXXXXXXXXXXXXXX
+9,999,999,999
+XXXXXXXXXXXXXXXXXXXXXXXXXX
+9,999,999,999
+Clear Scores
+&Game
+&Start Game	F2
+S&tart At...
+&Pause	F3
+&High Scores...
+E&xit
+&Options
+&Sounds...
+&Player Controls...	F8
+&Customize Game...	F9
+&Full Screen	F4
+&Help
+&Help Topics...
+How To &Play...
+How to &Use Help...
+&Quick Help...
+&About Hover!...
+MS Sans Serif
+&New 
+Cancel
+&Help
+Hover!
+Hover!
+For Help, press F1%Select an object on which to get Help
+SCRL
+Create a new document
+Open an existing document
+Open
+Close the active document
+Close
+Save the active document
+Save0Save the active document with a new name
+Save As
+?Display program information, version number and copyright
+About4Quit the application; prompts to save documents
+Exit
+List Help topics
+Help Index/Display instructions about how to use help
+Help;Display help for clicked on buttons, menus and windows
+Help-Display help for current task or command
+Help
+Open this document
+Open this document
+Open this document
+Open this document
+(Switch to the next window pane
+Next Pane5Switch back to the previous window pane
+Previous Pane
+(Split the active window into panes
+Split
+Erase the selection
+Erase
+Erase everything
+Erase All3Copy the selection and put it on the Clipboard
+Copy1Cut the selection and put it on the Clipboard
+Find the specified text
+Find
+Insert Clipboard contents
+Paste
+Repeat the last action
+Repeat1Replace specific text with different text
+Replace%Select the entire document
+Select All
+Undo the last action
+Undo&Redo the previously undone action
+Redo
+Change the window size
+Change the window position
+Reduce the window to an icon
+Enlarge the window to full size"Switch to the next document window&Switch to the previous document window9Close the active window and prompts to save the documents
+!Restore the window to normal size
+Activate Task List'Unable to Open Dash Board Graphics File
+ GAME PAUSED 
+ Press F3 to Continue sThis computer does not meet the
+minimum configuration of a 486/33
+with 8 MB of RAM to run Hover!
+Press OK to exit.wOne or more keys you have chosen
+has already been assigned to
+another action.  Choose only unique
+keys for each action.
+Back Space
+Enter
+Shift
+Control
+Space
+WALL
+FLOOR
+Start a new game.#Start a game at a level you choose.
+Switch to full screen mode.
+Toggle whether music is played.
+Toggle whether sound is on.2Toggle whether Quick Help is displayed at startup.
+Select controls to use.
+Adjust game settings.
+Display help contents.
+Pg Up
+Pg Dn
+Home
+Left
+Right
+Down
+Insert
+Delete	Num Pad 0	Num Pad 1	Num Pad 2	Num Pad 3	Num Pad 4	Num Pad 5	Num Pad 6	Num Pad 7	Num Pad 8	Num Pad 9
+Multiply
+Decimal
+Divide
+4Are you sure you want to clear the high score table?4Are  you sure you want to quit the game in progress?
+%d Flag left x %d = %d
+Good Job! Starting level %d!
+Press F2 to start
+BLANK
+Easy
+Intermediate	Difficult
+Sequential
+Random
+We have detected that you are not running a 256
+color video driver.  While HOVER! will still run,
+you will get the best performance if you run
+HOVER! with a 256 color video driver.
+HOVER! will not function with the current 16 color
+video driver, please change to a 256 color video
+driver and start HOVER! again.
+HOVER! has detected that you are not running
+a compatible version of Windows.
+HOVER! only runs on Windows 95,Windows NT 3.51
+or better.
+&What's This?cYou have been defeated!  The Drones have captured all of your flags.
+Would you like to play again?>There was a problem reading a file in Hover!
+Press OK to exit.
+@There was an error allocating memory in Hover!
+Press OK to exit.=There was an unexpected exception in Hover!
+Press OK to exit.4Are  you sure you want to quit the game in progress?
+Level bonus of %dfAll wave devices that can play files in this format are in use.  Try again when a wave device is free.
+Bonus Score
+a game of Hover!
+Activate Hover! and|There are not enough Windows resources to run Hover!
+Please close one or more applications and try again.
+Press OK to exit.
+*The application Hover! is already running.
+Home
+Pg Up
+Left
+Right
+Down
+Pg Dn
+%d Flags left x %d = %d
+Hover! - Level %d`There was an exception resulting from calling an unsupported feature in Hover!
+Press OK to exit.6There was no archive error in Hover!
+Press OK to exit.BThere was an unspecified archive error in Hover!
+Press OK to exit.JHover tried to write into an archive opened for loading.
+Press OK to exit.JHover reached the end of a file while reading an object.
+Press OK to exit.IHover tried to read from an archive opened for storing.
+Press OK to exit.BThere was an invalid file format error in Hover!
+Press OK to exit.QHover tried to read an object into an object of the wrong type.
+Press OK to exit.VHover tried to read an object with a different version of the class.
+Press OK to exit.fThere was an exception resulting from a failure to load a Windows resource in Hover!
+Press OK to exit.]There was an exception resulting from a failure in OLE processing in Hover!
+Press OK to exit.dThere was an exception resulting from failures in data access processing in Hover!
+Press OK to exit.ZThere was an exception used to stop a user-initiated operation in Hover!
+Press OK to exit.
+Open
+Save As
+All Files (*.*)
+Untitled
+Invalid filename.
+Failed to open document.
+Failed to save document.
+Save changes to %1? Failed to create empty document.
+The file is too large to open.
+Could not start print job.
+Failed to launch help.
+Internal application error.
+Command failed.)Insufficient memory to perform operation.
+#Unable to read write-only property.#Unable to write read-only property.
+Unexpected file format.V%1
+Cannot find this file.
+Please verify that the correct path and file name are given.
+Destination disk drive is full.5Unable to read from %1, it is opened by someone else.AUnable to write to %1, it is read-only or opened by someone else..An unexpected error occurred while reading %1..An unexpected error occurred while writing %1.
+Please enter an integer.
+Please enter a number.*Please enter an integer between %1 and %2.(Please enter a number between %1 and %2.(Please enter no more than %1 characters.
+Please select a button.*Please enter an integer between 0 and 255. Please enter a positive integer.
+50	Cancel
+50	&Apply
+&Help
+Close
+#Unable to load mail system support.
+Mail system DLL is invalid.!Send Mail failed to send message.

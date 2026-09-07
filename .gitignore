@@ -1,0 +1,22 @@
+# Build artifacts
+build/
+*.obj
+*.exe
+*.res
+*.sbr
+*.pdb
+*.ilk
+*.map
+
+# Editor / OS noise
+*.swp
+*~
+.DS_Store
+Thumbs.db
+
+# reccmp user-specific config (path to the original binary is machine-local)
+reccmp-user.yml
+
+# Python
+__pycache__/
+*.pyc

@@ -1,0 +1,615 @@
+#include <afxres.h>
+#include <winver.h>
+
+
+145 BITMAP "BITMAP145_1.bmp"
+
+30994 BITMAP "BITMAP30994_1.bmp"
+
+128 MENU
+{
+  POPUP "&Game"
+  {
+    MENUITEM "&Start Game\tF2",  32777
+    MENUITEM "S&tart At...",  32778
+    MENUITEM "&Pause\tF3",  32779
+    MENUITEM SEPARATOR
+    MENUITEM "&High Scores...",  40006
+    MENUITEM SEPARATOR
+    MENUITEM "E&xit",  57665
+  }
+  POPUP "&Options"
+  {
+    MENUITEM "&Sounds...",  40009
+    MENUITEM "&Player Controls...\tF8",  32784
+    MENUITEM "&Customize Game...\tF9",  32785
+    MENUITEM SEPARATOR
+    MENUITEM "&Full Screen\tF4",  32780
+  }
+  POPUP "&Help"
+  {
+    MENUITEM "&Help Topics...",  57669
+    MENUITEM "How To &Play...",  32787
+    MENUITEM "How to &Use Help...",  57667
+    MENUITEM SEPARATOR
+    MENUITEM "&Quick Help...",  32808
+    MENUITEM SEPARATOR
+    MENUITEM "&About Hover!...",  57664
+  }
+}
+
+100 DIALOG 34, 22, 224, 77
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "About Hover!"
+FONT 8, "MS Sans Serif"
+{
+   CONTROL 128, -1, STATIC, SS_ICON | WS_CHILD | WS_VISIBLE, 5, 16, 18, 20 
+   CONTROL "Hover! Version 1.0.9.5", -1, STATIC, SS_LEFT | WS_CHILD | WS_VISIBLE | WS_GROUP, 33, 18, 88, 11 
+   CONTROL "Copyright \xA9 1994-1995  Microsoft Co.", -1, STATIC, SS_LEFT | WS_CHILD | WS_VISIBLE | WS_GROUP, 31, 31, 184, 8 
+   CONTROL "OK", 1, BUTTON, BS_DEFPUSHBUTTON | WS_CHILD | WS_VISIBLE | WS_GROUP | WS_TABSTOP, 171, 12, 41, 14 
+   CONTROL "", -1, STATIC, SS_BLACKFRAME | WS_CHILD | WS_VISIBLE, 7, 48, 210, 1 
+   CONTROL "Build M7 03/13/95", -1, STATIC, SS_LEFT | WS_CHILD | WS_VISIBLE | WS_GROUP, 30, 55, 105, 8 
+}
+
+101 DIALOG 0, 0, 256, 167
+STYLE DS_SETFONT | DS_MODALFRAME | DS_CONTEXTHELP | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+CAPTION "Customize Game"
+FONT 8, "MS Sans Serif"
+{
+   CONTROL "&Speed && Detail", -1, BUTTON, BS_GROUPBOX | WS_CHILD | WS_VISIBLE, 5, 0, 185, 65 
+   CONTROL "Less Speed", -1, STATIC, SS_LEFT | WS_CHILD | WS_VISIBLE | WS_GROUP, 12, 12, 77, 8 
+   CONTROL "More Speed", -1, STATIC, SS_RIGHT | WS_CHILD | WS_VISIBLE | WS_GROUP, 112, 12, 72, 8 
+   CONTROL "Generic1", 1104, "msctls_trackbar32", TBS_HORZ | TBS_AUTOTICKS | TBS_BOTH | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 16, 24, 168, 25 
+   CONTROL "More Detail", -1, STATIC, SS_LEFT | WS_CHILD | WS_VISIBLE | WS_GROUP, 12, 52, 75, 8 
+   CONTROL "Less Detail", -1, STATIC, SS_RIGHT | WS_CHILD | WS_VISIBLE | WS_GROUP, 96, 52, 88, 8 
+   CONTROL "Vehicle Controls", -1, BUTTON, BS_GROUPBOX | WS_CHILD | WS_VISIBLE, 5, 70, 90, 55 
+   CONTROL "&Easy", 1000, BUTTON, BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_GROUP, 10, 80, 80, 10 
+   CONTROL "&Intermediate", 1001, BUTTON, BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE, 10, 95, 80, 10 
+   CONTROL "&Difficult", 1002, BUTTON, BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE, 10, 110, 80, 10 
+   CONTROL "Mirror Option", -1, BUTTON, BS_GROUPBOX | WS_CHILD | WS_VISIBLE, 5, 130, 90, 30 
+   CONTROL "Show Rear &View", 1012, BUTTON, BS_AUTOCHECKBOX | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 11, 144, 79, 10 
+   CONTROL "Maze Type", -1, BUTTON, BS_GROUPBOX | WS_CHILD | WS_VISIBLE, 100, 70, 90, 40 
+   CONTROL "Se&quential", 30100, BUTTON, BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_GROUP, 105, 80, 78, 10 
+   CONTROL "&Random", 30101, BUTTON, BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE, 105, 95, 77, 10 
+   CONTROL "Map Options", -1, BUTTON, BS_GROUPBOX | WS_CHILD | WS_VISIBLE, 100, 115, 90, 45 
+   CONTROL "Rotate &Map", 30102, BUTTON, BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE | WS_GROUP, 105, 130, 80, 10 
+   CONTROL "Rotate &Craft", 30103, BUTTON, BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE, 105, 145, 80, 10 
+   CONTROL "OK", 1, BUTTON, BS_DEFPUSHBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 202, 4, 50, 14 
+   CONTROL "Cancel", 2, BUTTON, BS_PUSHBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 202, 22, 50, 14 
+}
+
+103 DIALOG 0, 0, 272, 101
+STYLE DS_SETFONT | DS_MODALFRAME | DS_CONTEXTHELP | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+CAPTION "Keyboard Settings"
+FONT 8, "MS Sans Serif"
+{
+   CONTROL "F&orward && Left", -1, STATIC, SS_CENTER | WS_CHILD | WS_VISIBLE | WS_GROUP, 5, 20, 55, 9 
+   CONTROL "", 1008, COMBOBOX, CBS_DROPDOWNLIST | CBS_SORT | WS_CHILD | WS_VISIBLE | WS_VSCROLL | WS_TABSTOP, 5, 5, 55, 55 
+   CONTROL "&Forward", -1, STATIC, SS_CENTER | WS_CHILD | WS_VISIBLE | WS_GROUP, 75, 20, 55, 9 
+   CONTROL "", 1006, COMBOBOX, CBS_DROPDOWNLIST | CBS_SORT | WS_CHILD | WS_VISIBLE | WS_VSCROLL | WS_TABSTOP, 75, 5, 55, 55 
+   CONTROL "For&ward && Right", -1, STATIC, SS_CENTER | WS_CHILD | WS_VISIBLE | WS_GROUP, 145, 20, 55, 9 
+   CONTROL "", 1013, COMBOBOX, CBS_DROPDOWNLIST | CBS_SORT | WS_CHILD | WS_VISIBLE | WS_VSCROLL | WS_TABSTOP, 145, 5, 55, 55 
+   CONTROL "&Left", -1, STATIC, SS_CENTER | WS_CHILD | WS_VISIBLE | WS_GROUP, 5, 52, 55, 9 
+   CONTROL "", 1009, COMBOBOX, CBS_DROPDOWNLIST | CBS_SORT | WS_CHILD | WS_VISIBLE | WS_VSCROLL | WS_TABSTOP, 5, 37, 55, 53 
+   CONTROL "&Right", -1, STATIC, SS_CENTER | WS_CHILD | WS_VISIBLE | WS_GROUP, 145, 52, 55, 9 
+   CONTROL "", 1014, COMBOBOX, CBS_DROPDOWNLIST | CBS_SORT | WS_CHILD | WS_VISIBLE | WS_VSCROLL | WS_TABSTOP, 145, 37, 55, 53 
+   CONTROL "R&everse && Left", -1, STATIC, SS_CENTER | WS_CHILD | WS_VISIBLE | WS_GROUP, 5, 90, 55, 9 
+   CONTROL "", 1012, COMBOBOX, CBS_DROPDOWNLIST | CBS_SORT | WS_CHILD | WS_VISIBLE | WS_VSCROLL | WS_TABSTOP, 5, 73, 55, 52 
+   CONTROL "Re&verse", -1, STATIC, SS_CENTER | WS_CHILD | WS_VISIBLE | WS_GROUP, 75, 90, 55, 9 
+   CONTROL "", 1015, COMBOBOX, CBS_DROPDOWNLIST | CBS_SORT | WS_CHILD | WS_VISIBLE | WS_VSCROLL | WS_TABSTOP, 75, 73, 55, 52 
+   CONTROL "Rever&se && Right", -1, STATIC, SS_CENTER | WS_CHILD | WS_VISIBLE | WS_GROUP, 145, 90, 55, 9 
+   CONTROL "", 1010, COMBOBOX, CBS_DROPDOWNLIST | CBS_SORT | WS_CHILD | WS_VISIBLE | WS_VSCROLL | WS_TABSTOP, 145, 73, 55, 52 
+   CONTROL "OK", 1, BUTTON, BS_DEFPUSHBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 213, 5, 50, 14 
+   CONTROL "Cancel", 2, BUTTON, BS_PUSHBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 213, 25, 50, 14 
+   CONTROL "&Default", 1007, BUTTON, BS_PUSHBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 213, 45, 50, 14 
+}
+
+106 DIALOG 0, 0, 207, 151
+STYLE DS_SETFONT | DS_MODALFRAME | DS_CONTEXTHELP | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+CAPTION "Start At"
+FONT 8, "MS Sans Serif"
+{
+   CONTROL "Level", -1, BUTTON, BS_GROUPBOX | WS_CHILD | WS_VISIBLE, 5, 3, 140, 30 
+   CONTROL "&Start At:", -1, STATIC, SS_CENTER | WS_CHILD | WS_VISIBLE | WS_GROUP, 12, 17, 50, 8 
+   CONTROL "", 1011, EDIT, ES_LEFT | ES_AUTOHSCROLL | WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP, 68, 14, 30, 15 
+   CONTROL "Generic1", 1105, "msctls_updown32", UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_ARROWKEYS | WS_CHILD | WS_VISIBLE, 100, 14, 10, 14 
+   CONTROL "Scoring", 1114, BUTTON, BS_GROUPBOX | WS_CHILD | WS_VISIBLE, 5, 35, 140, 66 
+   CONTROL "Completed Level:", 1115, STATIC, SS_RIGHT | WS_CHILD | WS_VISIBLE | WS_GROUP, 11, 50, 80, 8 
+   CONTROL "100,000", 1092, STATIC, SS_RIGHT | WS_CHILD | WS_VISIBLE | WS_GROUP, 98, 50, 32, 8 
+   CONTROL "Each Captured Flag:", 1116, STATIC, SS_RIGHT | WS_CHILD | WS_VISIBLE | WS_GROUP, 11, 66, 80, 8 
+   CONTROL "100,000", 1109, STATIC, SS_RIGHT | WS_CHILD | WS_VISIBLE | WS_GROUP, 98, 66, 32, 8 
+   CONTROL "Each Remaining Flag:", 1117, STATIC, SS_RIGHT | WS_CHILD | WS_VISIBLE | WS_GROUP, 11, 82, 80, 8 
+   CONTROL "100,000", 1110, STATIC, SS_RIGHT | WS_CHILD | WS_VISIBLE | WS_GROUP, 98, 82, 32, 8 
+   CONTROL "Game Settings", 1094, BUTTON, BS_GROUPBOX | WS_CHILD | WS_VISIBLE, 5, 103, 140, 43 
+   CONTROL "Vehicle Controls:", 1095, STATIC, SS_RIGHT | WS_CHILD | WS_VISIBLE | WS_GROUP, 26, 115, 65, 8 
+   CONTROL "Easy", 1091, STATIC, SS_LEFT | WS_CHILD | WS_VISIBLE | WS_GROUP, 95, 115, 42, 8 
+   CONTROL "Maze Type:", 1096, STATIC, SS_RIGHT | WS_CHILD | WS_VISIBLE | WS_GROUP, 26, 130, 65, 8 
+   CONTROL "Random", 1090, STATIC, SS_LEFT | WS_CHILD | WS_VISIBLE | WS_GROUP, 95, 130, 42, 8 
+   CONTROL "OK", 1, BUTTON, BS_DEFPUSHBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 150, 7, 52, 14 
+   CONTROL "Cancel", 2, BUTTON, BS_PUSHBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 150, 24, 52, 14 
+   CONTROL "&Customize...", 3, BUTTON, BS_PUSHBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 150, 106, 52, 14 
+}
+
+108 DIALOG 0, 0, 269, 186
+STYLE DS_SETFONT | DS_MODALFRAME | DS_CONTEXTHELP | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+CAPTION "High Scores"
+FONT 8, "MS Sans Serif"
+{
+   CONTROL "1)", -1, STATIC, SS_RIGHT | WS_CHILD | WS_VISIBLE | WS_GROUP, 5, 5, 10, 8 
+   CONTROL "XXXXXXXXXXXXXXXXXXXXXXXXXX", 1071, STATIC, SS_LEFT | WS_CHILD | WS_VISIBLE | WS_GROUP, 20, 5, 122, 8 
+   CONTROL "9,999,999,999", 1080, STATIC, SS_RIGHT | WS_CHILD | WS_VISIBLE | WS_GROUP, 149, 5, 46, 8 
+   CONTROL "2)", -1, STATIC, SS_RIGHT | WS_CHILD | WS_VISIBLE | WS_GROUP, 5, 16, 10, 8 
+   CONTROL "XXXXXXXXXXXXXXXXXXXXXXXXXX", 1070, STATIC, SS_LEFT | WS_CHILD | WS_VISIBLE | WS_GROUP, 21, 16, 122, 8 
+   CONTROL "9,999,999,999", 1081, STATIC, SS_RIGHT | WS_CHILD | WS_VISIBLE | WS_GROUP, 149, 16, 46, 8 
+   CONTROL "3)", -1, STATIC, SS_RIGHT | WS_CHILD | WS_VISIBLE | WS_GROUP, 5, 28, 10, 8 
+   CONTROL "XXXXXXXXXXXXXXXXXXXXXXXXXX", 1072, STATIC, SS_LEFT | WS_CHILD | WS_VISIBLE | WS_GROUP, 21, 28, 122, 8 
+   CONTROL "9,999,999,999", 1082, STATIC, SS_RIGHT | WS_CHILD | WS_VISIBLE | WS_GROUP, 149, 28, 46, 8 
+   CONTROL "4)", -1, STATIC, SS_RIGHT | WS_CHILD | WS_VISIBLE | WS_GROUP, 5, 40, 10, 8 
+   CONTROL "XXXXXXXXXXXXXXXXXXXXXXXXXX", 1073, STATIC, SS_LEFT | WS_CHILD | WS_VISIBLE | WS_GROUP, 21, 40, 122, 8 
+   CONTROL "9,999,999,999", 1083, STATIC, SS_RIGHT | WS_CHILD | WS_VISIBLE | WS_GROUP, 149, 40, 46, 8 
+   CONTROL "5)", -1, STATIC, SS_RIGHT | WS_CHILD | WS_VISIBLE | WS_GROUP, 5, 52, 10, 8 
+   CONTROL "XXXXXXXXXXXXXXXXXXXXXXXXXX", 1074, STATIC, SS_LEFT | WS_CHILD | WS_VISIBLE | WS_GROUP, 21, 52, 122, 8 
+   CONTROL "9,999,999,999", 1084, STATIC, SS_RIGHT | WS_CHILD | WS_VISIBLE | WS_GROUP, 149, 52, 46, 8 
+   CONTROL "6)", -1, STATIC, SS_RIGHT | WS_CHILD | WS_VISIBLE | WS_GROUP, 5, 64, 10, 8 
+   CONTROL "XXXXXXXXXXXXXXXXXXXXXXXXXX", 1075, STATIC, SS_LEFT | WS_CHILD | WS_VISIBLE | WS_GROUP, 21, 64, 122, 8 
+   CONTROL "9,999,999,999", 1085, STATIC, SS_RIGHT | WS_CHILD | WS_VISIBLE | WS_GROUP, 149, 64, 46, 8 
+   CONTROL "7)", -1, STATIC, SS_RIGHT | WS_CHILD | WS_VISIBLE | WS_GROUP, 5, 76, 10, 8 
+   CONTROL "XXXXXXXXXXXXXXXXXXXXXXXXXX", 1076, STATIC, SS_LEFT | WS_CHILD | WS_VISIBLE | WS_GROUP, 21, 76, 122, 8 
+   CONTROL "9,999,999,999", 1086, STATIC, SS_RIGHT | WS_CHILD | WS_VISIBLE | WS_GROUP, 149, 76, 46, 8 
+   CONTROL "8)", -1, STATIC, SS_RIGHT | WS_CHILD | WS_VISIBLE | WS_GROUP, 5, 88, 10, 8 
+   CONTROL "XXXXXXXXXXXXXXXXXXXXXXXXXX", 1077, STATIC, SS_LEFT | WS_CHILD | WS_VISIBLE | WS_GROUP, 21, 88, 122, 8 
+   CONTROL "9,999,999,999", 1087, STATIC, SS_RIGHT | WS_CHILD | WS_VISIBLE | WS_GROUP, 149, 88, 46, 8 
+   CONTROL "9)", -1, STATIC, SS_RIGHT | WS_CHILD | WS_VISIBLE | WS_GROUP, 5, 100, 10, 8 
+   CONTROL "XXXXXXXXXXXXXXXXXXXXXXXXXX", 1078, STATIC, SS_LEFT | WS_CHILD | WS_VISIBLE | WS_GROUP, 21, 100, 122, 8 
+   CONTROL "9,999,999,999", 1088, STATIC, SS_RIGHT | WS_CHILD | WS_VISIBLE | WS_GROUP, 149, 100, 46, 8 
+   CONTROL "10)", -1, STATIC, SS_RIGHT | WS_CHILD | WS_VISIBLE | WS_GROUP, 5, 112, 10, 8 
+   CONTROL "XXXXXXXXXXXXXXXXXXXXXXXXXX", 1079, STATIC, SS_LEFT | WS_CHILD | WS_VISIBLE | WS_GROUP, 21, 112, 122, 8 
+   CONTROL "9,999,999,999", 1089, STATIC, SS_RIGHT | WS_CHILD | WS_VISIBLE | WS_GROUP, 149, 112, 46, 8 
+   CONTROL "11)", -1, STATIC, SS_RIGHT | WS_CHILD | WS_VISIBLE | WS_GROUP, 5, 124, 10, 8 
+   CONTROL "XXXXXXXXXXXXXXXXXXXXXXXXXX", 1090, STATIC, SS_LEFT | WS_CHILD | WS_VISIBLE | WS_GROUP, 21, 124, 122, 8 
+   CONTROL "9,999,999,999", 1095, STATIC, SS_RIGHT | WS_CHILD | WS_VISIBLE | WS_GROUP, 149, 124, 46, 8 
+   CONTROL "12)", -1, STATIC, SS_RIGHT | WS_CHILD | WS_VISIBLE | WS_GROUP, 5, 136, 10, 8 
+   CONTROL "XXXXXXXXXXXXXXXXXXXXXXXXXX", 1091, STATIC, SS_LEFT | WS_CHILD | WS_VISIBLE | WS_GROUP, 21, 136, 122, 8 
+   CONTROL "9,999,999,999", 1096, STATIC, SS_RIGHT | WS_CHILD | WS_VISIBLE | WS_GROUP, 149, 136, 46, 8 
+   CONTROL "13)", -1, STATIC, SS_RIGHT | WS_CHILD | WS_VISIBLE | WS_GROUP, 5, 148, 10, 8 
+   CONTROL "XXXXXXXXXXXXXXXXXXXXXXXXXX", 1092, STATIC, SS_LEFT | WS_CHILD | WS_VISIBLE | WS_GROUP, 21, 148, 122, 8 
+   CONTROL "9,999,999,999", 1097, STATIC, SS_RIGHT | WS_CHILD | WS_VISIBLE | WS_GROUP, 149, 148, 46, 8 
+   CONTROL "14)", -1, STATIC, SS_RIGHT | WS_CHILD | WS_VISIBLE | WS_GROUP, 5, 160, 10, 8 
+   CONTROL "XXXXXXXXXXXXXXXXXXXXXXXXXX", 1093, STATIC, SS_LEFT | WS_CHILD | WS_VISIBLE | WS_GROUP, 21, 160, 122, 8 
+   CONTROL "9,999,999,999", 1098, STATIC, SS_RIGHT | WS_CHILD | WS_VISIBLE | WS_GROUP, 149, 160, 46, 8 
+   CONTROL "15)", -1, STATIC, SS_RIGHT | WS_CHILD | WS_VISIBLE | WS_GROUP, 5, 172, 10, 8 
+   CONTROL "XXXXXXXXXXXXXXXXXXXXXXXXXX", 1094, STATIC, SS_LEFT | WS_CHILD | WS_VISIBLE | WS_GROUP, 21, 172, 122, 8 
+   CONTROL "9,999,999,999", 1099, STATIC, SS_RIGHT | WS_CHILD | WS_VISIBLE | WS_GROUP, 149, 172, 46, 8 
+   CONTROL "OK", 1, BUTTON, BS_DEFPUSHBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 205, 5, 50, 14 
+   CONTROL "Clear Scores", 30104, BUTTON, BS_PUSHBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 205, 25, 50, 15 
+}
+
+109 DIALOG 0, 0, 162, 76
+STYLE DS_SETFONT | DS_MODALFRAME | DS_CONTEXTHELP | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+CAPTION "Sound Options"
+FONT 8, "MS Sans Serif"
+{
+   CONTROL "Effects", 1093, BUTTON, BS_GROUPBOX | WS_CHILD | WS_VISIBLE, 5, 3, 94, 55 
+   CONTROL "&Music", 1008, BUTTON, BS_AUTOCHECKBOX | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 11, 14, 81, 10 
+   CONTROL "&Game Sounds", 1009, BUTTON, BS_AUTOCHECKBOX | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 11, 29, 81, 10 
+   CONTROL "&Engine", 1010, BUTTON, BS_AUTOCHECKBOX | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 11, 43, 81, 10 
+   CONTROL "&Sound Effects Mixing", 1012, BUTTON, BS_AUTOCHECKBOX | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 7, 62, 125, 10 
+   CONTROL "OK", 1, BUTTON, BS_DEFPUSHBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 105, 7, 50, 14 
+   CONTROL "Cancel", 2, BUTTON, BS_PUSHBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 105, 26, 50, 14 
+}
+
+112 DIALOG 0, 0, 232, 50
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+CAPTION "Enter High Score"
+FONT 8, "MS Sans Serif"
+{
+   CONTROL "", 1017, EDIT, ES_LEFT | ES_AUTOHSCROLL | WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP, 5, 35, 160, 12 
+   CONTROL "OK", 1, BUTTON, BS_DEFPUSHBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 175, 5, 50, 14 
+   CONTROL "Congratulations on a stellar game!", -1, STATIC, SS_LEFT | WS_CHILD | WS_VISIBLE | WS_GROUP, 5, 5, 160, 10 
+   CONTROL "Enter your name into the High Score list.", -1, STATIC, SS_LEFT | WS_CHILD | WS_VISIBLE | WS_GROUP, 5, 23, 160, 10 
+}
+
+113 DIALOG 0, 0, 202, 126
+STYLE DS_SETFONT | DS_MODALFRAME | DS_CONTEXTHELP | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+CAPTION "Player Controls"
+FONT 8, "MS Sans Serif"
+{
+   CONTROL "Movement", 1098, BUTTON, BS_GROUPBOX | WS_CHILD | WS_VISIBLE, 5, 3, 135, 48 
+   CONTROL "Keyboard", 1009, BUTTON, BS_AUTOCHECKBOX | WS_CHILD | WS_VISIBLE | WS_DISABLED, 12, 13, 58, 14 
+   CONTROL "&Set Keys...", 1004, BUTTON, BS_PUSHBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 79, 12, 50, 14 
+   CONTROL "&Joystick", 1008, BUTTON, BS_AUTOCHECKBOX | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 11, 31, 58, 14 
+   CONTROL "&Calibrate...", 1005, BUTTON, BS_PUSHBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 79, 30, 50, 14 
+   CONTROL "Objects", 1099, BUTTON, BS_GROUPBOX | WS_CHILD | WS_VISIBLE, 5, 53, 135, 70 
+   CONTROL "J&ump", 1102, STATIC, SS_LEFT | WS_CHILD | WS_VISIBLE | WS_GROUP, 12, 66, 58, 8 
+   CONTROL "", 1016, COMBOBOX, CBS_DROPDOWNLIST | CBS_SORT | WS_CHILD | WS_VISIBLE | WS_VSCROLL | WS_TABSTOP, 79, 63, 52, 55 
+   CONTROL "&Wall", 1100, STATIC, SS_LEFT | WS_CHILD | WS_VISIBLE | WS_GROUP, 12, 85, 58, 8 
+   CONTROL "", 1039, COMBOBOX, CBS_DROPDOWNLIST | CBS_SORT | WS_CHILD | WS_VISIBLE | WS_VSCROLL | WS_TABSTOP, 79, 82, 52, 53 
+   CONTROL "C&loak", 1101, STATIC, SS_LEFT | WS_CHILD | WS_VISIBLE | WS_GROUP, 12, 105, 58, 8 
+   CONTROL "", 1040, COMBOBOX, CBS_DROPDOWNLIST | CBS_SORT | WS_CHILD | WS_VISIBLE | WS_VSCROLL | WS_TABSTOP, 79, 102, 52, 56 
+   CONTROL "OK", 1, BUTTON, BS_DEFPUSHBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 147, 7, 50, 14 
+   CONTROL "Cancel", 2, BUTTON, BS_PUSHBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 147, 26, 50, 14 
+   CONTROL "&Default", 1042, BUTTON, BS_PUSHBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 147, 45, 50, 14 
+}
+
+115 DIALOG 0, 0, 277, 121
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+CAPTION "Quick Help"
+FONT 8, "MS Sans Serif"
+{
+   CONTROL "Instructions", -1, BUTTON, BS_GROUPBOX | WS_CHILD | WS_VISIBLE, 5, 3, 208, 100 
+   CONTROL "To start a game, click Start Game from the Game menu, or press F2.", -1, STATIC, SS_LEFT | WS_CHILD | WS_VISIBLE | WS_GROUP, 12, 16, 193, 18 
+   CONTROL "The object of the game is to collect all your opponents' blue flags before they collect all your red flags.", -1, STATIC, SS_LEFT | WS_CHILD | WS_VISIBLE | WS_GROUP, 12, 39, 193, 18 
+   CONTROL "Use the arrow keys to maneuver your Hover 950. To change the maneuvering keys, press F8.", -1, STATIC, SS_LEFT | WS_CHILD | WS_VISIBLE | WS_GROUP, 12, 60, 193, 18 
+   CONTROL "To pause the game and use the menus, press F3.", -1, STATIC, SS_LEFT | WS_CHILD | WS_VISIBLE | WS_GROUP, 12, 82, 193, 18 
+   CONTROL "Skip Quick Help at Startup", 1008, BUTTON, BS_AUTOCHECKBOX | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 5, 107, 206, 10 
+   CONTROL "OK", 1, BUTTON, BS_DEFPUSHBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 219, 7, 50, 14 
+}
+
+143 DIALOG 0, 0, 147, 42
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION
+CAPTION "Please Wait"
+FONT 8, "MS Sans Serif"
+{
+   CONTROL "Loading Level ", -1, STATIC, SS_LEFT | WS_CHILD | WS_VISIBLE | WS_GROUP, 6, 5, 129, 10 
+   CONTROL "", 1000, STATIC, SS_BLACKFRAME | WS_CHILD | WS_VISIBLE, 6, 20, 135, 15 
+}
+
+146 DIALOG 0, 0, 116, 111
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_VISIBLE
+FONT 14, "MS Sans Serif"
+{
+   CONTROL "", 1038, STATIC, SS_BLACKFRAME | WS_CHILD | WS_VISIBLE, 2, 2, 108, 76 
+   CONTROL "", 1112, STATIC, SS_CENTER | WS_CHILD | WS_VISIBLE | WS_GROUP, 3, 81, 107, 0 
+}
+
+30721 DIALOG 9, 26, 183, 70
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU | 0x4L
+CAPTION "New"
+FONT 8, "MS Sans Serif"
+{
+   CONTROL "&New ", -1, STATIC, SS_LEFT | WS_CHILD | WS_VISIBLE, 6, 5, 123, 8 
+   CONTROL "", 100, LISTBOX, LBS_NOTIFY | WS_CHILD | WS_VISIBLE | WS_BORDER | WS_VSCROLL | WS_TABSTOP, 6, 15, 125, 49 
+   CONTROL "OK", 1, BUTTON, BS_DEFPUSHBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 137, 6, 40, 14 
+   CONTROL "Cancel", 2, BUTTON, BS_PUSHBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 137, 23, 40, 14 
+   CONTROL "&Help", -7867, BUTTON, BS_PUSHBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 137, 43, 40, 14 
+}
+
+STRINGTABLE
+{
+  128, 	"Hover!\n\n\n\n\n\n\n"
+}
+
+STRINGTABLE
+{
+  32768, 	"WALL"
+  32769, 	"POD"
+  32770, 	"FLOOR"
+  32771, 	"CAR"
+  32777, 	"Start a new game."
+  32778, 	"Start a game at a level you choose."
+  32780, 	"Switch to full screen mode."
+  32781, 	"Toggle whether music is played."
+  32782, 	"Toggle whether sound is on."
+  32783, 	"Toggle whether Quick Help is displayed at startup."
+}
+
+STRINGTABLE
+{
+  32784, 	"Select controls to use."
+  32785, 	"Adjust game settings."
+  32786, 	"Display help contents."
+}
+
+STRINGTABLE
+{
+  57344, 	"Hover!"
+  57345, 	"For Help, press F1"
+  57346, 	"Select an object on which to get Help"
+}
+
+STRINGTABLE
+{
+  57600, 	"Create a new document\nNew"
+  57601, 	"Open an existing document\nOpen"
+  57602, 	"Close the active document\nClose"
+  57603, 	"Save the active document\nSave"
+  57604, 	"Save the active document with a new name\nSave As"
+}
+
+STRINGTABLE
+{
+  57616, 	"Open this document"
+  57617, 	"Open this document"
+  57618, 	"Open this document"
+  57619, 	"Open this document"
+}
+
+STRINGTABLE
+{
+  57632, 	"Erase the selection\nErase"
+  57633, 	"Erase everything\nErase All"
+  57634, 	"Copy the selection and put it on the Clipboard\nCopy"
+  57635, 	"Cut the selection and put it on the Clipboard\nCut"
+  57636, 	"Find the specified text\nFind"
+  57637, 	"Insert Clipboard contents\nPaste"
+  57640, 	"Repeat the last action\nRepeat"
+  57641, 	"Replace specific text with different text\nReplace"
+  57642, 	"Select the entire document\nSelect All"
+  57643, 	"Undo the last action\nUndo"
+  57644, 	"Redo the previously undone action\nRedo"
+}
+
+STRINGTABLE
+{
+  57653, 	"Split the active window into panes\nSplit"
+}
+
+STRINGTABLE
+{
+  57664, 	"Display program information, version number and copyright\nAbout"
+  57665, 	"Quit the application; prompts to save documents\nExit"
+  57666, 	"List Help topics\nHelp Index"
+  57667, 	"Display instructions about how to use help\nHelp"
+  57668, 	"Display help for clicked on buttons, menus and windows\nHelp"
+  57669, 	"Display help for current task or command\nHelp"
+}
+
+STRINGTABLE
+{
+  57680, 	"Switch to the next window pane\nNext Pane"
+  57681, 	"Switch back to the previous window pane\nPrevious Pane"
+}
+
+STRINGTABLE
+{
+  59136, 	"EXT"
+  59137, 	"CAP"
+  59138, 	"NUM"
+  59139, 	"SCRL"
+  59140, 	"OVR"
+  59141, 	"REC"
+}
+
+STRINGTABLE
+{
+  61184, 	"Change the window size"
+  61185, 	"Change the window position"
+  61186, 	"Reduce the window to an icon"
+  61187, 	"Enlarge the window to full size"
+  61188, 	"Switch to the next document window"
+  61189, 	"Switch to the previous document window"
+  61190, 	"Close the active window and prompts to save the documents"
+}
+
+STRINGTABLE
+{
+  61202, 	"Restore the window to normal size"
+  61203, 	"Activate Task List"
+  61204, 	"Unable to Open Dash Board Graphics File"
+  61205, 	" GAME PAUSED "
+  61206, 	" Press F3 to Continue "
+  61207, 	"This computer does not meet the\nminimum configuration of a 486/33\nwith 8 MB of RAM to run Hover!\n\nPress OK to exit."
+  61208, 	"One or more keys you have chosen\nhas already been assigned to\nanother action.  Choose only unique\nkeys for each action."
+  61209, 	"Back Space"
+  61210, 	"Tab"
+  61211, 	"Enter"
+  61212, 	"Shift"
+  61213, 	"Control"
+  61215, 	"Space"
+}
+
+STRINGTABLE
+{
+  61216, 	"Pg Up"
+  61217, 	"Pg Dn"
+  61218, 	"End"
+  61219, 	"Home"
+  61220, 	"Left"
+  61221, 	"Up"
+  61222, 	"Right"
+  61223, 	"Down"
+  61224, 	"Insert"
+  61225, 	"Delete"
+  61226, 	"Num Pad 0"
+  61227, 	"Num Pad 1"
+  61228, 	"Num Pad 2"
+  61229, 	"Num Pad 3"
+  61230, 	"Num Pad 4"
+  61231, 	"Num Pad 5"
+}
+
+STRINGTABLE
+{
+  61232, 	"Num Pad 6"
+  61233, 	"Num Pad 7"
+  61234, 	"Num Pad 8"
+  61235, 	"Num Pad 9"
+  61236, 	"Multiply"
+  61237, 	"Decimal"
+  61238, 	"Divide"
+  61243, 	"Are you sure you want to clear the high score table?"
+  61244, 	"Are  you sure you want to quit the game in progress?"
+  61245, 	"%d Flag left x %d = %d"
+  61246, 	"Good Job! Starting level %d!"
+  61247, 	"Press F2 to start"
+}
+
+STRINGTABLE
+{
+  61248, 	"BLANK"
+  61249, 	"Easy"
+  61250, 	"Intermediate"
+  61251, 	"Difficult"
+  61252, 	"Sequential"
+  61253, 	"Random"
+  61254, 	"We have detected that you are not running a 256\ncolor video driver.  While HOVER! will still run,\nyou will get the best performance if you run\nHOVER! with a 256 color video driver."
+  61255, 	"HOVER! will not function with the current 16 color\nvideo driver, please change to a 256 color video\ndriver and start HOVER! again."
+  61256, 	"HOVER! has detected that you are not running\na compatible version of Windows.\nHOVER! only runs on Windows 95,Windows NT 3.51\nor better."
+  61257, 	"&What's This?"
+  61258, 	"You have been defeated!  The Drones have captured all of your flags.\n\nWould you like to play again?"
+  61259, 	"There was a problem reading a file in Hover!\nPress OK to exit."
+  61261, 	"There was an error allocating memory in Hover!\nPress OK to exit."
+  61262, 	"There was an unexpected exception in Hover!\nPress OK to exit."
+  61263, 	"Are  you sure you want to quit the game in progress?"
+}
+
+STRINGTABLE
+{
+  61264, 	"Level bonus of %d"
+  61265, 	"All wave devices that can play files in this format are in use.  Try again when a wave device is free."
+  61266, 	"Bonus Score"
+  61267, 	"a game of Hover!"
+  61268, 	"Activate Hover! and"
+  61269, 	"There are not enough Windows resources to run Hover!\nPlease close one or more applications and try again.\nPress OK to exit.\n"
+  61270, 	"The application Hover! is already running."
+  61271, 	"A"
+  61272, 	"S"
+  61273, 	"D"
+  61274, 	"Home"
+  61275, 	"Up"
+  61276, 	"Pg Up"
+  61277, 	"Left"
+  61278, 	"Right"
+  61279, 	"End"
+}
+
+STRINGTABLE
+{
+  61280, 	"Down"
+  61281, 	"Pg Dn"
+  61282, 	"%d Flags left x %d = %d"
+  61283, 	"Hover! - Level %d"
+  61284, 	"There was an exception resulting from calling an unsupported feature in Hover!\nPress OK to exit."
+  61285, 	"There was no archive error in Hover!\nPress OK to exit."
+  61286, 	"There was an unspecified archive error in Hover!\nPress OK to exit."
+  61287, 	"Hover tried to write into an archive opened for loading.\nPress OK to exit."
+  61288, 	"Hover reached the end of a file while reading an object.\nPress OK to exit."
+  61289, 	"Hover tried to read from an archive opened for storing.\nPress OK to exit."
+  61290, 	"There was an invalid file format error in Hover!\nPress OK to exit."
+  61291, 	"Hover tried to read an object into an object of the wrong type.\nPress OK to exit."
+  61292, 	"Hover tried to read an object with a different version of the class.\nPress OK to exit."
+  61293, 	"There was an exception resulting from a failure to load a Windows resource in Hover!\nPress OK to exit."
+  61294, 	"There was an exception resulting from a failure in OLE processing in Hover!\nPress OK to exit."
+  61295, 	"There was an exception resulting from failures in data access processing in Hover!\nPress OK to exit."
+}
+
+STRINGTABLE
+{
+  61296, 	"There was an exception used to stop a user-initiated operation in Hover!\nPress OK to exit."
+}
+
+STRINGTABLE
+{
+  61440, 	"Open"
+  61441, 	"Save As"
+  61442, 	"All Files (*.*)"
+  61443, 	"Untitled"
+}
+
+STRINGTABLE
+{
+  61696, 	"Invalid filename."
+  61697, 	"Failed to open document."
+  61698, 	"Failed to save document."
+  61699, 	"Save changes to %1?"
+  61700, 	"Failed to create empty document."
+  61701, 	"The file is too large to open."
+  61702, 	"Could not start print job."
+  61703, 	"Failed to launch help."
+  61704, 	"Internal application error."
+  61705, 	"Command failed."
+  61706, 	"Insufficient memory to perform operation."
+}
+
+STRINGTABLE
+{
+  61712, 	"Please enter an integer."
+  61713, 	"Please enter a number."
+  61714, 	"Please enter an integer between %1 and %2."
+  61715, 	"Please enter a number between %1 and %2."
+  61716, 	"Please enter no more than %1 characters."
+  61717, 	"Please select a button."
+  61718, 	"Please enter an integer between 0 and 255."
+  61719, 	"Please enter a positive integer."
+}
+
+STRINGTABLE
+{
+  61728, 	"Unexpected file format."
+  61729, 	"%1\nCannot find this file.\nPlease verify that the correct path and file name are given."
+  61730, 	"Destination disk drive is full."
+  61731, 	"Unable to read from %1, it is opened by someone else."
+  61732, 	"Unable to write to %1, it is read-only or opened by someone else."
+  61733, 	"An unexpected error occurred while reading %1."
+  61734, 	"An unexpected error occurred while writing %1."
+}
+
+STRINGTABLE
+{
+  61836, 	"Unable to read write-only property."
+  61837, 	"Unable to write read-only property."
+}
+
+STRINGTABLE
+{
+  61840, 	"Unable to load mail system support."
+  61841, 	"Mail system DLL is invalid."
+  61842, 	"Send Mail failed to send message."
+}
+
+STRINGTABLE
+{
+  61984, 	"OK\n50"
+  61985, 	"Cancel\n50"
+  61986, 	"&Apply\n50"
+  61987, 	"&Help\n50"
+  61988, 	"Close"
+}
+
+
+128 ACCELERATORS
+{
+	VK_ESCAPE, 32800, NOINVERT, VIRTKEY
+	VK_F1, 57669, NOINVERT, VIRTKEY
+	VK_F1, 57668, NOINVERT, SHIFT, VIRTKEY
+	VK_F2, 32777, NOINVERT, VIRTKEY
+	VK_F3, 32779, NOINVERT, VIRTKEY
+	VK_F4, 32780, NOINVERT, VIRTKEY
+	VK_F4, 32780, NOINVERT, SHIFT, VIRTKEY
+	VK_F8, 32784, NOINVERT, VIRTKEY
+	VK_F9, 32785, NOINVERT, VIRTKEY
+	VK_PAUSE, 32779, NOINVERT, VIRTKEY
+}
+
+128 ICON "ICON128_1.ico"
+30977 CURSOR "CURSOR30977_1.cur"
+
+
+
+1 VERSIONINFO
+FILEVERSION 1,0,0,0
+PRODUCTVERSION 4,0,0,0
+FILEFLAGSMASK 0x3fL
+FILEOS 0x4
+FILETYPE 0x1
+{
+BLOCK "StringFileInfo"
+{
+	BLOCK "040904b0"
+	{
+		VALUE "CompanyName", "Microsoft Corporation"
+		VALUE "FileDescription", "Hover!"
+		VALUE "FileVersion", "1.0.000"
+		VALUE "InternalName", "HOVER"
+		VALUE "LegalCopyright", "Copyright \xA9 1994-1995 Microsoft Corporation"
+		VALUE "OriginalFilename", "HOVER.EXE"
+		VALUE "ProductName", "HOVER!"
+		VALUE "ProductVersion", "4.0.000"
+	}
+}
+
+BLOCK "VarFileInfo"
+{
+	VALUE "Translation", 0x0409 0x04B0  
+}
+}
