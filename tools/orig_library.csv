@@ -981,3 +981,4 @@ address,type,symbol
 0x45f1a0,library,?AfxPostQuitMessage@@YGXH@Z
 0x45f1cc,library,??1CWinThread@@UAE@XZ
 0x45f4b5,library,?AfxWinTerm@@YGXXZ
+0x40c5b0,library,??1CFont@@UAE@XZ

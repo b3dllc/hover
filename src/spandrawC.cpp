@@ -1,7 +1,7 @@
 // spandrawC.cpp : the "zoomed" span drawers of the software renderer
 //
 // Reconstructed from hover.exe 0x435D30..0x437EF0, the last third of the
-// hand-written span-drawer cluster whose addresses CSub410F20::Sub_410F20
+// hand-written span-drawer cluster whose addresses CRenderContext::SetMode
 // stores in the render context's drawer table.  Every function here is a
 // leaf with no arguments, called through a `void (*)()` slot, and every
 // body is one hand-written `_asm` block preceded by three C statements
@@ -16,19 +16,19 @@
 //
 // and inside each block four variants:
 //
-//   ..._Var     v shift taken from g_dwUnk_4A4A48 at run time (`sar ebx,cl`)
+//   ..._Var     v shift taken from g_dwVShift at run time (`sar ebx,cl`)
 //   ...Lit_Var  the same, but the texel is passed through the shade/remap
-//               table at g_dwUnk_4A4A3C ("lit" span)
+//               table at g_dwShadeTable ("lit" span)
 //   ..._Sn      v shift baked in as an immediate (texture width 2^(16-n),
 //               n = 6..15), direct texel
 //   ...Lit_Sn   v shift baked in, texel through the shade/remap table
 //
-// The inner loop is the usual affine texture walk: u = g_dwUnk_4A4A28
-// (masked with g_dwUnk_4A4A20, stepped by g_dwUnk_4A4A50), v =
-// g_dwUnk_4A4A2C (masked with g_dwUnk_4A4A38, stepped by g_dwUnk_4A4A24),
-// texel = g_dwUnk_4A4A1C[(u >> 16) + (v >> n)], destination g_dwUnk_4A4A4C
-// with g_dwUnk_4A4A30 (fixed-shift variants) or g_dwUnk_4A4A34 (run-time
-// shift variants) as the row stride, and g_dwUnk_4A4A14 as the counter.
+// The inner loop is the usual affine texture walk: u = g_dwU
+// (masked with g_dwUMask, stepped by g_dwUStep), v =
+// g_dwV (masked with g_dwVMask, stepped by g_dwVStep),
+// texel = g_dwTexels[(u >> 16) + (v >> n)], destination g_dwDst
+// with g_dwDstRowStride (fixed-shift variants) or g_dwRowPitch (run-time
+// shift variants) as the row stride, and g_dwSpanCount as the counter.
 //
 // The `push ebp` / `pop ebp` around the blocks that use ebp as the texture
 // base is part of the assembly, not the compiler's prologue: VC++ 2.x does
@@ -36,7 +36,7 @@
 // touches, and the original saves it in exactly that position.
 //
 // Two more spellings worth recording:
-//   - the run-time-shift drawers guard the loop with `if (g_dwUnk_4A4A14--)`,
+//   - the run-time-shift drawers guard the loop with `if (g_dwSpanCount--)`,
 //     which is exactly the original's `dec [0x4A4A14] / test reg,reg / je`
 //     over the value the division left in a register; the fixed-shift
 //     drawers have no guard at all (their loop is bottom-tested with
@@ -60,138 +60,138 @@
 
 // 2 px x 2 rows, texel through the shade/remap table (0x435EB0 family)
 #define SPAN2X2_LIT(shift) \
-	g_dwUnk_4A4A14 = (DWORD)((long)g_dwUnk_4A4A14 / 2); \
-	g_dwUnk_4A4A50 <<= 1; \
-	g_dwUnk_4A4A24 <<= 1; \
+	g_dwSpanCount = (DWORD)((long)g_dwSpanCount / 2); \
+	g_dwUStep <<= 1; \
+	g_dwVStep <<= 1; \
  \
 	_asm push ebp \
-	_asm mov eax, g_dwUnk_4A4A28 \
-	_asm and eax, g_dwUnk_4A4A20 \
-	_asm mov edx, g_dwUnk_4A4A2C \
-	_asm mov edi, g_dwUnk_4A4A4C \
-	_asm mov ebp, g_dwUnk_4A4A1C \
+	_asm mov eax, g_dwU \
+	_asm and eax, g_dwUMask \
+	_asm mov edx, g_dwV \
+	_asm mov edi, g_dwDst \
+	_asm mov ebp, g_dwTexels \
 	_asm sub ecx, ecx \
 	_asm sub edi, 2 \
 	_asm _sp_top: \
 	_asm mov ebx, eax \
-	_asm add eax, g_dwUnk_4A4A50 \
+	_asm add eax, g_dwUStep \
 	_asm shr ebx, 0x10 \
-	_asm and eax, g_dwUnk_4A4A20 \
+	_asm and eax, g_dwUMask \
 	_asm lea esi, [ebp+ebx] \
 	_asm mov ebx, edx \
-	_asm add edx, g_dwUnk_4A4A24 \
-	_asm and ebx, g_dwUnk_4A4A38 \
+	_asm add edx, g_dwVStep \
+	_asm and ebx, g_dwVMask \
 	_asm shr ebx, shift \
 	_asm add edi, 2 \
 	_asm sub ch, ch \
 	_asm mov cl, byte ptr [esi+ebx] \
-	_asm mov ebx, g_dwUnk_4A4A3C \
+	_asm mov ebx, g_dwShadeTable \
 	_asm mov cl, byte ptr [ebx+ecx] \
-	_asm dec g_dwUnk_4A4A14 \
+	_asm dec g_dwSpanCount \
 	_asm mov ch, cl \
 	_asm mov word ptr [edi], cx \
-	_asm mov ebx, g_dwUnk_4A4A30 \
+	_asm mov ebx, g_dwDstRowStride \
 	_asm mov word ptr [edi+ebx], cx \
 	_asm jg _sp_top \
 	_asm pop ebp
 
 // 2 px x 2 rows, direct texel (0x436130 family)
 #define SPAN2X2(shift) \
-	g_dwUnk_4A4A14 = (DWORD)((long)g_dwUnk_4A4A14 / 2); \
-	g_dwUnk_4A4A50 <<= 1; \
-	g_dwUnk_4A4A24 <<= 1; \
+	g_dwSpanCount = (DWORD)((long)g_dwSpanCount / 2); \
+	g_dwUStep <<= 1; \
+	g_dwVStep <<= 1; \
  \
 	_asm push ebp \
-	_asm mov eax, g_dwUnk_4A4A28 \
-	_asm and eax, g_dwUnk_4A4A20 \
-	_asm mov edx, g_dwUnk_4A4A2C \
-	_asm mov edi, g_dwUnk_4A4A4C \
-	_asm mov ebp, g_dwUnk_4A4A1C \
+	_asm mov eax, g_dwU \
+	_asm and eax, g_dwUMask \
+	_asm mov edx, g_dwV \
+	_asm mov edi, g_dwDst \
+	_asm mov ebp, g_dwTexels \
 	_asm sub ecx, ecx \
 	_asm sub edi, 2 \
 	_asm _sp_top: \
 	_asm mov ebx, eax \
-	_asm add eax, g_dwUnk_4A4A50 \
+	_asm add eax, g_dwUStep \
 	_asm shr ebx, 0x10 \
-	_asm and eax, g_dwUnk_4A4A20 \
+	_asm and eax, g_dwUMask \
 	_asm lea esi, [ebp+ebx] \
 	_asm mov ebx, edx \
-	_asm add edx, g_dwUnk_4A4A24 \
-	_asm and ebx, g_dwUnk_4A4A38 \
+	_asm add edx, g_dwVStep \
+	_asm and ebx, g_dwVMask \
 	_asm shr ebx, shift \
 	_asm add edi, 2 \
 	_asm mov cl, byte ptr [esi+ebx] \
-	_asm dec g_dwUnk_4A4A14 \
+	_asm dec g_dwSpanCount \
 	_asm mov ch, cl \
 	_asm mov word ptr [edi], cx \
-	_asm mov ebx, g_dwUnk_4A4A30 \
+	_asm mov ebx, g_dwDstRowStride \
 	_asm mov word ptr [edi+ebx], cx \
 	_asm jg _sp_top \
 	_asm pop ebp
 
 // 4 px x 2 rows, texel through the shade/remap table (0x436860 family)
 #define SPAN4X2_LIT(shift) \
-	g_dwUnk_4A4A14 = (DWORD)((long)g_dwUnk_4A4A14 / 4); \
-	g_dwUnk_4A4A50 <<= 2; \
-	g_dwUnk_4A4A24 <<= 2; \
+	g_dwSpanCount = (DWORD)((long)g_dwSpanCount / 4); \
+	g_dwUStep <<= 2; \
+	g_dwVStep <<= 2; \
  \
 	_asm push ebp \
-	_asm mov eax, g_dwUnk_4A4A28 \
-	_asm and eax, g_dwUnk_4A4A20 \
-	_asm mov edx, g_dwUnk_4A4A2C \
-	_asm mov edi, g_dwUnk_4A4A4C \
-	_asm mov ebp, g_dwUnk_4A4A1C \
+	_asm mov eax, g_dwU \
+	_asm and eax, g_dwUMask \
+	_asm mov edx, g_dwV \
+	_asm mov edi, g_dwDst \
+	_asm mov ebp, g_dwTexels \
 	_asm sub ecx, ecx \
 	_asm sub edi, 4 \
 	_asm _sp_top: \
 	_asm mov ebx, eax \
-	_asm add eax, g_dwUnk_4A4A50 \
+	_asm add eax, g_dwUStep \
 	_asm shr ebx, 0x10 \
-	_asm and eax, g_dwUnk_4A4A20 \
+	_asm and eax, g_dwUMask \
 	_asm lea esi, [ebp+ebx] \
 	_asm mov ebx, edx \
-	_asm add edx, g_dwUnk_4A4A24 \
-	_asm and ebx, g_dwUnk_4A4A38 \
+	_asm add edx, g_dwVStep \
+	_asm and ebx, g_dwVMask \
 	_asm shr ebx, shift \
 	_asm add edi, 4 \
 	_asm sub ecx, ecx \
 	_asm mov cl, byte ptr [esi+ebx] \
-	_asm mov ebx, g_dwUnk_4A4A3C \
+	_asm mov ebx, g_dwShadeTable \
 	_asm mov cl, byte ptr [ebx+ecx] \
 	_asm mov ch, cl \
 	_asm push cx \
 	_asm shl ecx, 0x10 \
 	_asm pop cx \
-	_asm dec g_dwUnk_4A4A14 \
+	_asm dec g_dwSpanCount \
 	_asm mov dword ptr [edi], ecx \
-	_asm mov ebx, g_dwUnk_4A4A30 \
+	_asm mov ebx, g_dwDstRowStride \
 	_asm mov dword ptr [edi+ebx], ecx \
 	_asm jg _sp_top \
 	_asm pop ebp
 
 // 4 px x 2 rows, direct texel (0x436B80 family)
 #define SPAN4X2(shift) \
-	g_dwUnk_4A4A14 = (DWORD)((long)g_dwUnk_4A4A14 / 4); \
-	g_dwUnk_4A4A50 <<= 2; \
-	g_dwUnk_4A4A24 <<= 2; \
+	g_dwSpanCount = (DWORD)((long)g_dwSpanCount / 4); \
+	g_dwUStep <<= 2; \
+	g_dwVStep <<= 2; \
  \
 	_asm push ebp \
-	_asm mov eax, g_dwUnk_4A4A28 \
-	_asm and eax, g_dwUnk_4A4A20 \
-	_asm mov edx, g_dwUnk_4A4A2C \
-	_asm mov edi, g_dwUnk_4A4A4C \
-	_asm mov ebp, g_dwUnk_4A4A1C \
+	_asm mov eax, g_dwU \
+	_asm and eax, g_dwUMask \
+	_asm mov edx, g_dwV \
+	_asm mov edi, g_dwDst \
+	_asm mov ebp, g_dwTexels \
 	_asm sub ecx, ecx \
 	_asm sub edi, 4 \
 	_asm _sp_top: \
 	_asm mov ebx, eax \
-	_asm add eax, g_dwUnk_4A4A50 \
+	_asm add eax, g_dwUStep \
 	_asm shr ebx, 0x10 \
-	_asm and eax, g_dwUnk_4A4A20 \
+	_asm and eax, g_dwUMask \
 	_asm lea esi, [ebp+ebx] \
 	_asm mov ebx, edx \
-	_asm add edx, g_dwUnk_4A4A24 \
-	_asm and ebx, g_dwUnk_4A4A38 \
+	_asm add edx, g_dwVStep \
+	_asm and ebx, g_dwVMask \
 	_asm shr ebx, shift \
 	_asm add edi, 4 \
 	_asm mov cl, byte ptr [esi+ebx] \
@@ -199,80 +199,80 @@
 	_asm push cx \
 	_asm shl ecx, 0x10 \
 	_asm pop cx \
-	_asm dec g_dwUnk_4A4A14 \
+	_asm dec g_dwSpanCount \
 	_asm mov dword ptr [edi], ecx \
-	_asm mov ebx, g_dwUnk_4A4A30 \
+	_asm mov ebx, g_dwDstRowStride \
 	_asm mov dword ptr [edi+ebx], ecx \
 	_asm jg _sp_top \
 	_asm pop ebp
 
 // 4 px x 4 rows, texel through the shade/remap table (0x4373A0 family)
 #define SPAN4X4_LIT(shift) \
-	g_dwUnk_4A4A14 = (DWORD)((long)g_dwUnk_4A4A14 / 4); \
-	g_dwUnk_4A4A50 <<= 2; \
-	g_dwUnk_4A4A24 <<= 2; \
+	g_dwSpanCount = (DWORD)((long)g_dwSpanCount / 4); \
+	g_dwUStep <<= 2; \
+	g_dwVStep <<= 2; \
  \
 	_asm push ebp \
-	_asm mov eax, g_dwUnk_4A4A28 \
-	_asm and eax, g_dwUnk_4A4A20 \
-	_asm mov edx, g_dwUnk_4A4A2C \
-	_asm mov edi, g_dwUnk_4A4A4C \
-	_asm mov ebp, g_dwUnk_4A4A1C \
+	_asm mov eax, g_dwU \
+	_asm and eax, g_dwUMask \
+	_asm mov edx, g_dwV \
+	_asm mov edi, g_dwDst \
+	_asm mov ebp, g_dwTexels \
 	_asm sub ecx, ecx \
 	_asm sub edi, 4 \
 	_asm _sp_top: \
 	_asm mov ebx, eax \
-	_asm add eax, g_dwUnk_4A4A50 \
+	_asm add eax, g_dwUStep \
 	_asm shr ebx, 0x10 \
-	_asm and eax, g_dwUnk_4A4A20 \
+	_asm and eax, g_dwUMask \
 	_asm lea esi, [ebp+ebx] \
 	_asm mov ebx, edx \
-	_asm add edx, g_dwUnk_4A4A24 \
-	_asm and ebx, g_dwUnk_4A4A38 \
+	_asm add edx, g_dwVStep \
+	_asm and ebx, g_dwVMask \
 	_asm shr ebx, shift \
 	_asm add edi, 4 \
 	_asm sub ecx, ecx \
 	_asm mov cl, byte ptr [esi+ebx] \
-	_asm mov ebx, g_dwUnk_4A4A3C \
+	_asm mov ebx, g_dwShadeTable \
 	_asm mov cl, byte ptr [ebx+ecx] \
 	_asm mov ch, cl \
 	_asm push cx \
 	_asm shl ecx, 0x10 \
 	_asm pop cx \
 	_asm mov dword ptr [edi], ecx \
-	_asm mov ebx, g_dwUnk_4A4A30 \
+	_asm mov ebx, g_dwDstRowStride \
 	_asm mov dword ptr [edi+ebx], ecx \
 	_asm mov dword ptr [edi+ebx*2], ecx \
-	_asm add ebx, g_dwUnk_4A4A30 \
-	_asm add ebx, g_dwUnk_4A4A30 \
+	_asm add ebx, g_dwDstRowStride \
+	_asm add ebx, g_dwDstRowStride \
 	_asm mov dword ptr [edi+ebx], ecx \
-	_asm dec g_dwUnk_4A4A14 \
+	_asm dec g_dwSpanCount \
 	_asm jg _sp_top \
 	_asm pop ebp
 
 // 4 px x 4 rows, direct texel (0x437820 family)
 #define SPAN4X4(shift) \
-	g_dwUnk_4A4A14 = (DWORD)((long)g_dwUnk_4A4A14 / 4); \
-	g_dwUnk_4A4A50 <<= 2; \
-	g_dwUnk_4A4A24 <<= 2; \
+	g_dwSpanCount = (DWORD)((long)g_dwSpanCount / 4); \
+	g_dwUStep <<= 2; \
+	g_dwVStep <<= 2; \
  \
 	_asm push ebp \
-	_asm mov eax, g_dwUnk_4A4A28 \
-	_asm and eax, g_dwUnk_4A4A20 \
-	_asm mov edx, g_dwUnk_4A4A2C \
-	_asm mov edi, g_dwUnk_4A4A4C \
-	_asm mov ebp, g_dwUnk_4A4A1C \
+	_asm mov eax, g_dwU \
+	_asm and eax, g_dwUMask \
+	_asm mov edx, g_dwV \
+	_asm mov edi, g_dwDst \
+	_asm mov ebp, g_dwTexels \
 	_asm sub ecx, ecx \
 	_asm sub edi, 4 \
 	_asm _sp_top: \
 	_asm mov ebx, eax \
-	_asm add eax, g_dwUnk_4A4A50 \
+	_asm add eax, g_dwUStep \
 	_asm shr ebx, 0x10 \
-	_asm and eax, g_dwUnk_4A4A20 \
+	_asm and eax, g_dwUMask \
 	_asm lea esi, [ebp+ebx] \
 	_asm mov ebx, edx \
-	_asm add edx, g_dwUnk_4A4A24 \
-	_asm and ebx, g_dwUnk_4A4A38 \
+	_asm add edx, g_dwVStep \
+	_asm and ebx, g_dwVMask \
 	_asm shr ebx, shift \
 	_asm add edi, 4 \
 	_asm mov cl, byte ptr [esi+ebx] \
@@ -281,13 +281,13 @@
 	_asm shl ecx, 0x10 \
 	_asm pop cx \
 	_asm mov dword ptr [edi], ecx \
-	_asm mov ebx, g_dwUnk_4A4A30 \
+	_asm mov ebx, g_dwDstRowStride \
 	_asm mov dword ptr [edi+ebx], ecx \
 	_asm mov dword ptr [edi+ebx*2], ecx \
-	_asm add ebx, g_dwUnk_4A4A30 \
-	_asm add ebx, g_dwUnk_4A4A30 \
+	_asm add ebx, g_dwDstRowStride \
+	_asm add ebx, g_dwDstRowStride \
 	_asm mov dword ptr [edi+ebx], ecx \
-	_asm dec g_dwUnk_4A4A14 \
+	_asm dec g_dwSpanCount \
 	_asm jg _sp_top \
 	_asm pop ebp
 
@@ -299,22 +299,22 @@
 // FUNCTION: HOVER 0x435d30
 void Span2x2_Var(void)
 {
-	g_dwUnk_4A4A14 = (DWORD)((long)g_dwUnk_4A4A14 / 2);
-	g_dwUnk_4A4A50 <<= 1;
-	g_dwUnk_4A4A24 <<= 1;
+	g_dwSpanCount = (DWORD)((long)g_dwSpanCount / 2);
+	g_dwUStep <<= 1;
+	g_dwVStep <<= 1;
 
-	if (g_dwUnk_4A4A14--)
+	if (g_dwSpanCount--)
 	{
-		_asm mov cl, byte ptr g_dwUnk_4A4A48
-		_asm mov edx, g_dwUnk_4A4A34
+		_asm mov cl, byte ptr g_dwVShift
+		_asm mov edx, g_dwRowPitch
 		_asm mov esi, 2
 		_asm _sp_top:
-		_asm mov ebx, g_dwUnk_4A4A38
-		_asm mov eax, g_dwUnk_4A4A20
-		_asm and ebx, g_dwUnk_4A4A2C
-		_asm and eax, g_dwUnk_4A4A28
+		_asm mov ebx, g_dwVMask
+		_asm mov eax, g_dwUMask
+		_asm and ebx, g_dwV
+		_asm and eax, g_dwU
 		_asm sar eax, 0x10
-		_asm mov edi, g_dwUnk_4A4A1C
+		_asm mov edi, g_dwTexels
 		_asm sar ebx, cl
 		_asm add ebx, eax
 		_asm xor eax, eax
@@ -322,17 +322,17 @@ void Span2x2_Var(void)
 		_asm mov edi, eax
 		_asm shl edi, 8
 		_asm or eax, edi
-		_asm mov edi, g_dwUnk_4A4A4C
+		_asm mov edi, g_dwDst
 		_asm mov word ptr [edi], ax
-		_asm mov edi, g_dwUnk_4A4A4C
+		_asm mov edi, g_dwDst
 		_asm mov word ptr [edi+edx], ax
-		_asm mov eax, g_dwUnk_4A4A50
-		_asm mov ebx, g_dwUnk_4A4A24
-		_asm mov edi, g_dwUnk_4A4A14
-		_asm add g_dwUnk_4A4A4C, esi
-		_asm add g_dwUnk_4A4A28, eax
-		_asm add g_dwUnk_4A4A2C, ebx
-		_asm dec g_dwUnk_4A4A14
+		_asm mov eax, g_dwUStep
+		_asm mov ebx, g_dwVStep
+		_asm mov edi, g_dwSpanCount
+		_asm add g_dwDst, esi
+		_asm add g_dwU, eax
+		_asm add g_dwV, ebx
+		_asm dec g_dwSpanCount
 		_asm test edi, edi
 		_asm jne _sp_top
 	}
@@ -342,43 +342,43 @@ void Span2x2_Var(void)
 // FUNCTION: HOVER 0x435df0
 void Span2x2Lit_Var(void)
 {
-	g_dwUnk_4A4A14 = (DWORD)((long)g_dwUnk_4A4A14 / 2);
-	g_dwUnk_4A4A50 <<= 1;
-	g_dwUnk_4A4A24 <<= 1;
+	g_dwSpanCount = (DWORD)((long)g_dwSpanCount / 2);
+	g_dwUStep <<= 1;
+	g_dwVStep <<= 1;
 
-	if (g_dwUnk_4A4A14--)
+	if (g_dwSpanCount--)
 	{
-		_asm mov cl, byte ptr g_dwUnk_4A4A48
-		_asm mov edx, g_dwUnk_4A4A34
+		_asm mov cl, byte ptr g_dwVShift
+		_asm mov edx, g_dwRowPitch
 		_asm mov esi, 2
 		_asm _sp_top:
-		_asm mov edi, g_dwUnk_4A4A38
-		_asm mov eax, g_dwUnk_4A4A20
-		_asm and edi, g_dwUnk_4A4A2C
-		_asm and eax, g_dwUnk_4A4A28
+		_asm mov edi, g_dwVMask
+		_asm mov eax, g_dwUMask
+		_asm and edi, g_dwV
+		_asm and eax, g_dwU
 		_asm sar eax, 0x10
 		_asm xor ebx, ebx
 		_asm sar edi, cl
 		_asm add edi, eax
-		_asm mov eax, g_dwUnk_4A4A1C
+		_asm mov eax, g_dwTexels
 		_asm mov bl, byte ptr [edi+eax]
-		_asm mov edi, g_dwUnk_4A4A3C
+		_asm mov edi, g_dwShadeTable
 		_asm xor eax, eax
 		_asm mov al, byte ptr [ebx+edi]
 		_asm mov edi, eax
 		_asm shl edi, 8
 		_asm or eax, edi
-		_asm mov edi, g_dwUnk_4A4A4C
+		_asm mov edi, g_dwDst
 		_asm mov word ptr [edi], ax
-		_asm mov edi, g_dwUnk_4A4A4C
+		_asm mov edi, g_dwDst
 		_asm mov word ptr [edi+edx], ax
-		_asm mov eax, g_dwUnk_4A4A50
-		_asm mov ebx, g_dwUnk_4A4A24
-		_asm mov edi, g_dwUnk_4A4A14
-		_asm add g_dwUnk_4A4A4C, esi
-		_asm add g_dwUnk_4A4A28, eax
-		_asm add g_dwUnk_4A4A2C, ebx
-		_asm dec g_dwUnk_4A4A14
+		_asm mov eax, g_dwUStep
+		_asm mov ebx, g_dwVStep
+		_asm mov edi, g_dwSpanCount
+		_asm add g_dwDst, esi
+		_asm add g_dwU, eax
+		_asm add g_dwV, ebx
+		_asm dec g_dwSpanCount
 		_asm test edi, edi
 		_asm jne _sp_top
 	}
@@ -490,27 +490,27 @@ void Span2x2_S15(void)
 // FUNCTION: HOVER 0x4366d0
 void Span4x2_Var(void)
 {
-	g_dwUnk_4A4A14 = (DWORD)((long)g_dwUnk_4A4A14 / 4);
-	g_dwUnk_4A4A50 <<= 2;
-	g_dwUnk_4A4A24 <<= 2;
+	g_dwSpanCount = (DWORD)((long)g_dwSpanCount / 4);
+	g_dwUStep <<= 2;
+	g_dwVStep <<= 2;
 
-	if (g_dwUnk_4A4A14--)
+	if (g_dwSpanCount--)
 	{
-		_asm mov cl, byte ptr g_dwUnk_4A4A48
-		_asm mov edx, g_dwUnk_4A4A34
+		_asm mov cl, byte ptr g_dwVShift
+		_asm mov edx, g_dwRowPitch
 		_asm mov esi, 4
 		_asm _sp_top:
-		_asm mov ebx, g_dwUnk_4A4A38
-		_asm mov eax, g_dwUnk_4A4A20
-		_asm and ebx, g_dwUnk_4A4A2C
-		_asm and eax, g_dwUnk_4A4A28
+		_asm mov ebx, g_dwVMask
+		_asm mov eax, g_dwUMask
+		_asm and ebx, g_dwV
+		_asm and eax, g_dwU
 		_asm sar eax, 0x10
-		_asm mov edi, g_dwUnk_4A4A1C
+		_asm mov edi, g_dwTexels
 		_asm sar ebx, cl
 		_asm add ebx, eax
 		_asm xor eax, eax
 		_asm mov al, byte ptr [ebx+edi]
-		_asm mov ebx, g_dwUnk_4A4A4C
+		_asm mov ebx, g_dwDst
 		_asm mov edi, eax
 		_asm shl edi, 8
 		_asm or eax, edi
@@ -518,15 +518,15 @@ void Span4x2_Var(void)
 		_asm shl edi, 0x10
 		_asm or eax, edi
 		_asm mov dword ptr [ebx], eax
-		_asm mov ebx, g_dwUnk_4A4A4C
+		_asm mov ebx, g_dwDst
 		_asm mov dword ptr [ebx+edx], eax
-		_asm mov eax, g_dwUnk_4A4A50
-		_asm mov edi, g_dwUnk_4A4A24
-		_asm mov ebx, g_dwUnk_4A4A14
-		_asm add g_dwUnk_4A4A4C, esi
-		_asm add g_dwUnk_4A4A28, eax
-		_asm add g_dwUnk_4A4A2C, edi
-		_asm dec g_dwUnk_4A4A14
+		_asm mov eax, g_dwUStep
+		_asm mov edi, g_dwVStep
+		_asm mov ebx, g_dwSpanCount
+		_asm add g_dwDst, esi
+		_asm add g_dwU, eax
+		_asm add g_dwV, edi
+		_asm dec g_dwSpanCount
 		_asm test ebx, ebx
 		_asm jne _sp_top
 	}
@@ -536,30 +536,30 @@ void Span4x2_Var(void)
 // FUNCTION: HOVER 0x436790
 void Span4x2Lit_Var(void)
 {
-	g_dwUnk_4A4A14 = (DWORD)((long)g_dwUnk_4A4A14 / 4);
-	g_dwUnk_4A4A50 <<= 2;
-	g_dwUnk_4A4A24 <<= 2;
+	g_dwSpanCount = (DWORD)((long)g_dwSpanCount / 4);
+	g_dwUStep <<= 2;
+	g_dwVStep <<= 2;
 
-	if (g_dwUnk_4A4A14--)
+	if (g_dwSpanCount--)
 	{
-		_asm mov cl, byte ptr g_dwUnk_4A4A48
-		_asm mov edx, g_dwUnk_4A4A34
+		_asm mov cl, byte ptr g_dwVShift
+		_asm mov edx, g_dwRowPitch
 		_asm mov esi, 4
 		_asm _sp_top:
-		_asm mov edi, g_dwUnk_4A4A38
-		_asm mov eax, g_dwUnk_4A4A20
-		_asm and edi, g_dwUnk_4A4A2C
-		_asm and eax, g_dwUnk_4A4A28
+		_asm mov edi, g_dwVMask
+		_asm mov eax, g_dwUMask
+		_asm and edi, g_dwV
+		_asm and eax, g_dwU
 		_asm sar eax, 0x10
 		_asm xor ebx, ebx
 		_asm sar edi, cl
 		_asm add edi, eax
-		_asm mov eax, g_dwUnk_4A4A1C
+		_asm mov eax, g_dwTexels
 		_asm mov bl, byte ptr [edi+eax]
-		_asm mov edi, g_dwUnk_4A4A3C
+		_asm mov edi, g_dwShadeTable
 		_asm xor eax, eax
 		_asm mov al, byte ptr [ebx+edi]
-		_asm mov ebx, g_dwUnk_4A4A4C
+		_asm mov ebx, g_dwDst
 		_asm mov edi, eax
 		_asm shl edi, 8
 		_asm or eax, edi
@@ -567,15 +567,15 @@ void Span4x2Lit_Var(void)
 		_asm shl edi, 0x10
 		_asm or eax, edi
 		_asm mov dword ptr [ebx], eax
-		_asm mov ebx, g_dwUnk_4A4A4C
+		_asm mov ebx, g_dwDst
 		_asm mov dword ptr [ebx+edx], eax
-		_asm mov eax, g_dwUnk_4A4A50
-		_asm mov edi, g_dwUnk_4A4A24
-		_asm mov ebx, g_dwUnk_4A4A14
-		_asm add g_dwUnk_4A4A4C, esi
-		_asm add g_dwUnk_4A4A28, eax
-		_asm add g_dwUnk_4A4A2C, edi
-		_asm dec g_dwUnk_4A4A14
+		_asm mov eax, g_dwUStep
+		_asm mov edi, g_dwVStep
+		_asm mov ebx, g_dwSpanCount
+		_asm add g_dwDst, esi
+		_asm add g_dwU, eax
+		_asm add g_dwV, edi
+		_asm dec g_dwSpanCount
 		_asm test ebx, ebx
 		_asm jne _sp_top
 	}
@@ -694,26 +694,26 @@ void Span4x2_S15(void)
 // FUNCTION: HOVER 0x4371c0
 void Span4x4_Var(void)
 {
-	g_dwUnk_4A4A14 = (DWORD)((long)g_dwUnk_4A4A14 / 4);
-	g_dwUnk_4A4A50 <<= 2;
-	g_dwUnk_4A4A24 <<= 2;
+	g_dwSpanCount = (DWORD)((long)g_dwSpanCount / 4);
+	g_dwUStep <<= 2;
+	g_dwVStep <<= 2;
 
-	if (g_dwUnk_4A4A14--)
+	if (g_dwSpanCount--)
 	{
-		_asm mov cl, byte ptr g_dwUnk_4A4A48
+		_asm mov cl, byte ptr g_dwVShift
 		_asm mov edx, 4
 		_asm _sp_top:
-		_asm mov esi, g_dwUnk_4A4A38
-		_asm mov eax, g_dwUnk_4A4A20
-		_asm and esi, g_dwUnk_4A4A2C
-		_asm and eax, g_dwUnk_4A4A28
+		_asm mov esi, g_dwVMask
+		_asm mov eax, g_dwUMask
+		_asm and esi, g_dwV
+		_asm and eax, g_dwU
 		_asm sar eax, 0x10
 		_asm xor ebx, ebx
 		_asm sar esi, cl
 		_asm add esi, eax
-		_asm mov eax, g_dwUnk_4A4A1C
+		_asm mov eax, g_dwTexels
 		_asm mov bl, byte ptr [esi+eax]
-		_asm mov esi, g_dwUnk_4A4A4C
+		_asm mov esi, g_dwDst
 		_asm mov eax, ebx
 		_asm shl eax, 8
 		_asm or ebx, eax
@@ -721,23 +721,23 @@ void Span4x4_Var(void)
 		_asm shl eax, 0x10
 		_asm or ebx, eax
 		_asm mov dword ptr [esi], ebx
-		_asm mov esi, g_dwUnk_4A4A4C
-		_asm mov eax, g_dwUnk_4A4A30
+		_asm mov esi, g_dwDst
+		_asm mov eax, g_dwDstRowStride
 		_asm mov dword ptr [esi+eax], ebx
-		_asm mov esi, g_dwUnk_4A4A30
-		_asm mov eax, g_dwUnk_4A4A4C
+		_asm mov esi, g_dwDstRowStride
+		_asm mov eax, g_dwDst
 		_asm mov dword ptr [eax+esi*2], ebx
-		_asm mov esi, g_dwUnk_4A4A30
+		_asm mov esi, g_dwDstRowStride
 		_asm lea eax, [esi+esi*2]
-		_asm mov esi, g_dwUnk_4A4A4C
+		_asm mov esi, g_dwDst
 		_asm mov dword ptr [eax+esi], ebx
-		_asm mov ebx, g_dwUnk_4A4A50
-		_asm mov eax, g_dwUnk_4A4A24
-		_asm mov esi, g_dwUnk_4A4A14
-		_asm add g_dwUnk_4A4A4C, edx
-		_asm add g_dwUnk_4A4A28, ebx
-		_asm add g_dwUnk_4A4A2C, eax
-		_asm dec g_dwUnk_4A4A14
+		_asm mov ebx, g_dwUStep
+		_asm mov eax, g_dwVStep
+		_asm mov esi, g_dwSpanCount
+		_asm add g_dwDst, edx
+		_asm add g_dwU, ebx
+		_asm add g_dwV, eax
+		_asm dec g_dwSpanCount
 		_asm test esi, esi
 		_asm jne _sp_top
 	}
@@ -760,45 +760,45 @@ void Span4x4_Var(void)
 // FUNCTION: HOVER 0x4372a0
 void Span4x4Lit_Var(void)
 {
-	long lLen = (long)g_dwUnk_4A4A14 / 4;
+	long lLen = (long)g_dwSpanCount / 4;
 
 	_asm push ebp
-	_asm mov edx, g_dwUnk_4A4A30
+	_asm mov edx, g_dwDstRowStride
 
-	g_dwUnk_4A4A14 = (DWORD)lLen;
+	g_dwSpanCount = (DWORD)lLen;
 
 	_asm add edx, edx
-	_asm mov eax, g_dwUnk_4A4A30
+	_asm mov eax, g_dwDstRowStride
 
-	g_dwUnk_4A4A50 <<= 2;
+	g_dwUStep <<= 2;
 
 	_asm lea esi, [eax+eax*2]
 
-	_asm mov ecx, g_dwUnk_4A4A14
+	_asm mov ecx, g_dwSpanCount
 
-	g_dwUnk_4A4A24 <<= 2;
+	g_dwVStep <<= 2;
 
-	_asm dec g_dwUnk_4A4A14
+	_asm dec g_dwSpanCount
 	_asm test ecx, ecx
 	_asm je _sp_done
 	{
-		_asm mov cl, byte ptr g_dwUnk_4A4A48
+		_asm mov cl, byte ptr g_dwVShift
 		_asm mov edi, 4
 		_asm _sp_top:
-		_asm mov ebp, g_dwUnk_4A4A38
-		_asm mov eax, g_dwUnk_4A4A20
-		_asm and ebp, g_dwUnk_4A4A2C
-		_asm and eax, g_dwUnk_4A4A28
+		_asm mov ebp, g_dwVMask
+		_asm mov eax, g_dwUMask
+		_asm and ebp, g_dwV
+		_asm and eax, g_dwU
 		_asm sar eax, 0x10
 		_asm xor ebx, ebx
 		_asm sar ebp, cl
 		_asm add ebp, eax
-		_asm mov eax, g_dwUnk_4A4A1C
+		_asm mov eax, g_dwTexels
 		_asm mov bl, byte ptr [ebp+eax]
-		_asm mov ebp, g_dwUnk_4A4A3C
+		_asm mov ebp, g_dwShadeTable
 		_asm xor eax, eax
 		_asm mov al, byte ptr [ebx+ebp]
-		_asm mov ebp, g_dwUnk_4A4A4C
+		_asm mov ebp, g_dwDst
 		_asm mov ebx, eax
 		_asm shl ebx, 8
 		_asm or eax, ebx
@@ -806,20 +806,20 @@ void Span4x4Lit_Var(void)
 		_asm shl ebx, 0x10
 		_asm or eax, ebx
 		_asm mov dword ptr [ebp], eax
-		_asm mov ebp, g_dwUnk_4A4A30
-		_asm mov ebx, g_dwUnk_4A4A4C
+		_asm mov ebp, g_dwDstRowStride
+		_asm mov ebx, g_dwDst
 		_asm mov dword ptr [ebx+ebp], eax
-		_asm mov ebx, g_dwUnk_4A4A4C
+		_asm mov ebx, g_dwDst
 		_asm mov dword ptr [ebx+edx], eax
-		_asm mov ebx, g_dwUnk_4A4A4C
+		_asm mov ebx, g_dwDst
 		_asm mov dword ptr [ebx+esi], eax
-		_asm mov eax, g_dwUnk_4A4A50
-		_asm mov ebp, g_dwUnk_4A4A24
-		_asm mov ebx, g_dwUnk_4A4A14
-		_asm add g_dwUnk_4A4A4C, edi
-		_asm add g_dwUnk_4A4A28, eax
-		_asm add g_dwUnk_4A4A2C, ebp
-		_asm dec g_dwUnk_4A4A14
+		_asm mov eax, g_dwUStep
+		_asm mov ebp, g_dwVStep
+		_asm mov ebx, g_dwSpanCount
+		_asm add g_dwDst, edi
+		_asm add g_dwU, eax
+		_asm add g_dwV, ebp
+		_asm dec g_dwSpanCount
 		_asm test ebx, ebx
 		_asm jne _sp_top
 	}

@@ -8,7 +8,7 @@
 //   CMerlinObject vtable at 0x4BD808, CMerlinTexture vtable at 0x4BBD20
 // The original header was called CTexture.h (per the "Blowing fixed memory
 // heap.  Increase MAXTEXTURESIZE in CTexture.h and re-compile." debug
-// string emitted by CBumperDoc::Sub_415450).
+// string emitted by CBumperDoc::OnOpenDocument).
 //
 // Note on member offsets: the comments give each member's offset within
 // the class in hover.exe.
@@ -163,25 +163,27 @@ public:
 	// many bytes, skipped on load)
 	virtual void Serialize(CArchive& ar);
 
-	CString m_strUnk04;			// +0x04 object/texture name
+	CString m_strName;			// +0x04 object/texture name
 	DWORD m_dwUnk10;			// +0x10 = 0
 };
 
 /////////////////////////////////////////////////////////////////////////////
-// MERLIN_TEXENTRY: one 0x20-byte texture frame entry, allocated inside the
-// fixed texture heap (the entry array pointer is CMerlinTexture::m_pUnk28).
+// MERLIN_TEXFRAME: one 0x20-byte texture frame entry, allocated inside the
+// fixed texture heap (the entry array pointer is CMerlinTexture::m_pFrames).
 
-typedef struct tagMERLIN_TEXENTRY
+struct tagTEXCOLUMN;	// texheap.h
+
+typedef struct tagMERLIN_TEXFRAME
 {
-	DWORD m_dwUnk00;	// +0x00
+	DWORD m_dwColMask;	// +0x00
 	DWORD m_dwUnk04;	// +0x04
-	DWORD m_dwUnk08;	// +0x08 point/span count
-	DWORD m_dwUnk0C;	// +0x0C
+	DWORD m_dwWidth;	// +0x08 point/span count
+	DWORD m_dwHeight;	// +0x0C
 	DWORD m_dwUnk10;	// +0x10
-	DWORD m_dwUnk14;	// +0x14 pixel data byte count (0 = none)
-	DWORD m_dwUnk18;	// +0x18 pixel data (fixed-heap pointer)
-	DWORD m_dwUnk1C;	// +0x1C point data (fixed-heap pointer)
-} MERLIN_TEXENTRY;		// sizeof = 0x20
+	DWORD m_cbPixels;	// +0x14 pixel data byte count (0 = none)
+	BYTE* m_pPixels;	// +0x18 pixel data (fixed-heap pointer)
+	tagTEXCOLUMN* m_pColumns;	// +0x1C point data (fixed-heap pointer)
+} MERLIN_TEXFRAME;		// sizeof = 0x20
 
 /////////////////////////////////////////////////////////////////////////////
 // CMerlinTexture
@@ -201,14 +203,14 @@ public:
 	// at 0x4128F0 (notes/perfect-match.md rule 221).
 	CMerlinTexture()		// hover.exe:0x4128F0
 	{
-		m_wUnk14 = 0;
-		m_wUnk18 = 0;
+		m_wWidth = 0;
+		m_wHeight = 0;
 		m_dwUnk34 = 0;
 		m_dwUnk20 = 0;
-		m_pUnk28 = NULL;
-		m_dwUnk2C = 0;
-		m_dwUnk1C = 0;
-		m_pUnk38 = NULL;
+		m_pFrames = NULL;
+		m_dwFrameCount = 0;
+		m_bTransparent = 0;
+		m_pNextFrame = NULL;
 		g_dwUnk_4C4DA0++;
 	}
 
@@ -225,21 +227,21 @@ public:
 	virtual void Serialize(CArchive& ar);
 
 // Member variables (hover.exe offsets in comments)
-	WORD m_wUnk14;			// +0x14 = 0
-	WORD m_wUnk16;			// +0x16
-	WORD m_wUnk18;			// +0x18 = 0
+	WORD m_wWidth;			// +0x14 = 0
+	WORD m_wColMask;			// +0x16
+	WORD m_wHeight;			// +0x18 = 0
 	WORD m_wUnk1A;			// +0x1A
-	DWORD m_dwUnk1C;		// +0x1C = 0
+	DWORD m_bTransparent;		// +0x1C = 0
 	DWORD m_dwUnk20;		// +0x20 = 0
 	DWORD m_dwUnk24;		// +0x24
-	MERLIN_TEXENTRY* m_pUnk28;	// +0x28 = 0 frame entries (fixed heap)
-	DWORD m_dwUnk2C;		// +0x2C = 0 frame count
+	MERLIN_TEXFRAME* m_pFrames;	// +0x28 = 0 frame entries (fixed heap)
+	DWORD m_dwFrameCount;		// +0x2C = 0 frame count
 	DWORD m_dwUnk30;		// +0x30 (never touched by the constructor or
 							// Serialize in hover.exe; keeps the following
 							// members at their original offsets)
 	DWORD m_dwUnk34;		// +0x34 = 0
-	CMerlinTexture* m_pUnk38;	// +0x38 = 0 next animation frame (linked by
-							// CBumperDoc::Sub_415450)
+	CMerlinTexture* m_pNextFrame;	// +0x38 = 0 next animation frame (linked by
+							// CBumperDoc::OnOpenDocument)
 };							// sizeof = 0x3C
 
 /////////////////////////////////////////////////////////////////////////////
@@ -252,7 +254,7 @@ extern CMapStringToOb g_mapUnk_4A4578;	// hover.exe:0x4A4578 name ->
 extern CMapStringToOb g_mapUnk_4A4768;	// hover.exe:0x4A4768 name ->
 										// CMerlinLocation (named point)
 extern void* g_pUnk_461D00;			// hover.exe:0x461D00 fixed texture heap
-									// cursor (base is g_pUnk_46003C)
+									// cursor (base is g_pTextureHeap)
 extern DWORD g_dwUnk_4C4DA0;		// hover.exe:0x4C4DA0 texture count
 extern DWORD g_dwUnk_4C4DA8;		// hover.exe:0x4C4DA8 textures loaded so far
 typedef void (__cdecl* LPPROGRESSFN)(DWORD dwDone, DWORD dwTotal);
@@ -273,9 +275,9 @@ extern const char* g_apszUnk_4C4928[10];	// hover.exe:0x4C4928 "FLG*"/"POD*"
 // g_mapUnk_4A4768 the CMerlinLocation points.
 
 // hover.exe:0x41A4E0 search g_mapUnk_4A4578
-CObject* Hover_sub_41A4E0(const CString& strName);
+CObject* Hover_FindStatic(const CString& strName);
 // hover.exe:0x40FE40 search g_mapUnk_4A4768
-CObject* Hover_sub_40FE40(const CString& strName);
+CObject* Hover_FindLocation(const CString& strName);
 
 /////////////////////////////////////////////////////////////////////////////
 

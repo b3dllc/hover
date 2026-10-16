@@ -25,8 +25,8 @@ BEGIN_MESSAGE_MAP(CMainFrame, CFrameWnd)
 	ON_COMMAND(ID_HELP_INDEX, OnHelpIndex)
 	ON_COMMAND(ID_HELP_HOWTOPLAY, OnHelpHowToPlay)
 	ON_WM_ACTIVATEAPP()
-	ON_COMMAND(ID_CMD_34010, OnCmd34010)
-	ON_UPDATE_COMMAND_UI(ID_CMD_34010, OnUpdateCmd34010)
+	ON_COMMAND(ID_DBG_STATUSBAR, OnDbgStatusBar)
+	ON_UPDATE_COMMAND_UI(ID_DBG_STATUSBAR, OnUpdateDbgStatusBar)
 	ON_WM_QUERYNEWPALETTE()
 	ON_WM_PALETTECHANGED()
 	ON_WM_CLOSE()
@@ -57,20 +57,18 @@ static UINT indicators[] =
 	ID_DBG_CAR,
 };
 
-// Set to 1 by CMainFrame::Sub_41D850 the first time it runs (the stubbed
+// Set to 1 by CMainFrame::SnapWindowRect the first time it runs (the stubbed
 // helper is the only user); kept here because it lives between the
 // indicator array and the resize guard in the original's .data.
 // hover.exe:0x4C483C
-static DWORD g_dwUnk_4C483C = 1;
+// GLOBAL: HOVER 0x4c483c
+DWORD g_bFirstWindowSnap = 1;
 
 // Nonzero while OnSize's own SetWindowPos call is in flight, so that the
 // WM_SIZE it generates does not recurse.
 // hover.exe:0x4C4840
-static DWORD g_dwUnk_4C4840 = 0;
-
-// The six board zone descriptors at hover.exe:0x4609A0 are one flat int
-// array; ZONE_INTS is the size of one block in ints (cf. hover.cpp).
-#define ZONE_INTS (0x338 / 4)
+// GLOBAL: HOVER 0x4c4840
+DWORD g_bInSnapResize = 0;
 
 /////////////////////////////////////////////////////////////////////////////
 // CMainFrame message handlers
@@ -91,9 +89,9 @@ void CMainFrame::OnInitMenuPopup(CMenu* pPopupMenu, UINT nIndex,
 {
 	CBumperView* pView;
 
-	pView = Hover_sub_401140();
+	pView = Hover_GetView();
 	if (bSysMenu && pView != NULL)
-		pView->Sub_40EE90(1);
+		pView->SuspendGame(1);
 	CFrameWnd::OnInitMenuPopup(pPopupMenu, nIndex, bSysMenu);
 }
 
@@ -106,8 +104,8 @@ BOOL CMainFrame::OnQueryNewPalette()
 {
 	CBumperView* pView;
 
-	Sub_426CF0();
-	pView = Hover_sub_401140();
+	RealizeGamePalette();
+	pView = Hover_GetView();
 	if (pView != NULL)
 		::RedrawWindow(pView->m_hWnd, NULL, NULL,
 			RDW_INVALIDATE | RDW_ERASE | RDW_UPDATENOW);
@@ -124,8 +122,8 @@ void CMainFrame::OnPaletteChanged(CWnd* pFocusWnd)
 	if (this == pFocusWnd)
 		return;
 
-	Sub_426CF0();
-	pView = Hover_sub_401140();
+	RealizeGamePalette();
+	pView = Hover_GetView();
 	if (pView != NULL)
 		::RedrawWindow(pView->m_hWnd, NULL, NULL,
 			RDW_INVALIDATE | RDW_ERASE | RDW_UPDATENOW);
@@ -141,23 +139,23 @@ void CMainFrame::OnActivateApp(BOOL bActive, HTASK hTask)
 	BOOL bChanged;
 	CBumperView* pView;
 
-	bChanged = ((bActive == 0) != (theApp.m_dwUnk03B4 == 0));
-	theApp.m_dwUnk03B4 = bActive;
+	bChanged = ((bActive == 0) != (theApp.m_bAppActive == 0));
+	theApp.m_bAppActive = bActive;
 
-	pView = Hover_sub_401140();
-	if (pView != NULL && pView->m_dwUnk0040 != 0)
+	pView = Hover_GetView();
+	if (pView != NULL && pView->m_pRenderThread != 0)
 	{
-		pView->Sub_40EE90(1);
-		if (bActive == 0 && theApp.m_dwUnk03B0 != 0)
-			theApp.Sub_425600();
+		pView->SuspendGame(1);
+		if (bActive == 0 && theApp.m_bFullScreen != 0)
+			theApp.LeaveFullScreen();
 		if (bChanged)
-			pView->Sub_40DC20(1);
+			pView->RequestRenderFrame(1);
 	}
 	Default();
 }
 
 // Like OnInitMenu, this handler does nothing but the default processing
-// (the frame's size limits come out of Sub_41D850 instead).
+// (the frame's size limits come out of SnapWindowRect instead).
 // hover.exe:0x417AF0
 // FUNCTION: HOVER 0x417af0
 void CMainFrame::OnGetMinMaxInfo(MINMAXINFO FAR* lpMMI)
@@ -181,27 +179,27 @@ void PASCAL CMainFrame::Construct(void* p)
 // FUNCTION: HOVER 0x41d6b0
 void CMainFrame::OnClose()
 {
-	Hover_sub_401140()->Sub_40EE90(1);
+	Hover_GetView()->SuspendGame(1);
 
-	if (theApp.m_dwUnk01B8 != 0) {
-		CSub424BD0 dlg(NULL);
+	if (theApp.m_dwGameState != 0) {
+		CHighScoresDialog dlg(NULL);
 
-		if (AfxMessageBox(IDS_PRESS_F2, MB_YESNO, (UINT)-1) == IDNO)
+		if (AfxMessageBox(IDS_QUIT_GAME_CONFIRM, MB_YESNO, (UINT)-1) == IDNO)
 			return;
 
-		if (dlg.Sub_424DF0(theApp.m_pBumperDoc->m_dwUnk83E4))
+		if (dlg.CheckNewHighScore(theApp.m_pBumperDoc->m_dwScore))
 			dlg.DoModal();
 
-		theApp.m_pBumperDoc->m_dwUnk83E4 = 0;
+		theApp.m_pBumperDoc->m_dwScore = 0;
 	}
 
-	if (theApp.m_dwUnk03B0 == 0) {
+	if (theApp.m_bFullScreen == 0) {
 		RECT rect;
 		BOOL bSave = TRUE;
 
 		if (::IsIconic(m_hWnd)) {
-			if (m_dwUnk00D0)
-				rect = m_rcUnk00D4;
+			if (m_bWindowRectValid)
+				rect = m_rcWindow;
 			else
 				bSave = FALSE;
 		} else {
@@ -232,12 +230,12 @@ void CMainFrame::OnClose()
 // i.e. the size at which the game snaps to the next zone up.
 //
 // The requested width and height each pick a zone; when both already agree
-// with the zone in use (g_dwUnk_460998) the request is a resize by the
+// with the zone in use (g_dwCurZone) the request is a resize by the
 // user, so the mode moves one step in the direction it was dragged,
 // otherwise the zone that actually changed wins. Full-screen mode
-// (theApp.m_dwUnk03B0) is nailed to zone 4 (640x480), and a 640-pixel wide
+// (theApp.m_bFullScreen) is nailed to zone 4 (640x480), and a 640-pixel wide
 // desktop caps the choice at zone 3, which is the largest window that
-// still fits with its border. g_dwUnk_4C483C makes the very first call
+// still fits with its border. g_bFirstWindowSnap makes the very first call
 // take the width's zone unchanged.
 //
 // The zone's client size is then grown by AdjustWindowRectEx (using the
@@ -247,7 +245,7 @@ void CMainFrame::OnClose()
 
 // hover.exe:0x41D850
 // FUNCTION: HOVER 0x41d850
-void CMainFrame::Sub_41D850(LPRECT lpRect, BOOL bCenter, DWORD dwStyle,
+void CMainFrame::SnapWindowRect(LPRECT lpRect, BOOL bCenter, DWORD dwStyle,
 	DWORD dwExStyle)
 {
 	int nZone;
@@ -263,7 +261,7 @@ void CMainFrame::Sub_41D850(LPRECT lpRect, BOOL bCenter, DWORD dwStyle,
 	DWORD dwViewStyle;
 	DWORD dwViewExStyle;
 
-	if (theApp.m_dwUnk03B0 != 0)
+	if (theApp.m_bFullScreen != 0)
 	{
 		nZone = 4;
 	}
@@ -275,7 +273,7 @@ void CMainFrame::Sub_41D850(LPRECT lpRect, BOOL bCenter, DWORD dwStyle,
 
 		for (nZone = 0; nZone < nMaxZone; nZone++)
 		{
-			if (g_adwUnk_4609A0[nZone * ZONE_INTS + 0x10 / 4] >=
+			if (g_aZones[nZone].m_sizeSnap.cx >=
 					lpRect->right - lpRect->left)
 				break;
 		}
@@ -284,25 +282,25 @@ void CMainFrame::Sub_41D850(LPRECT lpRect, BOOL bCenter, DWORD dwStyle,
 
 		for (nZoneY = 0; nZoneY < nMaxZone; nZoneY++)
 		{
-			if (g_adwUnk_4609A0[nZoneY * ZONE_INTS + 0x14 / 4] >=
+			if (g_aZones[nZoneY].m_sizeSnap.cy >=
 					lpRect->bottom - lpRect->top)
 				break;
 		}
 		if (nZoneY > nMaxZone)
 			nZoneY = nMaxZone;
 
-		if (g_dwUnk_4C483C != 0)
+		if (g_bFirstWindowSnap != 0)
 		{
-			g_dwUnk_4C483C = 0;
+			g_bFirstWindowSnap = 0;
 		}
 		else
 		{
-			nZoneCX = g_adwUnk_4609A0[nZone * ZONE_INTS];
+			nZoneCX = g_aZones[nZone].m_size.cx;
 			nDX = abs(lpRect->right - lpRect->left - nZoneCX);
-			nZoneCY = g_adwUnk_4609A0[nZoneY * ZONE_INTS + 1];
+			nZoneCY = g_aZones[nZoneY].m_size.cy;
 			nDY = abs(lpRect->bottom - lpRect->top - nZoneCY);
 
-			if (nZone == (int)g_dwUnk_460998 && nZoneY == (int)g_dwUnk_460998 &&
+			if (nZone == (int)g_dwCurZone && nZoneY == (int)g_dwCurZone &&
 				(nDX != 0 || nDY != 0))
 			{
 				// A plain resize: step one zone in the dragged direction.
@@ -333,11 +331,11 @@ void CMainFrame::Sub_41D850(LPRECT lpRect, BOOL bCenter, DWORD dwStyle,
 						nZone = (nZone < nMaxZone) ? nZone + 1 : nMaxZone;
 				}
 			}
-			else if (nZone == (int)g_dwUnk_460998)
+			else if (nZone == (int)g_dwCurZone)
 			{
 				nZone = nZoneY;
 			}
-			else if (nZoneY != (int)g_dwUnk_460998)
+			else if (nZoneY != (int)g_dwCurZone)
 			{
 				if (nZoneY <= nZone)
 					nZoneY = nZone;
@@ -349,8 +347,8 @@ void CMainFrame::Sub_41D850(LPRECT lpRect, BOOL bCenter, DWORD dwStyle,
 	pView = NULL;
 	rect.left = 0;
 	rect.top = 0;
-	rect.right = g_adwUnk_4609A0[nZone * ZONE_INTS];
-	rect.bottom = g_adwUnk_4609A0[nZone * ZONE_INTS + 1];
+	rect.right = g_aZones[nZone].m_size.cx;
+	rect.bottom = g_aZones[nZone].m_size.cy;
 	if (m_hWnd != NULL)
 		pView = GetActiveView();
 
@@ -362,7 +360,7 @@ void CMainFrame::Sub_41D850(LPRECT lpRect, BOOL bCenter, DWORD dwStyle,
 	else
 	{
 		dwViewStyle = WS_CHILD | WS_BORDER;
-		dwViewExStyle = theApp.m_dwUnk03FC ? WS_EX_CLIENTEDGE : 0;
+		dwViewExStyle = theApp.m_bNewShell ? WS_EX_CLIENTEDGE : 0;
 	}
 	::AdjustWindowRectEx(&rect, dwViewStyle & ~WS_BORDER, FALSE,
 		dwViewExStyle);
@@ -402,11 +400,11 @@ void CMainFrame::Sub_41D850(LPRECT lpRect, BOOL bCenter, DWORD dwStyle,
 // FWS_ADDTOTITLE (the game maintains its own "Hover! - Level n" caption),
 // then picks a default client size from the processor type -- 416x312 on a
 // 486, 512x384 on anything faster -- and hands the resulting rectangle to
-// Sub_41D850, which snaps it to a board zone and centres it.
+// SnapWindowRect, which snaps it to a board zone and centres it.
 //
 // If HKCU\Software\Microsoft\Hover!\ScreenPosition holds a 16-byte RECT
 // from a previous run, that rectangle is used instead (after being nudged
-// back onto the screen), and Sub_41D850 is skipped altogether, so the
+// back onto the screen), and SnapWindowRect is skipped altogether, so the
 // saved window rectangle survives verbatim.
 
 // hover.exe:0x41DDF0
@@ -491,7 +489,7 @@ BOOL CMainFrame::PreCreateWindow(CREATESTRUCT& cs)
 	}
 
 	if (bDefaultRect)
-		Sub_41D850(&rect, TRUE, cs.style, cs.dwExStyle);
+		SnapWindowRect(&rect, TRUE, cs.style, cs.dwExStyle);
 
 	cs.x = rect.left;
 	cs.y = rect.top;
@@ -500,11 +498,11 @@ BOOL CMainFrame::PreCreateWindow(CREATESTRUCT& cs)
 	return TRUE;
 }
 
-// Creates the frame's client area. m_dwUnk00C0 is never set in the code we
-// have decompiled so far, so in practice this only forwards to the base
+// Creates the frame's client area. m_bViewPrecreated is never set in the code
+// we have decompiled so far, so in practice this only forwards to the base
 // class; when it is set, the view has already been created as a top-level
-// window and is merely reparented into the frame (and loses its client
-// edge) instead of being created by CFrameWnd::OnCreateClient.
+// window and is merely reparented into the frame (and loses its client edge)
+// instead of being created by CFrameWnd::OnCreateClient.
 
 // hover.exe:0x41E070
 // FUNCTION: HOVER 0x41e070
@@ -512,17 +510,17 @@ BOOL CMainFrame::OnCreateClient(LPCREATESTRUCT lpcs, CCreateContext* pContext)
 {
 	CBumperView* pView;
 
-	if (m_dwUnk00C0 != 0)
+	if (m_bViewPrecreated != 0)
 	{
-		pView = Hover_sub_401140();
+		pView = Hover_GetView();
 		pView->SetParent(this);
 		pView->ModifyStyleEx(WS_EX_CLIENTEDGE, 0);
 	}
 	return CFrameWnd::OnCreateClient(lpcs, pContext);
 }
 
-// Releases the help/extension module m_dwUnk00C4 refers to. Like
-// m_dwUnk00C0 above, nothing in the decompiled code ever loads it, so the
+// Releases the help/extension module m_hLibrary refers to. Like
+// m_bViewPrecreated above, nothing in the decompiled code ever loads it, so the
 // destructor body is dead in practice; the member destructors for the
 // status bar and the CFrameWnd base that follow it are generated.
 
@@ -536,8 +534,8 @@ BOOL CMainFrame::OnCreateClient(LPCREATESTRUCT lpcs, CCreateContext* pContext)
 // FUNCTION: HOVER 0x41dfd0
 CMainFrame::~CMainFrame()
 {
-	if (m_dwUnk00C4 != 0)
-		::FreeLibrary((HINSTANCE)m_dwUnk00C4);
+	if (m_hLibrary != 0)
+		::FreeLibrary(m_hLibrary);
 }
 #endif
 
@@ -550,20 +548,20 @@ void CMainFrame::OnSysCommand(UINT nID, LPARAM lParam)
 	if ((nID & 0xFFF0) == SC_SCREENSAVE)
 	{
 		::OutputDebugString("ScreenSaver Starting...\n");
-		if (theApp.m_dwUnk01B8 != 0 &&
-			(theApp.m_dwUnk01B8 & 0x80000000) == 0)
+		if (theApp.m_dwGameState != 0 &&
+			(theApp.m_dwGameState & 0x80000000) == 0)
 		{
 			::OutputDebugString("Disabling Screen Saver\n");
 			return;
 		}
 		::OutputDebugString("Allowing Screen Saver\n");
-		if (theApp.m_dwUnk03B0 != 0)
-			theApp.Sub_425600();
+		if (theApp.m_bFullScreen != 0)
+			theApp.LeaveFullScreen();
 	}
 	CFrameWnd::OnSysCommand(nID, lParam);
 }
 
-// Creates the status bar (hidden: the ID_CMD_34010 debug command toggles
+// Creates the status bar (hidden: the ID_DBG_STATUSBAR debug command toggles
 // it) and sizes its three separator panes from the width of a digit.
 // hover.exe:0x41DB90
 // FUNCTION: HOVER 0x41db90
@@ -582,7 +580,7 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		return -1;		// fail to create
 	}
 
-	m_dwUnk00CC = 1;
+	m_bAutoStatusBar = 1;
 	m_wndStatusBar.SetPaneInfo(0, 0, SBPS_NOBORDERS | SBPS_STRETCH, 10);
 
 	CClientDC dc(&m_wndStatusBar);
@@ -597,7 +595,7 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 }
 
 // Snaps the frame back to the window size the current display mode wants
-// (g_dwUnk_4C4840 guards against the recursion through SetWindowPos) and
+// (g_bInSnapResize guards against the recursion through SetWindowPos) and
 // hands the new client size to the renderer.
 // hover.exe:0x41DCE0
 // FUNCTION: HOVER 0x41dce0
@@ -611,31 +609,31 @@ void CMainFrame::OnSize(UINT nType, int cx, int cy)
 
 	if (nType == SIZE_MINIMIZED || nType == SIZE_MAXHIDE)
 		return;
-	if (g_dwUnk_4C4840 != 0)
+	if (g_bInSnapResize != 0)
 		return;
-	if (m_dwUnk00C8 != 0)
+	if (m_bInSizeMove != 0)
 		return;
 
-	pView = Hover_sub_401140();
+	pView = Hover_GetView();
 	::GetClientRect((pView == NULL) ? m_hWnd : pView->m_hWnd, &rect);
-	Sub_41D850(&rect, 0, ::GetWindowLong(m_hWnd, GWL_STYLE),
+	SnapWindowRect(&rect, 0, ::GetWindowLong(m_hWnd, GWL_STYLE),
 		::GetWindowLong(m_hWnd, GWL_EXSTYLE));
 
 	cxWindow = rect.right - rect.left;
 	if (cxWindow != cx || cy != rect.bottom - rect.top)
 	{
-		g_dwUnk_4C4840 = 1;
+		g_bInSnapResize = 1;
 		::SetWindowPos(m_hWnd, NULL, 0, 0, cxWindow,
 			rect.bottom - rect.top,
 			SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
-		g_dwUnk_4C4840 = 0;
+		g_bInSnapResize = 0;
 	}
 
 	if (pView != NULL)
 	{
-		m_dwUnk00D0 = 1;
-		::GetWindowRect(m_hWnd, &m_rcUnk00D4);
-		pView->Sub_41F480();
+		m_bWindowRectValid = 1;
+		::GetWindowRect(m_hWnd, &m_rcWindow);
+		pView->OnFrameResized();
 	}
 }
 
@@ -650,12 +648,12 @@ LRESULT CMainFrame::OnExitSizeMove(WPARAM wParam, LPARAM lParam)
 	RECT rectClient;
 	RECT rectWindow;
 
-	pView = Hover_sub_401140();
+	pView = Hover_GetView();
 	::GetClientRect((pView == NULL) ? m_hWnd : pView->m_hWnd, &rectClient);
 	rectWindow = rectClient;
-	Sub_41D850(&rectWindow, 0, ::GetWindowLong(m_hWnd, GWL_STYLE),
+	SnapWindowRect(&rectWindow, 0, ::GetWindowLong(m_hWnd, GWL_STYLE),
 		::GetWindowLong(m_hWnd, GWL_EXSTYLE));
-	m_dwUnk00C8 = 0;
+	m_bInSizeMove = 0;
 
 	if (rectClient.right - rectClient.left ==
 			rectWindow.right - rectWindow.left &&
@@ -663,7 +661,7 @@ LRESULT CMainFrame::OnExitSizeMove(WPARAM wParam, LPARAM lParam)
 			rectWindow.bottom - rectWindow.top)
 	{
 		if (pView != NULL)
-			pView->Sub_41F480();
+			pView->OnFrameResized();
 	}
 	else
 	{
@@ -682,7 +680,7 @@ LRESULT CMainFrame::OnExitSizeMove(WPARAM wParam, LPARAM lParam)
 // FUNCTION: HOVER 0x426b40
 LRESULT CMainFrame::OnEnterSizeMove(WPARAM wParam, LPARAM lParam)
 {
-	m_dwUnk00C8 = 1;
+	m_bInSizeMove = 1;
 	return Default();
 }
 
@@ -692,9 +690,9 @@ void CMainFrame::OnMenuSelect(UINT nItemID, UINT nFlags, HMENU hSysMenu)
 {
 	CBumperView* pView;
 
-	pView = Hover_sub_401140();
+	pView = Hover_GetView();
 	if (pView != NULL)
-		pView->Sub_40EE90(1);
+		pView->SuspendGame(1);
 }
 
 // MM_WOM_DONE: lParam is the MIXWAVE the mixer has finished with; hand it
@@ -703,7 +701,7 @@ void CMainFrame::OnMenuSelect(UINT nItemID, UINT nFlags, HMENU hSysMenu)
 // FUNCTION: HOVER 0x426b80
 LRESULT CMainFrame::OnWomDone(WPARAM wParam, LPARAM lParam)
 {
-	Hover_sub_42D760((void*)lParam);
+	Hover_OnWaveMixDone((void*)lParam);
 	return 0;
 }
 
@@ -741,19 +739,21 @@ void CMainFrame::OnHelpHowToPlay()
 // size the display mode wants with the new status bar height.
 // hover.exe:0x426C20
 // FUNCTION: HOVER 0x426c20
-void CMainFrame::OnCmd34010()
+void CMainFrame::OnDbgStatusBar()
 {
 	RECT rect;
 	int cx;
 	int cy;
 	int nShow;
+	int fVisible;
 
 	if (m_wndStatusBar.m_hWnd == NULL)
 		return;
 
-	m_dwUnk00CC = 0;
-	nShow = ((::GetWindowLong(m_wndStatusBar.m_hWnd, GWL_STYLE) & WS_VISIBLE)
-		>> 28) ? SW_HIDE : SW_SHOW;
+	m_bAutoStatusBar = 0;
+	fVisible = (::GetWindowLong(m_wndStatusBar.m_hWnd, GWL_STYLE) & WS_VISIBLE)
+		>> 28;
+	nShow = fVisible ? SW_HIDE : SW_SHOW;
 	::ShowWindow(m_wndStatusBar.m_hWnd, nShow);
 	::GetWindowRect(m_hWnd, &rect);
 	cy = rect.bottom - rect.top + 1;
@@ -764,7 +764,7 @@ void CMainFrame::OnCmd34010()
 
 // hover.exe:0x426CA0
 // FUNCTION: HOVER 0x426ca0
-void CMainFrame::OnUpdateCmd34010(CCmdUI* pCmdUI)
+void CMainFrame::OnUpdateDbgStatusBar(CCmdUI* pCmdUI)
 {
 	if (m_wndStatusBar.m_hWnd == NULL)
 	{
@@ -787,17 +787,17 @@ void CMainFrame::OnUpdateCmd34010(CCmdUI* pCmdUI)
 // free function it looks like at the call sites in bumpview.cpp.
 // hover.exe:0x426CF0
 // FUNCTION: HOVER 0x426cf0
-void CMainFrame::Sub_426CF0()
+void CMainFrame::RealizeGamePalette()
 {
 	CClientDC dc(this);
 	// Frame placeholder, not a variable of the original (rule 80): the
 	// original keeps the second RealizePalette result below in a dead
 	// frame slot it never reads back.
 	volatile BOOL bUnused;
-	CPalette* pOldPal = dc.SelectPalette(&g_paletteUnk_4A1D50, TRUE);
+	CPalette* pOldPal = dc.SelectPalette(&g_palGame, TRUE);
 	if (RealizePalette(dc.m_hDC))
 	{
-		CBumperView* pView = Hover_sub_401140();
+		CBumperView* pView = Hover_GetView();
 		if (pView != NULL)
 		{
 			CClientDC viewDC(pView);
@@ -806,7 +806,7 @@ void CMainFrame::Sub_426CF0()
 			viewDC.PatBlt(rc.left, rc.top, rc.Width(), rc.Height(), BLACKNESS);
 		}
 	}
-	dc.SelectPalette(&g_paletteUnk_4A1D50, FALSE);
+	dc.SelectPalette(&g_palGame, FALSE);
 	bUnused = RealizePalette(dc.m_hDC);
 	dc.SelectPalette(pOldPal, TRUE);
 }
@@ -824,12 +824,12 @@ void CMainFrame::OnMove(int x, int y)
 	if (::IsIconic(m_hWnd))
 		return;
 
-	m_dwUnk00D0 = 1;
-	pView = Hover_sub_401140();
+	m_bWindowRectValid = 1;
+	pView = Hover_GetView();
 	if (pView == NULL)
-		::GetWindowRect(m_hWnd, &m_rcUnk00D4);
+		::GetWindowRect(m_hWnd, &m_rcWindow);
 	else
-		::GetWindowRect(pView->m_hWnd, &m_rcUnk00D4);
+		::GetWindowRect(pView->m_hWnd, &m_rcWindow);
 }
 
 // Displays pszText in pane nPane of the status bar, if the status bar has
@@ -837,7 +837,7 @@ void CMainFrame::OnMove(int x, int y)
 
 // hover.exe:0x408A70
 // FUNCTION: HOVER 0x408a70
-void CMainFrame::Sub_408A70(int nPane, const char* pszText)
+void CMainFrame::SetPaneMessage(int nPane, const char* pszText)
 {
 	if (m_wndStatusBar.m_hWnd != NULL)
 		m_wndStatusBar.SetPaneText(nPane, pszText, TRUE);

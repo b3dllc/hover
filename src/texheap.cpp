@@ -12,292 +12,292 @@
 
 // hover.exe:0x4A1D60
 // GLOBAL: HOVER 0x4a1d60
-BYTE* g_pUnk_4A1D60;			// span arena cursor
+BYTE* g_pArenaCursor;			// span arena cursor
 
 // hover.exe:0x4A1D64
 // GLOBAL: HOVER 0x4a1d64
-DWORD g_dwUnk_4A1D64;			// span window start
+DWORD g_dwColTopY;			// span window start
 
 // hover.exe:0x4A1D68
 // GLOBAL: HOVER 0x4a1d68
-CSub403850* g_pUnk_4A1D68;		// view object
+CRenderContext* g_pRenderCtx;		// render context in use
 
 // hover.exe:0x4A1D6C
 // GLOBAL: HOVER 0x4a1d6c
-DWORD g_dwUnk_4A1D6C;			// span scale numerator
+DWORD g_dwColProjScale;			// span scale numerator
 
 // hover.exe:0x4A1D70
 // GLOBAL: HOVER 0x4a1d70
-DWORD g_dwUnk_4A1D70;			// span origin offset
+DWORD g_dwHorizonY;			// span origin offset
 
 // hover.exe:0x4A1D74
 // GLOBAL: HOVER 0x4a1d74
-DWORD g_dwUnk_4A1D74;			// texture mip level
+DWORD g_dwFlatMipLevel;			// texture mip level
 
 // hover.exe:0x4A1D78
 // GLOBAL: HOVER 0x4a1d78
-DWORD g_dwUnk_4A1D78;			// angle->mip LUT enable
+DWORD g_bWallMipMapping;			// angle->mip LUT enable
 
 // hover.exe:0x4A1D80
 // GLOBAL: HOVER 0x4a1d80
-BYTE g_abUnk_4A1D80[0x4A40A8 - 0x4A1D80];	// span arena (end 0x4A40A8)
+BYTE g_abSpanArena[SPAN_ARENA_SIZE];	// span arena
 
 // hover.exe:0x4A4490
 // GLOBAL: HOVER 0x4a4490
-HEAPNODE* g_pUnk_4A4490;		// edge list head
+EDGENODE* g_pEdgeList;		// edge list head
 
 // hover.exe:0x4A4498
 // GLOBAL: HOVER 0x4a4498
-CMerlinLine g_lineUnk_4A4498;	// phase camera line (CSub406090::Sub_406090)
+CMerlinLine g_lineFrustumLeft;	// phase camera line (CSpanRasterizer::RenderWorld)
 
 // hover.exe:0x4A44E0
 // GLOBAL: HOVER 0x4a44e0
-CMerlinLine g_lineUnk_4A44E0;	// right-edge phase camera line
+CMerlinLine g_lineFrustumRight;	// right-edge phase camera line
 
 // hover.exe:0x4A4524
 // GLOBAL: HOVER 0x4a4524
-DWORD g_dwUnk_4A4524;			// clip window start
+DWORD g_dwClipTopY;			// clip window start
 
 // hover.exe:0x4A4528
 // GLOBAL: HOVER 0x4a4528
-WORD g_wUnk_4A4528;				// reset to 0 by CSub406090::Sub_406090
+WORD g_wBspOrder;				// reset to 0 by CSpanRasterizer::RenderWorld
 
 // hover.exe:0x4A452C
 // GLOBAL: HOVER 0x4a452c
-DWORD* g_pdwUnk_4A452C;			// scanline scale table
+DWORD* g_pdwDistTable;			// scanline scale table
 
 // hover.exe:0x4A4530
 // GLOBAL: HOVER 0x4a4530
-DWORD g_dwUnk_4A4530;			// low edge default
+DWORD g_dwBelowClipY;			// low edge default
 
 // hover.exe:0x4A4534
 // GLOBAL: HOVER 0x4a4534
-DWORD g_dwUnk_4A4534;			// fill color
+DWORD g_dwCurColumn;			// fill color
 
 // hover.exe:0x4A4538
 // GLOBAL: HOVER 0x4a4538
-DWORD g_dwUnk_4A4538;			// log2 screen width
+DWORD g_dwLogRowStep;			// log2 of g_dwRowStep
 
 // hover.exe:0x4A453C
 // GLOBAL: HOVER 0x4a453c
-DWORD g_dwUnk_4A453C;			// span step
+DWORD g_dwRowStep;			// rows per texel
 
 // hover.exe:0x4A4540
 // GLOBAL: HOVER 0x4a4540
-DWORD g_dwUnk_4A4540;			// frame buffer origin
+DWORD g_dwColumnOrigin;			// frame buffer origin
 
 // hover.exe:0x4A4544
 // GLOBAL: HOVER 0x4a4544
-DWORD g_dwUnk_4A4544;			// screen height
+DWORD g_dwEyeZ;			// camera (eye) height
 
 // hover.exe:0x4A4548
 // GLOBAL: HOVER 0x4a4548
-BYTE* g_pbUnk_4A4548;			// angle->mip LUT
+BYTE* g_pbMipLut;			// angle->mip LUT
 
 // hover.exe:0x4A454C
 // GLOBAL: HOVER 0x4a454c
-DWORD g_dwUnk_4A454C;			// screen width
+DWORD g_dwViewWidth;			// screen width
 
 // hover.exe:0x4A4550
 // GLOBAL: HOVER 0x4a4550
-DWORD* g_pdwUnk_4A4550;			// render target span buffer (m_pUnk3C)
+SPANLINK* g_pSpanLinkCursor;			// next free node in m_pLinkPool
 
 // hover.exe:0x4A4554
 // GLOBAL: HOVER 0x4a4554
-DWORD g_dwUnk_4A4554;			// texture shift count (read as a byte by
+DWORD g_dwLogColStep;			// texture shift count (read as a byte by
 								// the span drawers; stored as a dword by
-								// CSub406090::Sub_406090)
+								// CSpanRasterizer::RenderWorld)
 
 // hover.exe:0x4A455C
 // GLOBAL: HOVER 0x4a455c
-DWORD g_dwUnk_4A455C;			// span length mask
+DWORD g_dwColStep;			// pixels per texel across
 
 // hover.exe:0x4A4564
 // GLOBAL: HOVER 0x4a4564
-DWORD g_dwUnk_4A4564;			// clip window end
+DWORD g_dwClipBottomY;			// clip window end
 
 // hover.exe:0x4A4568
 // GLOBAL: HOVER 0x4a4568
-DWORD g_dwUnk_4A4568;			// high edge default
+DWORD g_dwAboveClipY;			// high edge default
 
 // hover.exe:0x4A456C
 // GLOBAL: HOVER 0x4a456c
-DWORD g_dwUnk_4A456C;			// span window end
+DWORD g_dwColBottomY;			// span window end
 
 // hover.exe:0x4A4714
 // GLOBAL: HOVER 0x4a4714
-RENDEROBJ* g_pUnk_4A4714;		// render-object pool list
+RENDEROBJ* g_pObjPool;		// render-object pool list
 
 // hover.exe:0x4A4718
 // GLOBAL: HOVER 0x4a4718
-DWORD* g_pdwUnk_4A4718;			// span buffer tail (m_pUnk44)
+RENDEROBJ* g_pObjArenaCursor;		// render-object pool cursor (m_pRenderObjPool)
 
 // hover.exe:0x4A471C
 // GLOBAL: HOVER 0x4a471c
-RENDEROBJ* g_pUnk_4A471C;		// static list head
+RENDEROBJ* g_pColumnObjs;		// static list head
 
 // hover.exe:0x4A4720
 // GLOBAL: HOVER 0x4a4720
-RENDEROBJ* g_pUnk_4A4720;		// active list head
+RENDEROBJ* g_pActiveObjs;		// active list head
 
 // hover.exe:0x4A4A14
 // GLOBAL: HOVER 0x4a4a14
-DWORD g_dwUnk_4A4A14;			// span length
+DWORD g_dwSpanCount;			// span length
 
 // hover.exe:0x4A4A18
 // GLOBAL: HOVER 0x4a4a18
-DWORD g_dwUnk_4A4A18;
+DWORD g_dwSkyU;
 
 // hover.exe:0x4A4A1C
 // GLOBAL: HOVER 0x4a4a1c
-DWORD g_dwUnk_4A4A1C;			// texture pixel pointer
+DWORD g_dwTexels;			// texture pixel pointer
 
 // hover.exe:0x4A4A20
 // GLOBAL: HOVER 0x4a4a20
-DWORD g_dwUnk_4A4A20;
+DWORD g_dwUMask;
 
 // hover.exe:0x4A4A24
 // GLOBAL: HOVER 0x4a4a24
-DWORD g_dwUnk_4A4A24;			// texture u step
+DWORD g_dwVStep;			// texture v step
 
 // hover.exe:0x4A4A28
 // GLOBAL: HOVER 0x4a4a28
-DWORD g_dwUnk_4A4A28;			// texture u origin
+DWORD g_dwU;			// texture u origin
 
 // hover.exe:0x4A4A2C
 // GLOBAL: HOVER 0x4a4a2c
-DWORD g_dwUnk_4A4A2C;			// texture v origin
+DWORD g_dwV;			// texture v origin
 
 // hover.exe:0x4A4A30
 // GLOBAL: HOVER 0x4a4a30
-DWORD g_dwUnk_4A4A30;			// render target width * m_dwUnk1C
+DWORD g_dwDstRowStride;			// render target width * m_dwRowDir
 
 // hover.exe:0x4A4A34
 // GLOBAL: HOVER 0x4a4a34
-DWORD g_dwUnk_4A4A34;			// frame buffer pitch
+DWORD g_dwRowPitch;			// frame buffer pitch
 
 // hover.exe:0x4A4A38
 // GLOBAL: HOVER 0x4a4a38
-DWORD g_dwUnk_4A4A38;
+DWORD g_dwVMask;
 
 // hover.exe:0x4A4A3C
 // GLOBAL: HOVER 0x4a4a3c
-DWORD g_dwUnk_4A4A3C;			// span limit table entry
+DWORD g_dwShadeTable;			// current 256-byte shade row
 
 // hover.exe:0x4A4A40
 // GLOBAL: HOVER 0x4a4a40
-DWORD g_dwUnk_4A4A40;
+DWORD g_dwColumnV;
 
 // hover.exe:0x4A4A44
 // GLOBAL: HOVER 0x4a4a44
-DWORD g_dwUnk_4A4A44;			// span scale
+DWORD g_dwSpanDepth;			// span scale
 
 // hover.exe:0x4A4A48
 // GLOBAL: HOVER 0x4a4a48
-DWORD g_dwUnk_4A4A48;			// drawer selector
+DWORD g_dwVShift;			// drawer selector
 
 // hover.exe:0x4A4A4C
 // GLOBAL: HOVER 0x4a4a4c
-DWORD g_dwUnk_4A4A4C;			// destination pointer
+DWORD g_dwDst;			// destination pointer
 
 // hover.exe:0x4A4A50
 // GLOBAL: HOVER 0x4a4a50
-DWORD g_dwUnk_4A4A50;			// texture step
+DWORD g_dwUStep;			// texture u step (the wall v step)
 
 // hover.exe:0x4C5208
 // GLOBAL: HOVER 0x4c5208
-DWORD g_dwUnk_4C5208 = 0xFFF0000;	// edge sentinel (dereferenced through
-									// RENDEROBJ::m_pUnk84/m_pUnk88)
+DWORD g_dwNoEdgeY = 0xFFF0000;	// edge sentinel (dereferenced through
+									// RENDEROBJ::m_pTopEdgeY/m_pBottomEdgeY)
 
 /////////////////////////////////////////////////////////////////////////////
 // Helper macros reconstructed from the inline code sequences in the
 // original (the binary carries several compiled copies of each)
 
-// Table lookup used by Sub_402B10: g_adwSinTable is addressed by byte
+// Table lookup used by DrawFlatRow: g_adwSinTable is addressed by byte
 // offset ((expr) & 0x7FFC) starting one dword into the table
 #define HOVER_SINLUT(expr) g_adwSinTable[(((expr) & 0x7FFC) >> 2) + 1]
 
-// Sub_4030F0: unlink pScan from the g_pUnk_4A4490 list and advance to the
+// LinkFlatEdges: unlink pScan from the g_pEdgeList list and advance to the
 // next node (ends the scan loop when the list runs out)
 #define HOVER_SPANUNLINK(pScan, pPrev)							\
-	pPrev = pScan->m_pUnk0C;									\
-	pScan = pScan->m_pUnk08;									\
+	pPrev = pScan->m_pPrev;									\
+	pScan = pScan->m_pNext;									\
 	if (pPrev != 0)												\
-		pPrev->m_pUnk08 = pScan;								\
+		pPrev->m_pNext = pScan;								\
 	else														\
-		g_pUnk_4A4490 = pScan;									\
+		g_pEdgeList = pScan;									\
 	if (pScan == 0)												\
 		break;													\
-	pScan->m_pUnk0C = pPrev
+	pScan->m_pPrev = pPrev
 
-// Sub_4030F0: merge the render object behind pScan into pTarget's top
+// LinkFlatEdges: merge the render object behind pScan into pTarget's top
 // edge and unlink the node; falls through to the next comparison when the
 // two objects are not both merge candidates
 #define HOVER_SPANMERGE(pObj, pScan, pPrev, pKey, pEdge)		\
-	if (pObj->m_dwUnk20 != 0)									\
+	if (pObj->m_bCovered != 0)									\
 	{															\
 		HOVER_SPANUNLINK(pScan, pPrev);							\
 		continue;												\
 	}															\
-	if (pTarget->m_dwUnk18 == 0 && pObj->m_dwUnk18 == 0)		\
+	if (pTarget->m_bHidden == 0 && pObj->m_bHidden == 0)		\
 	{															\
-		if (pScan->m_dwUnk10 != 0)								\
+		if (pScan->m_bTopEdge != 0)								\
 		{														\
-			pTarget->m_pUnk40 = pObj;							\
-			pTarget->m_dwUnk48 = (DWORD)(pKey);					\
-			pTarget->m_dwUnk44 = 1;								\
-			pTarget->m_dwUnk8C = 1;								\
-			pTarget->m_pUnk84 = (pEdge);						\
+			pTarget->m_pTopNeighbour = pObj;							\
+			pTarget->m_pTopFlatTex = (pKey);					\
+			pTarget->m_bTopAboveEye = 1;								\
+			pTarget->m_bHasFlats = 1;								\
+			pTarget->m_pTopEdgeY = (pEdge);						\
 		}														\
 		else													\
 		{														\
-			pTarget->m_pUnk4C = pObj;							\
-			pTarget->m_dwUnk54 = (DWORD)(pKey);					\
-			pTarget->m_dwUnk50 = 1;								\
-			pTarget->m_dwUnk8C = 1;								\
-			pTarget->m_pUnk88 = (pEdge);						\
+			pTarget->m_pBottomNeighbour = pObj;							\
+			pTarget->m_pBottomFlatTex = (pKey);					\
+			pTarget->m_bBottomAboveEye = 1;								\
+			pTarget->m_bHasFlats = 1;								\
+			pTarget->m_pBottomEdgeY = (pEdge);						\
 		}														\
 		HOVER_SPANUNLINK(pScan, pPrev);							\
 		continue;												\
 	}
 
-// Sub_4030F0: the same merge for the bottom edge.  The original spells
+// LinkFlatEdges: the same merge for the bottom edge.  The original spells
 // this copy out separately: the edge flag is cleared instead of set and
 // the five stores go out in a different order.
 #define HOVER_SPANMERGE_LO(pObj, pScan, pPrev, pKey, pEdge)		\
-	if (pObj->m_dwUnk20 != 0)									\
+	if (pObj->m_bCovered != 0)									\
 	{															\
 		HOVER_SPANUNLINK(pScan, pPrev);							\
 		continue;												\
 	}															\
-	if (pTarget->m_dwUnk18 == 0 && pObj->m_dwUnk18 == 0)		\
+	if (pTarget->m_bHidden == 0 && pObj->m_bHidden == 0)		\
 	{															\
-		if (pScan->m_dwUnk10 != 0)								\
+		if (pScan->m_bTopEdge != 0)								\
 		{														\
-			pTarget->m_dwUnk44 = 0;								\
-			pTarget->m_pUnk40 = pObj;							\
-			pTarget->m_dwUnk8C = 1;								\
-			pTarget->m_dwUnk48 = (DWORD)(pKey);					\
-			pTarget->m_pUnk84 = (pEdge);						\
+			pTarget->m_bTopAboveEye = 0;								\
+			pTarget->m_pTopNeighbour = pObj;							\
+			pTarget->m_bHasFlats = 1;								\
+			pTarget->m_pTopFlatTex = (pKey);					\
+			pTarget->m_pTopEdgeY = (pEdge);						\
 		}														\
 		else													\
 		{														\
-			pTarget->m_dwUnk50 = 0;								\
-			pTarget->m_pUnk4C = pObj;							\
-			pTarget->m_dwUnk8C = 1;								\
-			pTarget->m_dwUnk54 = (DWORD)(pKey);					\
-			pTarget->m_pUnk88 = (pEdge);						\
+			pTarget->m_bBottomAboveEye = 0;								\
+			pTarget->m_pBottomNeighbour = pObj;							\
+			pTarget->m_bHasFlats = 1;								\
+			pTarget->m_pBottomFlatTex = (pKey);					\
+			pTarget->m_pBottomEdgeY = (pEdge);						\
 		}														\
 		HOVER_SPANUNLINK(pScan, pPrev);							\
 		continue;												\
 	}
 
 /////////////////////////////////////////////////////////////////////////////
-// CSub402E00
+// CSpanRasterizer (span pass)
 
 // hover.exe:0x402630
 // FUNCTION: HOVER 0x402630
-void CSub402E00::Sub_402630(RENDEROBJ* pObj, DWORD dwA, DWORD dwB)
+void CSpanRasterizer::DrawWallWithFlats(RENDEROBJ* pObj, DWORD dwA, DWORD dwB)
 {
 	SPANENTRY* pSpan;
 	DWORD dwB4;
@@ -305,34 +305,34 @@ void CSub402E00::Sub_402630(RENDEROBJ* pObj, DWORD dwA, DWORD dwB)
 	DWORD dwV;
 	int bCovered;
 
-	dwB4 = pObj->m_acUnkAC.m_dwUnk08;
-	dwB8 = pObj->m_acUnkAC.m_dwUnk0C;
-	pSpan = &pObj->m_acUnkAC;
-	g_dwUnk_4A4564 = dwB;
-	// the original carries a dead cmp of m_dwUnk0C here
-	g_dwUnk_4A4524 = dwA;
-	pObj->m_pUnk10->m_wFlags |= 8;
-	if (pObj->m_pUnk40 != 0)
+	dwB4 = pObj->m_run.m_dwTopY;
+	dwB8 = pObj->m_run.m_dwBottomY;
+	pSpan = &pObj->m_run;
+	g_dwClipBottomY = dwB;
+	// the original carries a dead cmp of m_bSprite here
+	g_dwClipTopY = dwA;
+	pObj->m_pSource->m_wFlags |= 8;
+	if (pObj->m_pTopNeighbour != 0)
 	{
-		if ((int)pObj->m_dwUnk6C > 0)
+		if ((int)pObj->m_dwTopDZ > 0)
 		{
 			bCovered = 0;
-			dwV = *pObj->m_pUnk84;
+			dwV = *pObj->m_pTopEdgeY;
 			if ((int)dwV > (int)dwB4)
 			{
 				if ((int)dwV > (int)dwA)
 				{
 					if ((int)dwV >= (int)dwB)
 					{
-						m_pUnk00->Sub_403980(pObj->m_dwUnk60,
-							pObj->m_dwUnk48, dwA, dwB);
+						m_pRunHeap->AddFlatRun(pObj->m_dwTopZ,
+							pObj->m_pTopFlatTex, dwA, dwB);
 						bCovered = 1;
 					}
 					else
 					{
-						m_pUnk00->Sub_403980(pObj->m_dwUnk60,
-							pObj->m_dwUnk48, dwA, dwV);
-						g_dwUnk_4A4524 = dwV + g_dwUnk_4A453C;
+						m_pRunHeap->AddFlatRun(pObj->m_dwTopZ,
+							pObj->m_pTopFlatTex, dwA, dwV);
+						g_dwClipTopY = dwV + g_dwRowStep;
 					}
 				}
 			}
@@ -340,78 +340,78 @@ void CSub402E00::Sub_402630(RENDEROBJ* pObj, DWORD dwA, DWORD dwB)
 			{
 				if ((int)dwB <= (int)dwB4)
 				{
-					m_pUnk00->Sub_403980(pObj->m_dwUnk60, pObj->m_dwUnk48,
+					m_pRunHeap->AddFlatRun(pObj->m_dwTopZ, pObj->m_pTopFlatTex,
 						dwA, dwB);
 					bCovered = 1;
 				}
 				else
 				{
-					m_pUnk00->Sub_403980(pObj->m_dwUnk60, pObj->m_dwUnk48,
+					m_pRunHeap->AddFlatRun(pObj->m_dwTopZ, pObj->m_pTopFlatTex,
 						dwA, dwB4);
-					g_dwUnk_4A4524 = dwB4 + g_dwUnk_4A453C;
+					g_dwClipTopY = dwB4 + g_dwRowStep;
 				}
 			}
 			if (bCovered)
 				return;
-			if (pObj->m_pUnk4C == 0)
+			if (pObj->m_pBottomNeighbour == 0)
 				goto L_final;
-			dwV = *pObj->m_pUnk88;
+			dwV = *pObj->m_pBottomEdgeY;
 			if ((int)dwV > (int)dwB8)
 			{
-				if ((int)g_dwUnk_4A4564 > (int)dwB8)
+				if ((int)g_dwClipBottomY > (int)dwB8)
 				{
-					if ((int)g_dwUnk_4A4524 >= (int)dwB8)
+					if ((int)g_dwClipTopY >= (int)dwB8)
 					{
-						m_pUnk00->Sub_403980(pObj->m_dwUnk64,
-							pObj->m_dwUnk54, g_dwUnk_4A4524, g_dwUnk_4A4564);
+						m_pRunHeap->AddFlatRun(pObj->m_dwBottomZ,
+							pObj->m_pBottomFlatTex, g_dwClipTopY, g_dwClipBottomY);
 						bCovered = 1;
 					}
 					else
 					{
-						m_pUnk00->Sub_403980(pObj->m_dwUnk64,
-							pObj->m_dwUnk54, dwB8, g_dwUnk_4A4564);
-						g_dwUnk_4A4564 = dwB8 - g_dwUnk_4A453C;
+						m_pRunHeap->AddFlatRun(pObj->m_dwBottomZ,
+							pObj->m_pBottomFlatTex, dwB8, g_dwClipBottomY);
+						g_dwClipBottomY = dwB8 - g_dwRowStep;
 					}
 				}
 			}
-			else if ((int)g_dwUnk_4A4564 > (int)dwV)
+			else if ((int)g_dwClipBottomY > (int)dwV)
 			{
-				if ((int)g_dwUnk_4A4524 >= (int)dwV)
+				if ((int)g_dwClipTopY >= (int)dwV)
 				{
-					m_pUnk00->Sub_403980(pObj->m_dwUnk64, pObj->m_dwUnk54,
-						g_dwUnk_4A4524, g_dwUnk_4A4564);
+					m_pRunHeap->AddFlatRun(pObj->m_dwBottomZ, pObj->m_pBottomFlatTex,
+						g_dwClipTopY, g_dwClipBottomY);
 					bCovered = 1;
 				}
 				else
 				{
-					m_pUnk00->Sub_403980(pObj->m_dwUnk64, pObj->m_dwUnk54,
-						dwV, g_dwUnk_4A4564);
-					g_dwUnk_4A4564 = dwV - g_dwUnk_4A453C;
+					m_pRunHeap->AddFlatRun(pObj->m_dwBottomZ, pObj->m_pBottomFlatTex,
+						dwV, g_dwClipBottomY);
+					g_dwClipBottomY = dwV - g_dwRowStep;
 				}
 			}
 			if (bCovered)
 				return;
 			goto L_final;
 		}
-		if (pObj->m_pUnk4C != 0)
+		if (pObj->m_pBottomNeighbour != 0)
 		{
 			bCovered = 0;
-			dwV = *pObj->m_pUnk88;
+			dwV = *pObj->m_pBottomEdgeY;
 			if ((int)dwV > (int)dwB8)
 			{
 				if ((int)dwB > (int)dwB8)
 				{
 					if ((int)dwA >= (int)dwB8)
 					{
-						m_pUnk00->Sub_403980(pObj->m_dwUnk64,
-							pObj->m_dwUnk54, dwA, dwB);
+						m_pRunHeap->AddFlatRun(pObj->m_dwBottomZ,
+							pObj->m_pBottomFlatTex, dwA, dwB);
 						bCovered = 1;
 					}
 					else
 					{
-						m_pUnk00->Sub_403980(pObj->m_dwUnk64,
-							pObj->m_dwUnk54, dwB8, dwB);
-						g_dwUnk_4A4564 = dwB8 - g_dwUnk_4A453C;
+						m_pRunHeap->AddFlatRun(pObj->m_dwBottomZ,
+							pObj->m_pBottomFlatTex, dwB8, dwB);
+						g_dwClipBottomY = dwB8 - g_dwRowStep;
 					}
 				}
 			}
@@ -419,75 +419,75 @@ void CSub402E00::Sub_402630(RENDEROBJ* pObj, DWORD dwA, DWORD dwB)
 			{
 				if ((int)dwA >= (int)dwV)
 				{
-					m_pUnk00->Sub_403980(pObj->m_dwUnk64, pObj->m_dwUnk54,
+					m_pRunHeap->AddFlatRun(pObj->m_dwBottomZ, pObj->m_pBottomFlatTex,
 						dwA, dwB);
 					bCovered = 1;
 				}
 				else
 				{
-					m_pUnk00->Sub_403980(pObj->m_dwUnk64, pObj->m_dwUnk54,
+					m_pRunHeap->AddFlatRun(pObj->m_dwBottomZ, pObj->m_pBottomFlatTex,
 						dwV, dwB);
-					g_dwUnk_4A4564 = dwV - g_dwUnk_4A453C;
+					g_dwClipBottomY = dwV - g_dwRowStep;
 				}
 			}
 			if (bCovered)
 				return;
 		}
 		bCovered = 0;
-		dwV = *pObj->m_pUnk84;
+		dwV = *pObj->m_pTopEdgeY;
 		if ((int)dwB4 < (int)dwV)
 		{
-			if ((int)g_dwUnk_4A4524 < (int)dwV)
+			if ((int)g_dwClipTopY < (int)dwV)
 			{
-				if ((int)g_dwUnk_4A4564 <= (int)dwV)
+				if ((int)g_dwClipBottomY <= (int)dwV)
 				{
-					m_pUnk00->Sub_403980(pObj->m_dwUnk60, pObj->m_dwUnk48,
-						g_dwUnk_4A4524, g_dwUnk_4A4564);
+					m_pRunHeap->AddFlatRun(pObj->m_dwTopZ, pObj->m_pTopFlatTex,
+						g_dwClipTopY, g_dwClipBottomY);
 					bCovered = 1;
 				}
 				else
 				{
-					m_pUnk00->Sub_403980(pObj->m_dwUnk60, pObj->m_dwUnk48,
-						g_dwUnk_4A4524, dwV);
-					g_dwUnk_4A4524 = dwV + g_dwUnk_4A453C;
+					m_pRunHeap->AddFlatRun(pObj->m_dwTopZ, pObj->m_pTopFlatTex,
+						g_dwClipTopY, dwV);
+					g_dwClipTopY = dwV + g_dwRowStep;
 				}
 			}
 		}
-		else if ((int)g_dwUnk_4A4524 < (int)dwB4)
+		else if ((int)g_dwClipTopY < (int)dwB4)
 		{
-			if ((int)g_dwUnk_4A4564 <= (int)dwB4)
+			if ((int)g_dwClipBottomY <= (int)dwB4)
 			{
-				m_pUnk00->Sub_403980(pObj->m_dwUnk60, pObj->m_dwUnk48,
-					g_dwUnk_4A4524, g_dwUnk_4A4564);
+				m_pRunHeap->AddFlatRun(pObj->m_dwTopZ, pObj->m_pTopFlatTex,
+					g_dwClipTopY, g_dwClipBottomY);
 				bCovered = 1;
 			}
 			else
 			{
-				m_pUnk00->Sub_403980(pObj->m_dwUnk60, pObj->m_dwUnk48,
-					g_dwUnk_4A4524, dwB4);
-				g_dwUnk_4A4524 = dwB4 + g_dwUnk_4A453C;
+				m_pRunHeap->AddFlatRun(pObj->m_dwTopZ, pObj->m_pTopFlatTex,
+					g_dwClipTopY, dwB4);
+				g_dwClipTopY = dwB4 + g_dwRowStep;
 			}
 		}
 		if (bCovered)
 			return;
 		goto L_final;
 	}
-	if (Sub_4065F0(pObj, pSpan, dwB4, dwB8, pObj->m_dwUnk64) != 0)
+	if (ClipBottomFlat(pObj, pSpan, dwB4, dwB8, pObj->m_dwBottomZ) != 0)
 		return;
 L_final:
-	if ((int)g_dwUnk_4A4564 < (int)g_dwUnk_4A4524)
+	if ((int)g_dwClipBottomY < (int)g_dwClipTopY)
 		return;
-	Sub_402990(pObj, pSpan, g_dwUnk_4A4524, g_dwUnk_4A4564);
+	DrawWallRun(pObj, pSpan, g_dwClipTopY, g_dwClipBottomY);
 }
 
 // hover.exe:0x402990
 // FUNCTION: HOVER 0x402990
-void CSub402E00::Sub_402990(RENDEROBJ* pObj, SPANENTRY* pSpan, DWORD dwA,
+void CSpanRasterizer::DrawWallRun(RENDEROBJ* pObj, SPANENTRY* pSpan, DWORD dwA,
 	DWORD dwB)
 {
 	CMerlinTexture* pTex;
-	MERLIN_TEXENTRY* pEntry;
-	SPANPTS* pPts;
+	MERLIN_TEXFRAME* pEntry;
+	TEXCOLUMN* pPts;
 	DWORD dwLevel;
 	DWORD dwMax;
 	DWORD dwVal;
@@ -496,43 +496,43 @@ void CSub402E00::Sub_402990(RENDEROBJ* pObj, SPANENTRY* pSpan, DWORD dwA,
 	DWORD dwT;
 	BYTE cl;
 
-	g_dwUnk_4A4A14 = dwB + (g_dwUnk_4A453C - dwA);
-	if ((int)g_dwUnk_4A4A14 <= 0)
+	g_dwSpanCount = dwB + (g_dwRowStep - dwA);
+	if ((int)g_dwSpanCount <= 0)
 		return;
-	g_dwUnk_4A4A4C = g_dwUnk_4A4540 + dwA * g_dwUnk_4A4A34;
-	g_dwUnk_4A4A44 = (DWORD)(short)pObj->m_wUnk08;
-	if (pObj->m_dwUnkA4 == 0)
+	g_dwDst = g_dwColumnOrigin + dwA * g_dwRowPitch;
+	g_dwSpanDepth = (DWORD)(short)pObj->m_wDistance;
+	if (pObj->m_bMappingCached == 0)
 	{
-		pTex = pObj->m_pUnk5C;
-		// the original carries a dead cmp of m_dwUnk0C here
-		pObj->m_pUnk10->m_wFlags |= 8;
-		if (g_dwUnk_4A1D78 != 0)
+		pTex = pObj->m_pTex;
+		// the original carries a dead cmp of m_bSprite here
+		pObj->m_pSource->m_wFlags |= 8;
+		if (g_bWallMipMapping != 0)
 		{
-			cl = (BYTE)(pObj->m_dwUnk9C + 4);
-			dwVal = (DWORD)(((int)g_dwUnk_4A4A44 >> cl) & 0x7FF);
-			dwLevel = g_pbUnk_4A4548[dwVal];
-			dwMax = pTex->m_dwUnk2C - 1;
+			cl = (BYTE)(pObj->m_dwTexScaleLog2 + 4);
+			dwVal = (DWORD)(((int)g_dwSpanDepth >> cl) & 0x7FF);
+			dwLevel = g_pbMipLut[dwVal];
+			dwMax = pTex->m_dwFrameCount - 1;
 			if ((int)dwMax < (int)dwLevel)
 				dwLevel = dwMax;
-			if ((int)g_dwUnk_461CFC > (int)dwLevel)
-				dwLevel = g_dwUnk_461CFC;
+			if ((int)g_dwMipBias > (int)dwLevel)
+				dwLevel = g_dwMipBias;
 		}
 		else
 		{
-			dwLevel = g_dwUnk_461CFC;
+			dwLevel = g_dwMipBias;
 		}
-		pEntry = &pTex->m_pUnk28[dwLevel];
-		cl = (BYTE)(pObj->m_dwUnk9C + dwLevel);
-		dwVal = (DWORD)(((short)pObj->m_wUnk0A >> cl) &
-			(int)pEntry->m_dwUnk00);
-		pPts = (SPANPTS*)(pEntry->m_dwUnk1C + dwVal * 8);
-		dwP = pPts->m_pUnk04->m_dwUnk04;
-		dwX = pSpan->m_dwUnk0C - pSpan->m_dwUnk08;
-		pSpan->m_dwUnk10 = dwP;
-		g_dwUnk_4A4A1C = dwP;
+		pEntry = &pTex->m_pFrames[dwLevel];
+		cl = (BYTE)(pObj->m_dwTexScaleLog2 + dwLevel);
+		dwVal = (DWORD)(((short)pObj->m_wTexU >> cl) &
+			(int)pEntry->m_dwColMask);
+		pPts = &pEntry->m_pColumns[dwVal];
+		dwP = (DWORD)pPts->m_pRuns->m_pPixels;
+		dwX = pSpan->m_dwBottomY - pSpan->m_dwTopY;
+		pSpan->m_pPixels = (BYTE*)dwP;
+		g_dwTexels = dwP;
 		if (dwX != 0)
 		{
-			dwP = (DWORD)((int)pObj->m_dwUnk68 / (int)dwX);
+			dwP = (DWORD)((int)pObj->m_dwHeight16 / (int)dwX);
 			dwP = (DWORD)((int)dwP >> cl);
 		}
 		else
@@ -540,31 +540,31 @@ void CSub402E00::Sub_402990(RENDEROBJ* pObj, SPANENTRY* pSpan, DWORD dwA,
 			dwP = 0;
 		}
 		dwT = pEntry->m_dwUnk04;
-		pObj->m_dwUnk98 = dwP;
-		pObj->m_dwUnkA4 = 1;
+		pObj->m_dwVStep = dwP;
+		pObj->m_bMappingCached = 1;
 		dwT = (dwT << 0x10) + 0xFFFF;
-		pObj->m_dwUnk94 = dwT;
-		g_dwUnk_4A4A38 = dwT;
+		pObj->m_dwVMask = dwT;
+		g_dwVMask = dwT;
 	}
 	else
 	{
-		g_dwUnk_4A4A38 = pObj->m_dwUnk94;
-		dwP = pObj->m_dwUnk98;
-		g_dwUnk_4A4A1C = pSpan->m_dwUnk10;
+		g_dwVMask = pObj->m_dwVMask;
+		dwP = pObj->m_dwVStep;
+		g_dwTexels = (DWORD)pSpan->m_pPixels;
 	}
-	g_dwUnk_4A4A50 = dwP;
-	g_dwUnk_4A4A40 = (dwA - pSpan->m_dwUnk08) * dwP;
-	g_dwUnk_4A4A3C = (DWORD)g_pUnk_4A1D68->Sub_403850(g_dwUnk_4A4A44);
-	g_pUnk_4A1D68->m_pfnUnk00();
+	g_dwUStep = dwP;
+	g_dwColumnV = (dwA - pSpan->m_dwTopY) * dwP;
+	g_dwShadeTable = (DWORD)g_pRenderCtx->GetShadeRow(g_dwSpanDepth);
+	g_pRenderCtx->m_pfnDrawWall();
 }
 
 // hover.exe:0x402B10
 // FUNCTION: HOVER 0x402b10
-void CSub402E00::Sub_402B10(DWORD dwA, DWORD dwB, CMerlinTexture* pTex,
+void CSpanRasterizer::DrawFlatRow(DWORD dwA, DWORD dwB, CMerlinTexture* pTex,
 	DWORD dwY)
 {
-	CSub403850* pView;
-	MERLIN_TEXENTRY* pEntry;
+	CRenderContext* pView;
+	MERLIN_TEXFRAME* pEntry;
 	DWORD dwX0;
 	DWORD dwRow;
 	DWORD dwScale;
@@ -585,88 +585,88 @@ void CSub402E00::Sub_402B10(DWORD dwA, DWORD dwB, CMerlinTexture* pTex,
 	BYTE cl;
 
 	dwX0 = dwB;
-	dwRow = g_dwUnk_4A4544 - dwY;
-	nT = abs((int)((dwX0 & (0 - g_dwUnk_4A453C)) - g_dwUnk_4A1D70));
-	dwScale = (DWORD)((int)g_pdwUnk_4A452C[dwRow + 0x400] / (nT + 1));
-	g_dwUnk_4A4A44 = dwScale;
-	if (m_dwUnk24 != 0)
+	dwRow = g_dwEyeZ - dwY;
+	nT = abs((int)((dwX0 & (0 - g_dwRowStep)) - g_dwHorizonY));
+	dwScale = (DWORD)((int)g_pdwDistTable[dwRow + 0x400] / (nT + 1));
+	g_dwSpanDepth = dwScale;
+	if (m_bMipMapping != 0)
 	{
-		dwLevel = (DWORD)g_pbUnk_4A4548[(dwScale & 0x7FF0) >> 4] + 1;
-		g_dwUnk_4A1D74 = dwLevel;
-		if ((int)g_dwUnk_4A4A44 < 0xFA)
-			dwLevel = g_dwUnk_461CFC;
-		g_dwUnk_4A1D74 = dwLevel;
-		if ((int)dwLevel >= (int)pTex->m_dwUnk2C)
-			dwLevel = pTex->m_dwUnk2C - 1;
-		g_dwUnk_4A1D74 = dwLevel;
-		if ((int)g_dwUnk_461CFC > (int)dwLevel)
-			dwLevel = g_dwUnk_461CFC;
+		dwLevel = (DWORD)g_pbMipLut[(dwScale & 0x7FF0) >> 4] + 1;
+		g_dwFlatMipLevel = dwLevel;
+		if ((int)g_dwSpanDepth < 0xFA)
+			dwLevel = g_dwMipBias;
+		g_dwFlatMipLevel = dwLevel;
+		if ((int)dwLevel >= (int)pTex->m_dwFrameCount)
+			dwLevel = pTex->m_dwFrameCount - 1;
+		g_dwFlatMipLevel = dwLevel;
+		if ((int)g_dwMipBias > (int)dwLevel)
+			dwLevel = g_dwMipBias;
 	}
 	else
 	{
-		dwLevel = g_dwUnk_461CFC;
+		dwLevel = g_dwMipBias;
 	}
 	cl = (BYTE)dwLevel;
-	pEntry = &pTex->m_pUnk28[dwLevel];
-	pView = g_pUnk_4A1D68;
-	g_dwUnk_4A4A1C = pEntry->m_dwUnk18;
-	if (pView->m_dwUnk68 != 0)
+	pEntry = &pTex->m_pFrames[dwLevel];
+	pView = g_pRenderCtx;
+	g_dwTexels = (DWORD)pEntry->m_pPixels;
+	if (pView->m_bMirror != 0)
 	{
-		dwT14 = g_dwUnk_4A454C - g_dwUnk_4A4534 - 1;
-		dwAng = pView->m_dwUnk54 << 6;
-		dwBX = pView->m_dwUnk48 << 0x10;
-		dwT24 = g_dwUnk_4A454C - dwA - 1;
-		dwBY = pView->m_dwUnk4C << 0x10;
-		dwF0 = HOVER_SINLUT(dwAng + 0x1554) * g_dwUnk_4A4A44 + dwBX;
-		dwF1 = dwBX + HOVER_SINLUT(dwAng + 0x2AA8) * g_dwUnk_4A4A44;
-		dwF3 = HOVER_SINLUT(dwAng - 0xAAC) * g_dwUnk_4A4A44 + dwBY;
-		dwF2 = dwBY + HOVER_SINLUT(dwAng + 0xAA8) * g_dwUnk_4A4A44;
+		dwT14 = g_dwViewWidth - g_dwCurColumn - 1;
+		dwAng = pView->m_dwCamAngle << 6;
+		dwBX = pView->m_dwCamX << 0x10;
+		dwT24 = g_dwViewWidth - dwA - 1;
+		dwBY = pView->m_dwCamY << 0x10;
+		dwF0 = HOVER_SINLUT(dwAng + 0x1554) * g_dwSpanDepth + dwBX;
+		dwF1 = dwBX + HOVER_SINLUT(dwAng + 0x2AA8) * g_dwSpanDepth;
+		dwF3 = HOVER_SINLUT(dwAng - 0xAAC) * g_dwSpanDepth + dwBY;
+		dwF2 = dwBY + HOVER_SINLUT(dwAng + 0xAA8) * g_dwSpanDepth;
 	}
 	else
 	{
 		dwT14 = dwA;
-		dwBX = pView->m_dwUnk48 << 0x10;
-		dwAng = pView->m_dwUnk54 << 6;
-		dwT24 = g_dwUnk_4A4534;
-		dwBY = pView->m_dwUnk4C << 0x10;
-		dwF1 = HOVER_SINLUT(dwAng + 0x1554) * g_dwUnk_4A4A44 + dwBX;
-		dwF0 = HOVER_SINLUT(dwAng + 0x2AA8) * g_dwUnk_4A4A44 + dwBX;
+		dwBX = pView->m_dwCamX << 0x10;
+		dwAng = pView->m_dwCamAngle << 6;
+		dwT24 = g_dwCurColumn;
+		dwBY = pView->m_dwCamY << 0x10;
+		dwF1 = HOVER_SINLUT(dwAng + 0x1554) * g_dwSpanDepth + dwBX;
+		dwF0 = HOVER_SINLUT(dwAng + 0x2AA8) * g_dwSpanDepth + dwBX;
 		dwAng += 0xAA8;
-		dwF2 = HOVER_SINLUT(dwAng - 0x1554) * g_dwUnk_4A4A44 + dwBY;
-		dwF3 = HOVER_SINLUT(dwAng) * g_dwUnk_4A4A44 + dwBY;
+		dwF2 = HOVER_SINLUT(dwAng - 0x1554) * g_dwSpanDepth + dwBY;
+		dwF3 = HOVER_SINLUT(dwAng) * g_dwSpanDepth + dwBY;
 	}
 	dwCount = dwT24 - dwT14;
-	g_dwUnk_4A1D74 = dwLevel;
-	dwFb = dwX0 * g_dwUnk_4A4A34 + pView->m_dwUnk28;
-	g_dwUnk_4A4A14 = dwCount;
-	g_dwUnk_4A4A4C = dwT14 + dwFb;
-	dwDiv = g_dwUnk_4A454C << cl;
-	g_dwUnk_4A4A50 = (DWORD)((int)(dwF3 - dwF2) / (int)dwDiv);
+	g_dwFlatMipLevel = dwLevel;
+	dwFb = (DWORD)(dwX0 * g_dwRowPitch + pView->m_pScanOrigin);
+	g_dwSpanCount = dwCount;
+	g_dwDst = dwT14 + dwFb;
+	dwDiv = g_dwViewWidth << cl;
+	g_dwUStep = (DWORD)((int)(dwF3 - dwF2) / (int)dwDiv);
 	dwF2 = (DWORD)((int)dwF2 >> cl);
-	g_dwUnk_4A4A24 = (DWORD)((int)(dwF0 - dwF1) / (int)dwDiv);
+	g_dwVStep = (DWORD)((int)(dwF0 - dwF1) / (int)dwDiv);
 	dwF1 = (DWORD)((int)dwF1 >> cl);
-	g_dwUnk_4A4A28 = dwT14 * g_dwUnk_4A4A50 + dwF2;
-	g_dwUnk_4A4A2C = g_dwUnk_4A4A24 * dwT14 + dwF1;
-	g_dwUnk_4A4A3C = (DWORD)pView->Sub_403850(g_dwUnk_4A4A44);
-	g_dwUnk_4A4A20 = (pEntry->m_dwUnk04 << 0x10) + 0xFFFF;
-	g_dwUnk_4A4A38 = pEntry->m_dwUnk00 << 0x10;
-	g_dwUnk_4A4A48 = 0x10 - pEntry->m_dwUnk10;
-	if (pView->m_dwUnk80 != 0)
-		pView->m_ppfnUnk08[g_dwUnk_4A4A48]();
+	g_dwU = dwT14 * g_dwUStep + dwF2;
+	g_dwV = g_dwVStep * dwT14 + dwF1;
+	g_dwShadeTable = (DWORD)pView->GetShadeRow(g_dwSpanDepth);
+	g_dwUMask = (pEntry->m_dwUnk04 << 0x10) + 0xFFFF;
+	g_dwVMask = pEntry->m_dwColMask << 0x10;
+	g_dwVShift = 0x10 - pEntry->m_dwUnk10;
+	if (pView->m_bUseShiftTable != 0)
+		pView->m_ppfnDrawFlatByShift[g_dwVShift]();
 	else
-		pView->m_pfnUnk0C();
+		pView->m_pfnDrawFlat();
 }
 
 // hover.exe:0x402E00
 // FUNCTION: HOVER 0x402e00
-void CSub402E00::Sub_402E00(DWORD dwUnk)
+void CSpanRasterizer::RenderColumn(DWORD dwUnk)
 {
 	RENDEROBJ* pObj;
 	SPANENTRY* pSpan;
 	SPANENTRY* pArena;
-	SPANPTS* pPts;
-	SPANPT* pPt;
-	MERLIN_TEXENTRY* pEntry;
+	TEXCOLUMN* pPts;
+	TEXRUN* pPt;
+	MERLIN_TEXFRAME* pEntry;
 	DWORD dwScale;
 	DWORD dwMask;
 	DWORD dwX0;
@@ -681,337 +681,332 @@ void CSub402E00::Sub_402E00(DWORD dwUnk)
 	int nPts;
 	BYTE cl;
 
-	g_pUnk_4A1D60 = g_abUnk_4A1D80;
-	if (m_dwUnk28 != 0)
-		Sub_4030F0();
-	for (pObj = g_pUnk_4A471C; pObj != 0; pObj = pObj->m_pUnk34)
+	g_pArenaCursor = g_abSpanArena;
+	if (m_bRelink != 0)
+		LinkFlatEdges();
+	for (pObj = g_pColumnObjs; pObj != 0; pObj = pObj->m_pColNext)
 	{
-		nCount = (short)pObj->m_wUnk08;
-		if (pObj->m_dwUnk18 != 0 || nCount <= 0)
+		nCount = (short)pObj->m_wDistance;
+		if (pObj->m_bHidden != 0 || nCount <= 0)
 		{
 			if (nCount == 0)
 			{
 				// no points: clamp the embedded span to the edge defaults
-				if ((int)pObj->m_dwUnk6C > 0)
-					pObj->m_acUnkAC.m_dwUnk08 = g_dwUnk_4A4530;
+				pSpan = &pObj->m_run;
+				if ((int)pObj->m_dwTopDZ > 0)
+					pSpan->m_dwTopY = g_dwBelowClipY;
 				else
-					pObj->m_acUnkAC.m_dwUnk08 = g_dwUnk_4A4568;
-				if ((int)pObj->m_dwUnk70 > 0)
-					pObj->m_acUnkAC.m_dwUnk0C = g_dwUnk_4A4530;
+					pSpan->m_dwTopY = g_dwAboveClipY;
+				if ((int)pObj->m_dwBottomDZ > 0)
+					pSpan->m_dwBottomY = g_dwBelowClipY;
 				else
-					pObj->m_acUnkAC.m_dwUnk0C = g_dwUnk_4A4568;
+					pSpan->m_dwBottomY = g_dwAboveClipY;
 			}
-			pObj->m_dwUnk58 = 0;
+			pObj->m_bVisible = 0;
 			continue;
 		}
-		pSpan = &pObj->m_acUnkAC;
-		dwScale = (DWORD)((int)g_dwUnk_4A1D6C / nCount);
-		pObj->m_dwUnk58 = 1;
-		dwX0 = (DWORD)(((int)(pObj->m_dwUnk6C * dwScale) >> 0xA) +
-			(int)g_dwUnk_4A1D70);
-		dwMask = 0 - g_dwUnk_4A453C;
+		pSpan = &pObj->m_run;
+		dwScale = (DWORD)((int)g_dwColProjScale / nCount);
+		pObj->m_bVisible = 1;
+		dwX0 = (DWORD)(((int)(pObj->m_dwTopDZ * dwScale) >> 0xA) +
+			(int)g_dwHorizonY);
+		dwMask = 0 - g_dwRowStep;
 		dwX0 &= dwMask;
-		dwX1 = (DWORD)(((int)(pObj->m_dwUnk70 * dwScale) >> 0xA) +
-			(int)g_dwUnk_4A1D70);
+		dwX1 = (DWORD)(((int)(pObj->m_dwBottomDZ * dwScale) >> 0xA) +
+			(int)g_dwHorizonY);
 		dwX1 &= dwMask;
-		pSpan->m_dwUnk08 = dwX0;
-		pSpan->m_dwUnk0C = dwX1;
-		if (pObj->m_dwUnkA0 == 0)
+		pSpan->m_dwTopY = dwX0;
+		pSpan->m_dwBottomY = dwX1;
+		if (pObj->m_bMasked == 0)
 		{
 			DWORD dwA, dwB, dwMin;
 
-			pObj->m_dwUnkA4 = 0;
-			if (pObj->m_dwUnk8C == 0)
+			pObj->m_bMappingCached = 0;
+			if (pObj->m_bHasFlats == 0)
 				continue;
-			dwA = *pObj->m_pUnk84;
-			dwB = *pObj->m_pUnk88;
+			dwA = *pObj->m_pTopEdgeY;
+			dwB = *pObj->m_pBottomEdgeY;
 			dwMin = ((int)dwB >= (int)dwA) ? dwA : dwB;
-			pObj->m_dwUnk74 = ((int)dwMin > (int)dwX0) ? dwX0 : dwMin;
+			pObj->m_dwMinY = ((int)dwMin > (int)dwX0) ? dwX0 : dwMin;
 			if (dwA != 0xFFF0000 && (int)dwA > (int)dwX1)
 				dwX1 = dwA;
 			if (dwB != 0xFFF0000 && (int)dwX1 < (int)dwB)
-				pObj->m_dwUnk78 = dwB;
+				pObj->m_dwMaxY = dwB;
 			else
-				pObj->m_dwUnk78 = dwX1;
+				pObj->m_dwMaxY = dwX1;
 			continue;
 		}
-		pObj->m_dwUnk74 = dwX0;
-		pObj->m_dwUnk78 = dwX1;
-		if (g_dwUnk_4A1D78 != 0)
+		pObj->m_dwMinY = dwX0;
+		pObj->m_dwMaxY = dwX1;
+		if (g_bWallMipMapping != 0)
 		{
-			cl = (BYTE)(pObj->m_dwUnk9C + 4);
+			cl = (BYTE)(pObj->m_dwTexScaleLog2 + 4);
 			dwT = (DWORD)((nCount >> cl) & 0x7FF);
-			dwLevel = g_pbUnk_4A4548[dwT];
-			dwMax = pObj->m_pUnk5C->m_dwUnk2C - 1;
+			dwLevel = g_pbMipLut[dwT];
+			dwMax = pObj->m_pTex->m_dwFrameCount - 1;
 			if ((int)dwLevel > (int)dwMax)
 				dwLevel = dwMax;
-			if ((int)g_dwUnk_461CFC > (int)dwLevel)
-				dwLevel = g_dwUnk_461CFC;
+			if ((int)g_dwMipBias > (int)dwLevel)
+				dwLevel = g_dwMipBias;
 		}
 		else
 		{
-			dwLevel = g_dwUnk_461CFC;
+			dwLevel = g_dwMipBias;
 		}
-		// the original carries a dead cmp of m_dwUnk0C here
-		pObj->m_pUnk10->m_wFlags |= 8;
-		pEntry = &pObj->m_pUnk5C->m_pUnk28[dwLevel];
-		cl = (BYTE)(pObj->m_dwUnk9C + dwLevel);
-		nPts = ((short)pObj->m_wUnk0A >> cl) & (int)pEntry->m_dwUnk00;
-		pPts = (SPANPTS*)(pEntry->m_dwUnk1C + ((DWORD)nPts << 3));
+		// the original carries a dead cmp of m_bSprite here
+		pObj->m_pSource->m_wFlags |= 8;
+		pEntry = &pObj->m_pTex->m_pFrames[dwLevel];
+		cl = (BYTE)(pObj->m_dwTexScaleLog2 + dwLevel);
+		nPts = ((short)pObj->m_wTexU >> cl) & (int)pEntry->m_dwColMask;
+		pPts = &pEntry->m_pColumns[nPts];
 		dwX1 -= dwX0;
 		if (dwX1 != 0)
 		{
 			dwX1 <<= cl;
-			pObj->m_dwUnk98 = (DWORD)((int)pObj->m_dwUnk68 / (int)dwX1);
+			pObj->m_dwVStep = (DWORD)((int)pObj->m_dwHeight16 / (int)dwX1);
 		}
 		else
 		{
-			pObj->m_dwUnk98 = 0;
+			pObj->m_dwVStep = 0;
 		}
 		dwT = pEntry->m_dwUnk04 << 0x10;
-		pArena = (SPANENTRY*)g_pUnk_4A1D60;
-		pObj->m_pUnkA8 = pArena;
+		pArena = (SPANENTRY*)g_pArenaCursor;
+		pObj->m_pRuns = pArena;
 		dwT += 0xFFFF;
-		pObj->m_dwUnk90 = (DWORD)(short)pPts->m_wUnk00;
-		pObj->m_dwUnk94 = dwT;
-		g_pUnk_4A1D60 += pObj->m_dwUnk90 * 0x14;
-		if (pObj->m_dwUnk90 == 0)
+		dwMax = (DWORD)(short)pPts->m_wRunCount;
+		pObj->m_dwRunCount = dwMax;
+		pObj->m_dwVMask = dwT;
+		g_pArenaCursor += dwMax * sizeof(SPANENTRY);
+		if (dwMax == 0)
 		{
-			pObj->m_dwUnk58 = 0;
+			pObj->m_bVisible = 0;
 			continue;
 		}
-		pPt = pPts->m_pUnk04;
-		if ((int)pObj->m_dwUnk90 <= 0)
+		pPt = pPts->m_pRuns;
+		if ((int)dwMax <= 0)
 			continue;
-		i = pObj->m_dwUnk90;
+		i = dwMax;
 		do
 		{
-			cl = (BYTE)pObj->m_dwUnk9C;
-			dwA = pObj->m_dwUnk60 - (DWORD)(((short)pPt->m_wUnk00) << cl);
-			dwB = pObj->m_dwUnk60 - (DWORD)(((short)pPt->m_wUnk02) << cl);
-			pArena->m_dwUnk00 = dwA;
-			pArena->m_dwUnk04 = dwB;
-			if ((int)pObj->m_dwUnk64 > (int)dwB)
-			{
-				dwB = pObj->m_dwUnk64;
-				pArena->m_dwUnk04 = dwB;
-			}
-			pArena->m_dwUnk10 = pPt->m_dwUnk04;
+			cl = (BYTE)pObj->m_dwTexScaleLog2;
+			dwA = pObj->m_dwTopZ - (DWORD)(((short)pPt->m_wTop) << cl);
+			dwB = pObj->m_dwTopZ - (DWORD)(((short)pPt->m_wBottom) << cl);
+			pArena->m_dwTopZ = dwA;
+			pArena->m_dwBottomZ = dwB;
+			if ((int)pObj->m_dwBottomZ > (int)dwB)
+				pArena->m_dwBottomZ = pObj->m_dwBottomZ;
+			pArena->m_pPixels = pPt->m_pPixels;
 			pPt++;
 			pArena++;
-			dwT = (DWORD)(((int)((g_dwUnk_4A4544 - dwA) * dwScale) >> 0xA) +
-				(int)g_dwUnk_4A1D70);
+			dwT = (DWORD)(((int)((g_dwEyeZ - dwA) * dwScale) >> 0xA) +
+				(int)g_dwHorizonY);
 			dwT &= dwMask;
-			pArena[-1].m_dwUnk08 = dwT;
-			dwT = (DWORD)(((int)((g_dwUnk_4A4544 - pArena[-1].m_dwUnk04) *
-				dwScale) >> 0xA) + (int)g_dwUnk_4A1D70);
+			pArena[-1].m_dwTopY = dwT;
+			dwT = (DWORD)(((int)((g_dwEyeZ - pArena[-1].m_dwBottomZ) *
+				dwScale) >> 0xA) + (int)g_dwHorizonY);
 			dwT &= dwMask;
-			pArena[-1].m_dwUnk0C = dwT;
+			pArena[-1].m_dwBottomY = dwT;
 			i--;
 		} while (i != 0);
 	}
-	Sub_404030(g_pUnk_4A4720, g_dwUnk_4A1D64, g_dwUnk_4A456C);
-	m_pUnk00->Sub_403A60(this);
-	if (g_pUnk_4A1D60 > g_abUnk_4A1D80 + (0x4A40A8 - 0x4A1D80))
+	CoverRows(g_pActiveObjs, g_dwColTopY, g_dwColBottomY);
+	m_pRunHeap->FlushRuns(this);
+	if (g_pArenaCursor > g_abSpanArena + sizeof(g_abSpanArena))
 		OutputDebugStringA("Trashing Heap");	// hover.exe:0x4C520C
 }
 
 // hover.exe:0x4030F0
 // FUNCTION: HOVER 0x4030f0
-void CSub402E00::Sub_4030F0()
+void CSpanRasterizer::LinkFlatEdges()
 {
+	EDGENODE* pScan;
 	RENDEROBJ* pObj;
-	RENDEROBJ* pTarget;
 	RENDEROBJ* pObj2;
 	RENDEROBJ* pNext2;
 	RENDEROBJ* pPrev2;
 	CMerlinStatic* pSrc;
 	CMerlinTexture* pTex;
-	HEAPNODE* pNode;
-	HEAPNODE* pScan;
-	HEAPNODE* pNew;
-	HEAPNODE* pPrev;
-	HEAPNODE* pOldHead;
+	EDGENODE* pNode;
+	EDGENODE* pPrev;
+	EDGENODE* pOldHead;
 	DWORD dwArea;
 	DWORD dwDelta;
 	DWORD dwShift;
 	DWORD dwT1;
 	DWORD dwT2;
 	DWORD dwVal;
-	void* pSrcB;
-	void* pKey;
-	int nW56;
-	int nW54;
+	CMerlinTexture* pSrcB;
+	CMerlinTexture* pKey;
+	RENDEROBJ* pTarget;
+	DWORD nW56;
+	DWORD nW54;
 
-	g_pUnk_4A4490 = 0;
-	pObj = g_pUnk_4A4714;
-	pNode = (HEAPNODE*)g_abUnk_4A1D80;
-	if (pObj->m_pUnk2C != 0)
+	g_pEdgeList = 0;
+	pObj = g_pObjPool;
+	pNode = (EDGENODE*)g_abSpanArena;
+	if (pObj->m_pPoolNext != 0)
 	{
 		do
 		{
-			pObj = pObj->m_pUnk2C;
-		} while (pObj->m_pUnk2C != 0);
+			pObj = pObj->m_pPoolNext;
+		} while (pObj->m_pPoolNext != 0);
 	}
-	g_pUnk_4A1D60 = (BYTE*)pNode;
+	g_pArenaCursor = (BYTE*)pNode;
 	if (pObj != 0)
 	{
 		for (;;)
 		{
-			pObj->m_pUnk40 = 0;
-			pObj->m_pUnk4C = 0;
-			pObj->m_dwUnk8C = 0;
-			pObj->m_pUnk84 = &g_dwUnk_4C5208;
-			pObj->m_pUnk88 = &g_dwUnk_4C5208;
-			if (pObj->m_dwUnk0C != 0)
+			pObj->m_pTopNeighbour = 0;
+			pObj->m_pBottomNeighbour = 0;
+			pObj->m_bHasFlats = 0;
+			pObj->m_pTopEdgeY = &g_dwNoEdgeY;
+			pObj->m_pBottomEdgeY = &g_dwNoEdgeY;
+			if (pObj->m_bSprite != 0)
 			{
 				// sprite object: derive the span from the sprite's
 				// height words
-				nW56 = (short)((CMerlinDynamic*)pObj->m_pUnk10)->m_wUnk56;
-				nW54 = (short)((CMerlinDynamic*)pObj->m_pUnk10)->m_wUnk54;
-				dwArea = (DWORD)(nW56 - nW54) << 0x10;
-				pObj->m_dwUnk60 = (DWORD)nW56;
-				pObj->m_dwUnk64 = (DWORD)nW54;
-				pObj->m_dwUnk68 = dwArea;
-				pObj->m_dwUnk6C = g_dwUnk_4A4544 - (DWORD)nW56;
-				pObj->m_dwUnkA0 = 1;
-				pObj->m_dwUnk70 = g_dwUnk_4A4544 - (DWORD)nW54;
-				pTex = ((CMerlinDynamic*)pObj->m_pUnk10)->m_pUnk50;
-				pObj->m_pUnk5C = pTex;
+				nW56 = (DWORD)(short)((CMerlinDynamic*)pObj->m_pSource)->m_wTop;
+				nW54 = (DWORD)(short)((CMerlinDynamic*)pObj->m_pSource)->m_wBottom;
+				dwArea = (nW56 - nW54) << 0x10;
+				pObj->m_dwTopZ = nW56;
+				pObj->m_dwBottomZ = nW54;
+				pObj->m_dwHeight16 = dwArea;
+				pObj->m_dwTopDZ = g_dwEyeZ - nW56;
+				pObj->m_bMasked = 1;
+				pObj->m_dwBottomDZ = g_dwEyeZ - nW54;
+				pTex = ((CMerlinDynamic*)pObj->m_pSource)->m_pTexture;
+				pObj->m_pTex = pTex;
 				if (pTex != 0)
 				{
-					pObj->m_dwUnk9C = (DWORD)(((int)dwArea >> 0x10) /
-						(short)pTex->m_wUnk18);
+					pObj->m_dwTexScaleLog2 = (DWORD)(((int)dwArea >> 0x10) /
+						(short)pTex->m_wHeight);
 				}
 				else
 				{
-					pObj->m_dwUnk18 = 1;
+					pObj->m_bHidden = 1;
 				}
 				dwShift = 0;
-				while ((int)pObj->m_dwUnk9C > 1)
+				while ((int)pObj->m_dwTexScaleLog2 > 1)
 				{
 					dwShift++;
-					pObj->m_dwUnk9C = (DWORD)((int)pObj->m_dwUnk9C >> 1);
+					pObj->m_dwTexScaleLog2 = (DWORD)((int)pObj->m_dwTexScaleLog2 >> 1);
 				}
-				pObj->m_dwUnk9C = dwShift;
+				pObj->m_dwTexScaleLog2 = dwShift;
 			}
 			else
 			{
-				pSrc = (CMerlinStatic*)pObj->m_pUnk10;
-				pScan = g_pUnk_4A4490;
-				nW56 = (short)pSrc->m_wUnkA6;
-				nW54 = (short)pSrc->m_wUnkA4;
-				pObj->m_dwUnk60 = (DWORD)nW56;
-				dwDelta = (DWORD)(nW56 - nW54);
-				pObj->m_dwUnk64 = (DWORD)nW54;
+				pSrc = (CMerlinStatic*)pObj->m_pSource;
+				pScan = g_pEdgeList;
+				nW56 = (DWORD)(short)pSrc->m_wTop;
+				nW54 = (DWORD)(short)pSrc->m_wBottom;
+				pObj->m_dwTopZ = nW56;
+				dwDelta = nW56 - nW54;
+				pObj->m_dwBottomZ = nW54;
 				dwArea = dwDelta << 0x10;
-				pObj->m_dwUnk68 = dwArea;
-				pObj->m_dwUnk6C = (DWORD)((int)g_dwUnk_4A4544 - nW56);
-				pObj->m_dwUnk70 = (DWORD)((int)g_dwUnk_4A4544 - nW54);
-				if (pObj->m_dwUnk18 != 0)
+				pObj->m_dwHeight16 = dwArea;
+				pObj->m_dwTopDZ = g_dwEyeZ - nW56;
+				pObj->m_dwBottomDZ = g_dwEyeZ - nW54;
+				if (pObj->m_bHidden != 0)
 				{
-					dwT1 = pSrc->m_dwY1;
-					dwT1 -= g_pUnk_4A1D68->m_dwUnk4C;
-					dwT1 *= pSrc->m_dwDeltaX;
-					dwT2 = g_pUnk_4A1D68->m_dwUnk48;
-					dwT2 -= pSrc->m_dwX1;
-					pObj->m_dwUnk14 = 0;
-					dwT2 *= pSrc->m_dwDeltaY;
+					dwT1 = (pSrc->m_dwY1 -
+						g_pRenderCtx->m_dwCamY) *
+						pSrc->m_dwDeltaX;
+					dwT2 = (g_pRenderCtx->m_dwCamX -
+						pSrc->m_dwX1) * pSrc->m_dwDeltaY;
+					pObj->m_bFrontFace = 0;
 					if ((int)(dwT1 + dwT2) >= 0)
-						pObj->m_dwUnk14 = 1;
+						pObj->m_bFrontFace = 1;
 				}
-				if (pObj->m_dwUnk14 != 0)
+				if (pObj->m_bFrontFace != 0)
 				{
-					pObj->m_pUnk5C = pSrc->m_pUnk94;
-					pObj->m_dwUnkA0 = pSrc->m_dwUnkB0;
+					pObj->m_pTex = pSrc->m_pFrontTex;
+					pObj->m_bMasked = pSrc->m_bFrontTransparent;
 				}
 				else
 				{
-					pObj->m_pUnk5C = pSrc->m_pUnk98;
-					pObj->m_dwUnkA0 = pSrc->m_dwUnkB4;
+					pObj->m_pTex = pSrc->m_pBackTex;
+					pObj->m_bMasked = pSrc->m_bBackTransparent;
 				}
-				if (pObj->m_pUnk5C != 0)
+				if (pObj->m_pTex != 0)
 				{
-					dwT1 = (DWORD)(short)pObj->m_pUnk5C->m_wUnk18;
-					pObj->m_dwUnk9C = (DWORD)(((int)dwArea >> 0x10) /
+					dwT1 = (DWORD)(short)pObj->m_pTex->m_wHeight;
+					pObj->m_dwTexScaleLog2 = (DWORD)(((int)dwArea >> 0x10) /
 						(int)dwT1);
 				}
 				else
 				{
-					pObj->m_dwUnk18 = 1;
+					pObj->m_bHidden = 1;
 				}
 				dwShift = 0;
-				while ((int)pObj->m_dwUnk9C > 1)
+				while ((int)pObj->m_dwTexScaleLog2 > 1)
 				{
 					dwShift++;
-					pObj->m_dwUnk9C = (DWORD)((int)pObj->m_dwUnk9C >> 1);
+					pObj->m_dwTexScaleLog2 = (DWORD)((int)pObj->m_dwTexScaleLog2 >> 1);
 				}
-				pObj->m_dwUnk9C = dwShift;
-				if (pObj->m_dwUnk14 != 0)
+				pObj->m_dwTexScaleLog2 = dwShift;
+				if (pObj->m_bFrontFace != 0)
 				{
 					// merge matching front-face edges out of the list
-					if (g_pUnk_4A4490 != 0)
+					if (g_pEdgeList != 0)
 					{
 						do
 						{
-							dwVal = pScan->m_dwUnk14;
-							if (dwVal == (DWORD)nW56)
+							dwVal = pScan->m_dwEdgeZ;
+							if (dwVal == nW56)
 							{
-								pKey = pScan->m_pUnk04;
-								if (pSrc->m_pUnk90 == pKey)
+								pKey = pScan->m_pFlatTex;
+								if (pSrc->m_pBackTopTex == pKey)
 								{
-									pTarget = pScan->m_pUnk00;
+									pTarget = pScan->m_pObj;
 									HOVER_SPANMERGE(pObj, pScan,
 										pPrev, pKey,
-										&pObj->m_acUnkAC.m_dwUnk08);
+										&pObj->m_run.m_dwTopY);
 								}
 							}
-							if (dwVal == (DWORD)nW54)
+							if (dwVal == nW54)
 							{
-								pKey = pScan->m_pUnk04;
-								if (pSrc->m_pUnkA0 == pKey)
+								pKey = pScan->m_pFlatTex;
+								if (pSrc->m_pBackBottomTex == pKey)
 								{
-									pTarget = pScan->m_pUnk00;
+									pTarget = pScan->m_pObj;
 									HOVER_SPANMERGE_LO(pObj, pScan,
 										pPrev, pKey,
-										&pObj->m_acUnkAC.m_dwUnk0C);
+										&pObj->m_run.m_dwBottomY);
 								}
 							}
-							pScan = pScan->m_pUnk08;
+							pScan = pScan->m_pNext;
 						} while (pScan != 0);
 					}
-					if (pObj->m_dwUnk20 == 0)
+					if (pObj->m_bCovered == 0)
 					{
-						pSrcB = pSrc->m_pUnk8C;
+						pSrcB = pSrc->m_pFrontTopTex;
 						if (pSrcB != 0)
 						{
-							pOldHead = g_pUnk_4A4490;
-							pNew = pNode;
-							pNew->m_pUnk0C = 0;
-							g_pUnk_4A4490 = pNew;
-							pNew->m_pUnk08 = pOldHead;
+							pOldHead = g_pEdgeList;
+							pNode->m_pPrev = 0;
+							g_pEdgeList = pNode;
+							pNode->m_pNext = pOldHead;
 							if (pOldHead != 0)
-								pOldHead->m_pUnk0C = pNew;
-							pNew->m_pUnk04 = pSrcB;
-							pNew->m_pUnk00 = pObj;
-							pNew->m_dwUnk10 = 1;
-							pNew->m_dwUnk14 = (DWORD)nW56;
+								pOldHead->m_pPrev = pNode;
+							pNode->m_pFlatTex = pSrcB;
+							pNode->m_pObj = pObj;
+							pNode->m_bTopEdge = 1;
+							pNode->m_dwEdgeZ = nW56;
 							pNode++;
 						}
-						pSrcB = pSrc->m_pUnk9C;
+						pSrcB = pSrc->m_pFrontBottomTex;
 						if (pSrcB != 0 && (int)dwDelta > 0)
 						{
-							pOldHead = g_pUnk_4A4490;
-							pNew = pNode;
-							pNew->m_pUnk0C = 0;
-							g_pUnk_4A4490 = pNew;
-							pNew->m_pUnk08 = pOldHead;
+							pOldHead = g_pEdgeList;
+							pNode->m_pPrev = 0;
+							g_pEdgeList = pNode;
+							pNode->m_pNext = pOldHead;
 							if (pOldHead != 0)
-								pOldHead->m_pUnk0C = pNew;
-							pNew->m_pUnk04 = pSrcB;
-							pNew->m_dwUnk14 = (DWORD)nW54;
-							pNew->m_pUnk00 = pObj;
-							pNew->m_dwUnk10 = 0;
+								pOldHead->m_pPrev = pNode;
+							pNode->m_pFlatTex = pSrcB;
+							pNode->m_dwEdgeZ = nW54;
+							pNode->m_pObj = pObj;
+							pNode->m_bTopEdge = 0;
 							pNode++;
 						}
 					}
@@ -1021,187 +1016,189 @@ void CSub402E00::Sub_4030F0()
 					// merge matching back-face edges out of the list
 					while (pScan != 0)
 					{
-						dwVal = pScan->m_dwUnk14;
-						if (dwVal == (DWORD)nW56)
+						dwVal = pScan->m_dwEdgeZ;
+						if (dwVal == nW56)
 						{
-							pKey = pScan->m_pUnk04;
-							if (pSrc->m_pUnk8C == pKey)
+							pKey = pScan->m_pFlatTex;
+							if (pSrc->m_pFrontTopTex == pKey)
 							{
-								pTarget = pScan->m_pUnk00;
+								pTarget = pScan->m_pObj;
 								HOVER_SPANMERGE(pObj, pScan, pPrev,
-									pKey, &pObj->m_acUnkAC.m_dwUnk08);
+									pKey, &pObj->m_run.m_dwTopY);
 							}
 						}
-						if (dwVal == (DWORD)nW54)
+						if (dwVal == nW54)
 						{
-							pKey = pScan->m_pUnk04;
-							if (pSrc->m_pUnk9C == pKey)
+							pKey = pScan->m_pFlatTex;
+							if (pSrc->m_pFrontBottomTex == pKey)
 							{
-								pTarget = pScan->m_pUnk00;
+								pTarget = pScan->m_pObj;
 								HOVER_SPANMERGE_LO(pObj, pScan, pPrev,
-									pKey, &pObj->m_acUnkAC.m_dwUnk0C);
+									pKey, &pObj->m_run.m_dwBottomY);
 							}
 						}
-						pScan = pScan->m_pUnk08;
+						pScan = pScan->m_pNext;
 					}
-					if (pObj->m_dwUnk20 == 0)
+					if (pObj->m_bCovered == 0)
 					{
-						pSrcB = pSrc->m_pUnk90;
+						pSrcB = pSrc->m_pBackTopTex;
 						if (pSrcB != 0)
 						{
-							pOldHead = g_pUnk_4A4490;
-							pNew = pNode;
-							pNew->m_pUnk0C = 0;
-							g_pUnk_4A4490 = pNew;
-							pNew->m_pUnk08 = pOldHead;
+							pOldHead = g_pEdgeList;
+							pNode->m_pPrev = 0;
+							g_pEdgeList = pNode;
+							pNode->m_pNext = pOldHead;
 							if (pOldHead != 0)
-								pOldHead->m_pUnk0C = pNew;
-							pNew->m_pUnk04 = pSrcB;
-							pNew->m_pUnk00 = pObj;
-							pNew->m_dwUnk10 = 1;
-							pNew->m_dwUnk14 = (DWORD)nW56;
+								pOldHead->m_pPrev = pNode;
+							pNode->m_pFlatTex = pSrcB;
+							pNode->m_pObj = pObj;
+							pNode->m_bTopEdge = 1;
+							pNode->m_dwEdgeZ = nW56;
 							pNode++;
 						}
-						pSrcB = pSrc->m_pUnkA0;
+						pSrcB = pSrc->m_pBackBottomTex;
 						if (pSrcB != 0 && (int)dwDelta > 0)
 						{
-							pOldHead = g_pUnk_4A4490;
-							pNew = pNode;
-							pNew->m_pUnk0C = 0;
-							g_pUnk_4A4490 = pNew;
-							pNew->m_pUnk08 = pOldHead;
+							pOldHead = g_pEdgeList;
+							pNode->m_pPrev = 0;
+							g_pEdgeList = pNode;
+							pNode->m_pNext = pOldHead;
 							if (pOldHead != 0)
-								pOldHead->m_pUnk0C = pNew;
-							pNew->m_pUnk04 = pSrcB;
-							pNew->m_dwUnk14 = (DWORD)nW54;
-							pNew->m_pUnk00 = pObj;
-							pNew->m_dwUnk10 = 0;
+								pOldHead->m_pPrev = pNode;
+							pNode->m_pFlatTex = pSrcB;
+							pNode->m_dwEdgeZ = nW54;
+							pNode->m_pObj = pObj;
+							pNode->m_bTopEdge = 0;
 							pNode++;
 						}
 					}
 				}
 			}
-			g_pUnk_4A1D60 = (BYTE*)pNode;
-			pObj = pObj->m_pUnk28;
+			g_pArenaCursor = (BYTE*)pNode;
+			pObj = pObj->m_pPoolPrev;
 			if (pObj == 0)
 				break;
 		}
 	}
 	// turn the edge list into the objects' edge pointers
-	pScan = g_pUnk_4A4490;
+	pScan = g_pEdgeList;
 	while (pScan != 0)
 	{
-		pTarget = pScan->m_pUnk00;
-		if (pTarget->m_dwUnk18 != 0)
+		pTarget = pScan->m_pObj;
+		if (pTarget->m_bHidden != 0)
 		{
-			pPrev = pScan->m_pUnk0C;
-			pScan = pScan->m_pUnk08;
+			pPrev = pScan->m_pPrev;
+			pScan = pScan->m_pNext;
 			if (pPrev != 0)
-				pPrev->m_pUnk08 = pScan;
+				pPrev->m_pNext = pScan;
 			else
-				g_pUnk_4A4490 = pScan;
+				g_pEdgeList = pScan;
 			if (pScan == 0)
 				break;
-			pScan->m_pUnk0C = pPrev;
+			pScan->m_pPrev = pPrev;
 			continue;
 		}
-		if (pScan->m_dwUnk10 != 0)
+		if (pScan->m_bTopEdge != 0)
 		{
-			pTarget->m_pUnk40 = (RENDEROBJ*)-1;
-			pTarget->m_dwUnk48 = (DWORD)pScan->m_pUnk04;
-			pTarget->m_dwUnk8C = 1;
-			if ((int)pScan->m_dwUnk14 > (int)g_dwUnk_4A4544)
+			pKey = pScan->m_pFlatTex;
+			pTarget->m_pTopNeighbour = (RENDEROBJ*)-1;
+			pTarget->m_pTopFlatTex = pKey;
+			pTarget->m_bHasFlats = 1;
+			if ((int)pScan->m_dwEdgeZ > (int)g_dwEyeZ)
 			{
-				pTarget->m_dwUnk44 = 1;
-				pTarget->m_pUnk84 = &g_dwUnk_4A4568;
+				pTarget->m_bTopAboveEye = 1;
+				pTarget->m_pTopEdgeY = &g_dwAboveClipY;
 			}
 			else
 			{
-				pTarget->m_pUnk84 = &g_dwUnk_4A4530;
-				pTarget->m_dwUnk44 = 0;
+				pTarget->m_pTopEdgeY = &g_dwBelowClipY;
+				pTarget->m_bTopAboveEye = 0;
 			}
 		}
 		else
 		{
-			pTarget->m_pUnk4C = (RENDEROBJ*)-1;
-			pTarget->m_dwUnk54 = (DWORD)pScan->m_pUnk04;
-			pTarget->m_dwUnk8C = 1;
-			if ((int)pScan->m_dwUnk14 > (int)g_dwUnk_4A4544)
+			pKey = pScan->m_pFlatTex;
+			pTarget->m_pBottomNeighbour = (RENDEROBJ*)-1;
+			pTarget->m_pBottomFlatTex = pKey;
+			pTarget->m_bHasFlats = 1;
+			if ((int)pScan->m_dwEdgeZ > (int)g_dwEyeZ)
 			{
-				pTarget->m_dwUnk50 = 1;
-				pTarget->m_pUnk88 = &g_dwUnk_4A4568;
+				pTarget->m_bBottomAboveEye = 1;
+				pTarget->m_pBottomEdgeY = &g_dwAboveClipY;
 			}
 			else
 			{
-				pTarget->m_pUnk88 = &g_dwUnk_4A4530;
-				pTarget->m_dwUnk50 = 0;
+				pTarget->m_pBottomEdgeY = &g_dwBelowClipY;
+				pTarget->m_bBottomAboveEye = 0;
 			}
 		}
-		pScan = pScan->m_pUnk08;
+		pScan = pScan->m_pNext;
 	}
 	// copy the static list into the active list links and re-sort it
-	pObj2 = g_pUnk_4A471C;
-	if (pObj2->m_pUnk34 != 0)
+	pObj2 = g_pColumnObjs;
+	if (pObj2->m_pColNext != 0)
 	{
 		do
 		{
-			pNext2 = pObj2->m_pUnk34;
-			pPrev2 = pObj2->m_pUnk30;
-			pObj2->m_pUnk38 = pNext2;
-			pObj2->m_pUnk3C = pPrev2;
+			pNext2 = pObj2->m_pColNext;
+			pPrev2 = pObj2->m_pColPrev;
+			pObj2->m_pActiveNext = pNext2;
+			pObj2->m_pActivePrev = pPrev2;
 			pObj2 = pNext2;
-		} while (pNext2->m_pUnk34 != 0);
+		} while (pNext2->m_pColNext != 0);
 	}
-	pPrev2 = pObj2->m_pUnk30;
-	pObj2->m_pUnk3C = pPrev2;
-	pObj2->m_pUnk38 = 0;
+	pPrev2 = pObj2->m_pColPrev;
+	pObj2->m_pActivePrev = pPrev2;
+	pObj2->m_pActiveNext = 0;
 	if (pPrev2 != 0)
 	{
 		do
 		{
-			if (pObj2->m_dwUnk8C != 0)
-				Hover_sub_406A80(pObj2);
-			pPrev2 = pObj2->m_pUnk3C;
+			if (pObj2->m_bHasFlats != 0)
+				Hover_SortBehindNeighbours(pObj2);
+			pPrev2 = pObj2->m_pActivePrev;
 			if (pPrev2 != 0)
 				pObj2 = pPrev2;
-		} while (pObj2->m_pUnk3C != 0);
+		} while (pObj2->m_pActivePrev != 0);
 	}
-	pObj2->m_pUnk3C = 0;
-	g_pUnk_4A4720 = pObj2;
-	m_dwUnk28 = 0;
+	pObj2->m_pActivePrev = 0;
+	g_pActiveObjs = pObj2;
+	m_bRelink = 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// CSub403850
+// CRenderContext
 
 // hover.exe:0x403850
 // FUNCTION: HOVER 0x403850
-DWORD* CSub403850::Sub_403850(DWORD dwY)
+DWORD* CRenderContext::GetShadeRow(DWORD dwY)
 {
 	DWORD dwOff;
+	DWORD* pTable;
 
 	dwOff = dwY - 0x15E;
 	if ((int)dwOff < 1)
 		dwOff = 1;
 	dwOff &= 0xFFFFFFC0;
+	pTable = m_pShade;
 	if ((int)dwOff > 0xFC0)
-		return (DWORD*)((BYTE*)m_pUnk60 + 0x3F00);
-	return (DWORD*)((BYTE*)m_pUnk60 + dwOff * 4);
+		return pTable + 0xFC0;
+	return pTable + dwOff;
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// CSub403980
+// CFlatRunHeap
 
 // Find-or-create the span-run node for one (scanline, texture) pair and
 // append the x span [dwC, dwD] to it. The node is keyed on
 // (dwA << 0x12) + dwB, so every run in one node shares the scanline dwA and
-// the texture dwB; Sub_403A60 later passes that texture to Sub_402B10.
+// the texture dwB; FlushRuns later passes that texture to DrawFlatRow.
 
 // hover.exe:0x403980
 // FUNCTION: HOVER 0x403980
-void CSub403980::Sub_403980(DWORD dwA, DWORD dwB, DWORD dwC, DWORD dwD)
+void CFlatRunHeap::AddFlatRun(DWORD dwA, CMerlinTexture* pTex, DWORD dwC, DWORD dwD)
 {
-	SPANNODE* pNode;
+	FLATNODE* pNode;
 	BYTE* pEnd;
 	BYTE* pCur;
 	DWORD dwKey;
@@ -1209,50 +1206,52 @@ void CSub403980::Sub_403980(DWORD dwA, DWORD dwB, DWORD dwC, DWORD dwD)
 	WORD* pw;
 	WORD** ppw;
 
-	pNode = m_pUnk0C;
-	dwKey = (dwA << 0x12) + dwB;
+	pNode = m_pFlatHead;
+	// The key folds the texture's address into 32 bits (a 64-bit build
+	// would need a real hash here).
+	dwKey = (dwA << 0x12) + (DWORD)pTex;
 	while (pNode != 0)
 	{
-		if (pNode->m_dwUnk20 == dwKey)
+		if (pNode->m_dwKey == dwKey)
 			break;
-		pNode = pNode->m_pUnk28;
+		pNode = pNode->m_pNext;
 	}
 	if (pNode == 0)
 	{
 		// allocate a new node (header + buffers) from the heap
-		if (m_pUnk10 != 0)
-			m_pUnk10->m_pUnk28 = (SPANNODE*)m_pUnk1C;
+		if (m_pFlatTail != 0)
+			m_pFlatTail->m_pNext = (FLATNODE*)m_pHeapCursor;
 		else
-			m_pUnk0C = (SPANNODE*)m_pUnk1C;
-		m_pUnk10 = pNode = (SPANNODE*)m_pUnk1C;
-		pCur = (BYTE*)pNode + 0x2C;
-		m_pUnk1C = pCur;
-		pNode->m_pUnk00 = (WORD*)pCur;
+			m_pFlatHead = (FLATNODE*)m_pHeapCursor;
+		m_pFlatTail = pNode = (FLATNODE*)m_pHeapCursor;
+		pCur = (BYTE*)(pNode + 1);
+		m_pHeapCursor = pCur;
+		pNode->m_pRunsA = (WORD*)pCur;
 		pCur += 0xA0;
-		m_pUnk1C = pCur;
-		pNode->m_pUnk04 = (WORD*)pCur;
-		pEnd = pCur + m_dwUnk00 * 2 + 0xA0;
+		m_pHeapCursor = pCur;
+		pNode->m_pRunsB = (WORD*)pCur;
+		pEnd = pCur + m_dwRows * 2 + 0xA0;
 		pCur += 0xA0;
-		m_pUnk1C = pCur;
-		pNode->m_pUnk10 = (WORD*)pCur;
-		m_pUnk1C = pEnd;
-		pNode->m_pUnk28 = 0;
-		pNode->m_dwUnk14 = 0;
-		pNode->m_dwUnk18 = 0;
-		pNode->m_pUnk08 = &pNode->m_pUnk00;
-		pNode->m_dwUnk1C = dwA;
-		pNode->m_pUnk0C = &pNode->m_pUnk04;
-		pNode->m_dwUnk24 = dwB;
-		pNode->m_dwUnk20 = dwKey;
-		m_dwUnk14++;
-		if (m_pUnk18 + 0x16B48 < pEnd)
+		m_pHeapCursor = pCur;
+		pNode->m_pRowStartCol = (WORD*)pCur;
+		m_pHeapCursor = pEnd;
+		pNode->m_pNext = 0;
+		pNode->m_dwCurRuns = 0;
+		pNode->m_dwPrevRuns = 0;
+		pNode->m_ppPrevRuns = &pNode->m_pRunsA;
+		pNode->m_dwHeight = dwA;
+		pNode->m_ppCurRuns = &pNode->m_pRunsB;
+		pNode->m_pTex = pTex;
+		pNode->m_dwKey = dwKey;
+		m_dwFlatNodes++;
+		if (m_pHeapBase + 0x16B48 < pEnd)
 			OutputDebugStringA("Blowing floor heap");	// hover.exe:0x4C55F4
 	}
-	dwCount = pNode->m_dwUnk14;
+	dwCount = pNode->m_dwCurRuns;
 	if ((int)dwCount < 0x28)
 	{
-		ppw = pNode->m_pUnk0C;
-		pNode->m_dwUnk14 = ++dwCount;
+		ppw = pNode->m_ppCurRuns;
+		pNode->m_dwCurRuns = ++dwCount;
 		pw = *ppw + (dwCount - 1) * 2;
 		pw[0] = (WORD)dwC;
 		pw[1] = (WORD)dwD;
@@ -1261,18 +1260,18 @@ void CSub403980::Sub_403980(DWORD dwA, DWORD dwB, DWORD dwC, DWORD dwD)
 
 // One node's merge pass, written once because the original carries two
 // compiled copies of it: the first for the current node (which emits its
-// runs through Sub_406740) and the second for every node of the span-run
-// list (Sub_402B10).  EMIT names the drawer call.
+// runs through DrawSkyRow) and the second for every node of the span-run
+// list (DrawFlatRow).  EMIT names the drawer call.
 //
 // The new spans of the node are copied into the merge scratch buffer, then
 // walked in lockstep with the spans accumulated by the previous pass: where
 // an old span is uncovered its index words are handed to the drawer, where a
 // new span is uncovered the index words are stamped with the current column.
 #define HOVER_SPANMERGE_NODE(EMIT)													\
-	pNew = m_pUnk04;																\
-	pSrc = *pNode->m_pUnk0C;														\
+	pNew = m_pScratchRuns;																\
+	pSrc = *pNode->m_ppCurRuns;														\
 	pDst = pNew;																	\
-	dwCount = pNode->m_dwUnk14;														\
+	dwCount = pNode->m_dwCurRuns;														\
 	if ((int)dwCount > 0)															\
 	{																				\
 		do																			\
@@ -1284,11 +1283,11 @@ void CSub403980::Sub_403980(DWORD dwA, DWORD dwB, DWORD dwC, DWORD dwD)
 			dwCount--;																\
 		} while (dwCount != 0);														\
 	}																				\
-	dwStep = g_dwUnk_4A453C;														\
+	dwStep = g_dwRowStep;														\
 	nNew = 0;																		\
 	nOld = 0;																		\
-	pOld = *pNode->m_pUnk08;														\
-	if ((int)pNode->m_dwUnk18 > 0)													\
+	pOld = *pNode->m_ppPrevRuns;														\
+	if ((int)pNode->m_dwPrevRuns > 0)													\
 	{																				\
 		do																			\
 		{																			\
@@ -1297,7 +1296,7 @@ void CSub403980::Sub_403980(DWORD dwA, DWORD dwB, DWORD dwC, DWORD dwD)
 			int nNewX0;																\
 			volatile int nNewX1;													\
 																					\
-			if ((int)pNode->m_dwUnk14 <= (int)nNew)									\
+			if ((int)pNode->m_dwCurRuns <= (int)nNew)									\
 				break;																\
 			nNewX0 = (short)pNew[0];												\
 			nOldX0 = (short)pOld[0];												\
@@ -1311,7 +1310,7 @@ void CSub403980::Sub_403980(DWORD dwA, DWORD dwB, DWORD dwC, DWORD dwD)
 						do															\
 						{															\
 							EMIT(nOldX0);											\
-							dwStep = g_dwUnk_4A453C;								\
+							dwStep = g_dwRowStep;								\
 							nOldX0 += (int)dwStep;									\
 						} while (nOldX1 >= nOldX0);									\
 					}																\
@@ -1328,7 +1327,7 @@ void CSub403980::Sub_403980(DWORD dwA, DWORD dwB, DWORD dwC, DWORD dwD)
 							do														\
 							{														\
 								EMIT(nOldX0);										\
-								dwStep = g_dwUnk_4A453C;							\
+								dwStep = g_dwRowStep;							\
 								nOldX0 += (int)dwStep;								\
 							} while (nNewX0 > nOldX0);								\
 						}															\
@@ -1344,7 +1343,7 @@ void CSub403980::Sub_403980(DWORD dwA, DWORD dwB, DWORD dwC, DWORD dwD)
 							do														\
 							{														\
 								EMIT(nOldX0);										\
-								dwStep = g_dwUnk_4A453C;							\
+								dwStep = g_dwRowStep;							\
 								nOldX0 += (int)dwStep;								\
 							} while (nNewX0 > nOldX0);								\
 						}															\
@@ -1362,10 +1361,10 @@ void CSub403980::Sub_403980(DWORD dwA, DWORD dwB, DWORD dwC, DWORD dwD)
 				{																	\
 					if (nNewX1 >= nNewX0)											\
 					{																\
-						pIdx = pNode->m_pUnk10 + nNewX0;							\
+						pIdx = pNode->m_pRowStartCol + nNewX0;							\
 						do															\
 						{															\
-							*pIdx = *(WORD*)&g_dwUnk_4A4534;						\
+							*pIdx = *(WORD*)&g_dwCurColumn;						\
 							nNewX0 += (int)dwStep;									\
 							pIdx += dwStep;											\
 						} while (nNewX1 >= nNewX0);									\
@@ -1380,10 +1379,10 @@ void CSub403980::Sub_403980(DWORD dwA, DWORD dwB, DWORD dwC, DWORD dwD)
 					{																\
 						if (nNewX0 < nOldX0)										\
 						{															\
-							pIdx = pNode->m_pUnk10 + nNewX0;						\
+							pIdx = pNode->m_pRowStartCol + nNewX0;						\
 							do														\
 							{														\
-								*pIdx = *(WORD*)&g_dwUnk_4A4534;					\
+								*pIdx = *(WORD*)&g_dwCurColumn;					\
 								nNewX0 += (int)dwStep;								\
 								pIdx += dwStep;										\
 							} while (nOldX0 > nNewX0);								\
@@ -1397,10 +1396,10 @@ void CSub403980::Sub_403980(DWORD dwA, DWORD dwB, DWORD dwC, DWORD dwD)
 					{																\
 						if (nNewX0 < nOldX0)										\
 						{															\
-							pIdx = pNode->m_pUnk10 + nNewX0;						\
+							pIdx = pNode->m_pRowStartCol + nNewX0;						\
 							do														\
 							{														\
-								*pIdx = *(WORD*)&g_dwUnk_4A4534;					\
+								*pIdx = *(WORD*)&g_dwCurColumn;					\
 								nNewX0 += (int)dwStep;								\
 								pIdx += dwStep;										\
 							} while (nOldX0 > nNewX0);								\
@@ -1412,14 +1411,14 @@ void CSub403980::Sub_403980(DWORD dwA, DWORD dwB, DWORD dwC, DWORD dwD)
 					}																\
 				}																	\
 			}																		\
-		} while ((int)pNode->m_dwUnk18 > (int)nOld);								\
+		} while ((int)pNode->m_dwPrevRuns > (int)nOld);								\
 	}																				\
-	if ((int)nOld < (int)pNode->m_dwUnk18)											\
+	if ((int)nOld < (int)pNode->m_dwPrevRuns)											\
 	{																				\
 		i = nOld;																	\
 		do																			\
 		{																			\
-			pOld = *pNode->m_pUnk08 + i * 2;										\
+			pOld = *pNode->m_ppPrevRuns + i * 2;										\
 			nX0 = (short)pOld[0];													\
 			nX1 = (short)pOld[1];													\
 			if (nX1 >= nX0)															\
@@ -1427,29 +1426,29 @@ void CSub403980::Sub_403980(DWORD dwA, DWORD dwB, DWORD dwC, DWORD dwD)
 				do																	\
 				{																	\
 					EMIT(nX0);														\
-					dwStep = g_dwUnk_4A453C;										\
+					dwStep = g_dwRowStep;										\
 					nX0 += (int)dwStep;												\
-					pOld = *pNode->m_pUnk08 + i * 2;								\
+					pOld = *pNode->m_ppPrevRuns + i * 2;								\
 					nX1 = (short)pOld[1];											\
 				} while (nX1 >= nX0);												\
 			}																		\
 			i++;																	\
-		} while ((int)pNode->m_dwUnk18 > (int)i);									\
+		} while ((int)pNode->m_dwPrevRuns > (int)i);									\
 	}																				\
-	if ((int)nNew < (int)pNode->m_dwUnk14)											\
+	if ((int)nNew < (int)pNode->m_dwCurRuns)											\
 	{																				\
-		pDst = m_pUnk04 + nNew * 2 + 1;												\
-		dwCount = pNode->m_dwUnk14 - nNew;											\
+		pDst = m_pScratchRuns + nNew * 2 + 1;												\
+		dwCount = pNode->m_dwCurRuns - nNew;											\
 		do																			\
 		{																			\
 			nX0 = (short)pDst[-1];													\
 			nX1 = (short)pDst[0];													\
 			if (nX0 <= nX1)															\
 			{																		\
-				pIdx = pNode->m_pUnk10 + nX0;										\
+				pIdx = pNode->m_pRowStartCol + nX0;										\
 				do																	\
 				{																	\
-					*pIdx = *(WORD*)&g_dwUnk_4A4534;								\
+					*pIdx = *(WORD*)&g_dwCurColumn;								\
 					nX0 += (int)dwStep;												\
 					pIdx += dwStep;													\
 				} while (nX0 <= nX1);												\
@@ -1458,29 +1457,29 @@ void CSub403980::Sub_403980(DWORD dwA, DWORD dwB, DWORD dwC, DWORD dwD)
 			dwCount--;																\
 		} while (dwCount != 0);														\
 	}																				\
-	ppA = pNode->m_pUnk0C;															\
-	ppB = pNode->m_pUnk08;															\
-	dwCount = pNode->m_dwUnk14;														\
-	pNode->m_pUnk0C = ppB;															\
-	pNode->m_pUnk08 = ppA;															\
-	pNode->m_dwUnk18 = dwCount;														\
-	pNode->m_dwUnk14 = 0
+	ppA = pNode->m_ppCurRuns;															\
+	ppB = pNode->m_ppPrevRuns;															\
+	dwCount = pNode->m_dwCurRuns;														\
+	pNode->m_ppCurRuns = ppB;															\
+	pNode->m_ppPrevRuns = ppA;															\
+	pNode->m_dwPrevRuns = dwCount;														\
+	pNode->m_dwCurRuns = 0
 
 // The flat (untextured) drawer of the current node's runs
 #define HOVER_SPANEMIT_FLAT(nX)										\
-	pRender->Sub_406740((DWORD)(short)pNode->m_pUnk10[nX], (DWORD)(nX))
+	pRender->DrawSkyRow((DWORD)(short)pNode->m_pRowStartCol[nX], (DWORD)(nX))
 
 // The textured drawer of a span-run node: the run carries its own scanline
-// (m_dwUnk1C) and CMerlinTexture (m_dwUnk24)
+// (m_dwHeight) and CMerlinTexture (m_pTex)
 #define HOVER_SPANEMIT_TEX(nX)										\
-	pRender->Sub_402B10((DWORD)(short)pNode->m_pUnk10[nX], (DWORD)(nX),	\
-		(CMerlinTexture*)pNode->m_dwUnk24, pNode->m_dwUnk1C)
+	pRender->DrawFlatRow((DWORD)(short)pNode->m_pRowStartCol[nX], (DWORD)(nX),	\
+		pNode->m_pTex, pNode->m_dwHeight)
 
 // hover.exe:0x403A60
 // FUNCTION: HOVER 0x403a60
-void CSub403980::Sub_403A60(CSub402E00* pRender)
+void CFlatRunHeap::FlushRuns(CSpanRasterizer* pRender)
 {
-	SPANNODE* pNode;
+	FLATNODE* pNode;
 	WORD* pNew;
 	WORD* pDst;
 	WORD* pSrc;
@@ -1496,15 +1495,15 @@ void CSub403980::Sub_403A60(CSub402E00* pRender)
 	int nX0;
 	int nX1;
 
-	pNode = m_pUnk08;
+	pNode = m_pSkyNode;
 	HOVER_SPANMERGE_NODE(HOVER_SPANEMIT_FLAT);
-	pNode = m_pUnk0C;
+	pNode = m_pFlatHead;
 	if (pNode != 0)
 	{
 		do
 		{
 			HOVER_SPANMERGE_NODE(HOVER_SPANEMIT_TEX);
-			pNode = pNode->m_pUnk28;
+			pNode = pNode->m_pNext;
 		} while (pNode != 0);
 	}
 }
@@ -1519,39 +1518,39 @@ void CSub403980::Sub_403A60(CSub402E00* pRender)
 // object has no spans at all.  The step is held in a local so that the pixel
 // pitch stays in one place across the three clip arms.
 // FUNCTION: HOVER 0x404030
-void CSub402E00::Sub_404030(RENDEROBJ* pObj, DWORD dwX, DWORD dwXMax)
+void CSpanRasterizer::CoverRows(RENDEROBJ* pObj, DWORD dwX, DWORD dwXMax)
 {
 	SPANENTRY* pSpan;
 	DWORD dwX0;
 	DWORD dwX1;
 	DWORD i;
-	DWORD dwStep;			// g_dwUnk_4A453C, the one-pixel step
+	DWORD dwStep;			// g_dwRowStep, the one-pixel step
 
-	dwStep = g_dwUnk_4A453C;
+	dwStep = g_dwRowStep;
 	for (;;)
 	{
-		if (pObj->m_dwUnk58 == 0)
+		if (pObj->m_bVisible == 0)
 			goto L_advance;
-		if (pObj->m_dwUnk8C != 0)
+		if (pObj->m_bHasFlats != 0)
 		{
-			dwX0 = pObj->m_dwUnk74;
-			dwX1 = pObj->m_dwUnk78;
+			dwX0 = pObj->m_dwMinY;
+			dwX1 = pObj->m_dwMaxY;
 			if ((int)dwX0 > (int)dwXMax)
 				goto L_advance;
 			if ((int)dwX1 < (int)dwX)
 				goto L_advance;
 			if ((int)dwX0 > (int)dwX)
 			{
-				if (pObj->m_pUnk38 != 0)
-					Sub_404030(pObj->m_pUnk38, dwX, dwX0 - dwStep);
+				if (pObj->m_pActiveNext != 0)
+					CoverRows(pObj->m_pActiveNext, dwX, dwX0 - dwStep);
 				else
-					m_pUnk00->Sub_406D00(dwX, dwX0 - dwStep);
+					m_pRunHeap->AddSkyRun(dwX, dwX0 - dwStep);
 				if ((int)dwX1 >= (int)dwXMax)
 				{
-					Sub_402630(pObj, dwX0, dwXMax);
+					DrawWallWithFlats(pObj, dwX0, dwXMax);
 					return;
 				}
-				Sub_402630(pObj, dwX0, dwX1);
+				DrawWallWithFlats(pObj, dwX0, dwX1);
 				dwX = dwX1 + dwStep;
 				if ((int)dwX1 >= (int)dwX)
 					return;
@@ -1561,36 +1560,36 @@ void CSub402E00::Sub_404030(RENDEROBJ* pObj, DWORD dwX, DWORD dwXMax)
 				goto L_advance;
 			if ((int)dwX1 > (int)dwXMax)
 			{
-				Sub_402630(pObj, dwX, dwXMax);
+				DrawWallWithFlats(pObj, dwX, dwXMax);
 				return;
 			}
-			Sub_402630(pObj, dwX, dwX1);
+			DrawWallWithFlats(pObj, dwX, dwX1);
 			dwX = dwX1 + dwStep;
 			if ((int)dwX1 >= (int)dwX)
 				return;
 			goto L_advance;
 		}
-		if (pObj->m_dwUnkA0 == 0)
+		if (pObj->m_bMasked == 0)
 		{
-			dwX0 = pObj->m_acUnkAC.m_dwUnk08;
-			dwX1 = pObj->m_acUnkAC.m_dwUnk0C;
-			pSpan = &pObj->m_acUnkAC;
+			dwX0 = pObj->m_run.m_dwTopY;
+			dwX1 = pObj->m_run.m_dwBottomY;
+			pSpan = &pObj->m_run;
 			if ((int)dwX0 > (int)dwXMax)
 				goto L_advance;
 			if ((int)dwX1 < (int)dwX)
 				goto L_advance;
 			if ((int)dwX0 > (int)dwX)
 			{
-				if (pObj->m_pUnk38 != 0)
-					Sub_404030(pObj->m_pUnk38, dwX, dwX0 - dwStep);
+				if (pObj->m_pActiveNext != 0)
+					CoverRows(pObj->m_pActiveNext, dwX, dwX0 - dwStep);
 				else
-					m_pUnk00->Sub_406D00(dwX, dwX0 - dwStep);
+					m_pRunHeap->AddSkyRun(dwX, dwX0 - dwStep);
 				if ((int)dwX1 >= (int)dwXMax)
 				{
-					Sub_402990(pObj, pSpan, dwX0, dwXMax);
+					DrawWallRun(pObj, pSpan, dwX0, dwXMax);
 					return;
 				}
-				Sub_402990(pObj, pSpan, dwX0, dwX1);
+				DrawWallRun(pObj, pSpan, dwX0, dwX1);
 				dwX = dwX1 + dwStep;
 				if ((int)dwX1 >= (int)dwX)
 					return;
@@ -1600,65 +1599,65 @@ void CSub402E00::Sub_404030(RENDEROBJ* pObj, DWORD dwX, DWORD dwXMax)
 				goto L_advance;
 			if ((int)dwX1 > (int)dwXMax)
 			{
-				Sub_402990(pObj, pSpan, dwX, dwXMax);
+				DrawWallRun(pObj, pSpan, dwX, dwXMax);
 				return;
 			}
-			Sub_402990(pObj, pSpan, dwX, dwX1);
+			DrawWallRun(pObj, pSpan, dwX, dwX1);
 			dwX = dwX1 + dwStep;
 			if ((int)dwX1 >= (int)dwX)
 				return;
 			goto L_advance;
 		}
-		if ((int)pObj->m_dwUnk74 > (int)dwXMax)
+		if ((int)pObj->m_dwMinY > (int)dwXMax)
 			goto L_advance;
-		if ((int)pObj->m_dwUnk78 < (int)dwX)
+		if ((int)pObj->m_dwMaxY < (int)dwX)
 			goto L_advance;
 		i = 0;
-		pSpan = pObj->m_pUnkA8;
-		if ((int)pObj->m_dwUnk90 > 0)
+		pSpan = pObj->m_pRuns;
+		if ((int)pObj->m_dwRunCount > 0)
 		{
 			do
 			{
-				dwX0 = pSpan->m_dwUnk08;
-				dwX1 = pSpan->m_dwUnk0C;
+				dwX0 = pSpan->m_dwTopY;
+				dwX1 = pSpan->m_dwBottomY;
 				if ((int)dwX0 > (int)dwX)
 				{
 					if ((int)dwX0 > (int)dwXMax)
 						goto L_advance;
-					if (pObj->m_pUnk38 != 0)
-						Sub_404030(pObj->m_pUnk38, dwX,
+					if (pObj->m_pActiveNext != 0)
+						CoverRows(pObj->m_pActiveNext, dwX,
 							dwX0 - dwStep);
 					else
-						m_pUnk00->Sub_406D00(dwX, dwX0 - dwStep);
+						m_pRunHeap->AddSkyRun(dwX, dwX0 - dwStep);
 					if ((int)dwX1 >= (int)dwXMax)
 					{
-						Sub_4066B0(pObj, pSpan, dwX0, dwXMax);
+						DrawMaskedRun(pObj, pSpan, dwX0, dwXMax);
 						return;
 					}
-					Sub_4066B0(pObj, pSpan, dwX0, dwX1);
+					DrawMaskedRun(pObj, pSpan, dwX0, dwX1);
 					dwX = dwX1 + dwStep;
 				}
 				else if ((int)dwX1 >= (int)dwX)
 				{
 					if ((int)dwX1 > (int)dwXMax)
 					{
-						Sub_4066B0(pObj, pSpan, dwX, dwXMax);
+						DrawMaskedRun(pObj, pSpan, dwX, dwXMax);
 						return;
 					}
-					Sub_4066B0(pObj, pSpan, dwX, dwX1);
+					DrawMaskedRun(pObj, pSpan, dwX, dwX1);
 					dwX = dwX1 + dwStep;
 				}
 				pSpan++;
 				i++;
-			} while ((int)pObj->m_dwUnk90 > (int)i);
+			} while ((int)pObj->m_dwRunCount > (int)i);
 		}
 		if ((int)dwX1 >= (int)dwX)
 			return;
 	L_advance:
-		pObj = pObj->m_pUnk38;
+		pObj = pObj->m_pActiveNext;
 		if (pObj == 0)
 		{
-			m_pUnk00->Sub_406D00(dwX, dwXMax);
+			m_pRunHeap->AddSkyRun(dwX, dwXMax);
 			return;
 		}
 	}
@@ -1666,71 +1665,69 @@ void CSub402E00::Sub_404030(RENDEROBJ* pObj, DWORD dwX, DWORD dwXMax)
 
 // hover.exe:0x4065F0
 // FUNCTION: HOVER 0x4065f0
-int CSub402E00::Sub_4065F0(RENDEROBJ* pObj, SPANENTRY* pSpan, DWORD dwC,
+int CSpanRasterizer::ClipBottomFlat(RENDEROBJ* pObj, SPANENTRY* pSpan, DWORD dwC,
 	DWORD dwD, DWORD dwE)
 {
 	DWORD dwV;
 
-	dwV = *pObj->m_pUnk88;
+	dwV = *pObj->m_pBottomEdgeY;
 	if ((int)dwD < (int)dwV)
 	{
-		if ((int)dwD >= (int)g_dwUnk_4A4564)
+		if ((int)dwD >= (int)g_dwClipBottomY)
 			return 0;
-		if ((int)dwD <= (int)g_dwUnk_4A4524)
+		if ((int)dwD <= (int)g_dwClipTopY)
 		{
-			m_pUnk00->Sub_403980(dwE, pObj->m_dwUnk54, g_dwUnk_4A4524,
-				g_dwUnk_4A4564);
+			m_pRunHeap->AddFlatRun(dwE, pObj->m_pBottomFlatTex, g_dwClipTopY,
+				g_dwClipBottomY);
 			return 1;
 		}
-		m_pUnk00->Sub_403980(dwE, pObj->m_dwUnk54, dwD, g_dwUnk_4A4564);
-		g_dwUnk_4A4564 = dwD - g_dwUnk_4A453C;
+		m_pRunHeap->AddFlatRun(dwE, pObj->m_pBottomFlatTex, dwD, g_dwClipBottomY);
+		g_dwClipBottomY = dwD - g_dwRowStep;
 		return 0;
 	}
-	if ((int)g_dwUnk_4A4564 <= (int)dwV)
+	if ((int)g_dwClipBottomY <= (int)dwV)
 		return 0;
-	if ((int)g_dwUnk_4A4524 >= (int)dwV)
+	if ((int)g_dwClipTopY >= (int)dwV)
 	{
-		m_pUnk00->Sub_403980(dwE, pObj->m_dwUnk54, g_dwUnk_4A4524,
-			g_dwUnk_4A4564);
+		m_pRunHeap->AddFlatRun(dwE, pObj->m_pBottomFlatTex, g_dwClipTopY,
+			g_dwClipBottomY);
 		return 1;
 	}
-	m_pUnk00->Sub_403980(dwE, pObj->m_dwUnk54, dwV, g_dwUnk_4A4564);
-	g_dwUnk_4A4564 = dwV - g_dwUnk_4A453C;
+	m_pRunHeap->AddFlatRun(dwE, pObj->m_pBottomFlatTex, dwV, g_dwClipBottomY);
+	g_dwClipBottomY = dwV - g_dwRowStep;
 	return 0;
 }
 
 // hover.exe:0x4066B0
 // FUNCTION: HOVER 0x4066b0
-void CSub402E00::Sub_4066B0(RENDEROBJ* pObj, SPANENTRY* pSpan, DWORD dwA,
+void CSpanRasterizer::DrawMaskedRun(RENDEROBJ* pObj, SPANENTRY* pSpan, DWORD dwA,
 	DWORD dwB)
 {
 	DWORD dwY;
 
-	g_dwUnk_4A4A14 = dwB + (g_dwUnk_4A453C - dwA);
-	if ((int)g_dwUnk_4A4A14 < 1)
+	g_dwSpanCount = dwB + (g_dwRowStep - dwA);
+	if ((int)g_dwSpanCount < 1)
 		return;
-	g_dwUnk_4A4A4C = g_dwUnk_4A4540 + dwA * g_dwUnk_4A4A34;
-	dwY = (DWORD)(short)pObj->m_wUnk08;
-	g_dwUnk_4A4A44 = dwY;
-	g_dwUnk_4A4A38 = pObj->m_dwUnk94;
-	g_dwUnk_4A4A50 = pObj->m_dwUnk98;
-	g_dwUnk_4A4A40 = (dwA - pSpan->m_dwUnk08) * pObj->m_dwUnk98;
-	g_dwUnk_4A4A1C = pSpan->m_dwUnk10;
-	g_dwUnk_4A4A3C = (DWORD)g_pUnk_4A1D68->Sub_403850(dwY);
-	g_pUnk_4A1D68->m_pfnUnk00();
+	g_dwDst = g_dwColumnOrigin + dwA * g_dwRowPitch;
+	dwY = (DWORD)(short)pObj->m_wDistance;
+	g_dwSpanDepth = dwY;
+	g_dwVMask = pObj->m_dwVMask;
+	g_dwUStep = pObj->m_dwVStep;
+	g_dwColumnV = (dwA - pSpan->m_dwTopY) * pObj->m_dwVStep;
+	g_dwTexels = (DWORD)pSpan->m_pPixels;
+	g_dwShadeTable = (DWORD)g_pRenderCtx->GetShadeRow(dwY);
+	g_pRenderCtx->m_pfnDrawWall();
 }
 
 // hover.exe:0x406740
 // FUNCTION: HOVER 0x406740
-void CSub402E00::Sub_406740(DWORD dwA, DWORD dwB)
+void CSpanRasterizer::DrawSkyRow(DWORD dwA, DWORD dwB)
 {
-	CSub403850* pView;
-	MERLIN_TEXENTRY* pEntry;
+	CRenderContext* pView;
+	MERLIN_TEXFRAME* pEntry;
 	BYTE* pDst;
-	BYTE* p;
 	DWORD dwStep;
 	DWORD dwFill;
-	DWORD dwPat;
 	DWORD dwV;
 	DWORD dwS;
 	DWORD dwBX;
@@ -1741,72 +1738,60 @@ void CSub402E00::Sub_406740(DWORD dwA, DWORD dwB)
 	DWORD dwV2;
 	DWORD dwV3;
 	DWORD dwV4;
-	DWORD n;
 	BYTE bPix;
 	BYTE cl;
 
-	dwStep = g_dwUnk_4A453C;
-	pView = g_pUnk_4A1D68;
-	dwB &= 0 - g_dwUnk_4A453C;
-	if (pView->m_dwUnk74 == 1)
+	dwStep = g_dwRowStep;
+	pView = g_pRenderCtx;
+	dwB &= 0 - g_dwRowStep;
+	if (pView->m_dwSkyMode == 1)
 	{
 		// flat fill: dwStep rows of the same color byte
-		pDst = (BYTE*)(dwB * g_dwUnk_4A4A34 + pView->m_dwUnk28) + dwA;
-		g_dwUnk_4A4A4C = (DWORD)pDst;
+		pDst = (BYTE*)(dwB * g_dwRowPitch + pView->m_pScanOrigin) + dwA;
+		g_dwDst = (DWORD)pDst;
 		if ((int)dwStep <= 0)
 			return;
-		bPix = pView->m_pUnk6C[dwB * 4];
-		dwFill = g_dwUnk_4A4534 - dwA;
+		bPix = *(BYTE*)&pView->m_pSkyGradient[dwB];	// low byte of the entry
+		dwFill = g_dwCurColumn - dwA;
 		do
 		{
-			dwPat = (DWORD)bPix * 0x01010101;
-			p = pDst;
-			for (n = dwFill >> 2; n != 0; n--)
-			{
-				*(DWORD*)p = dwPat;
-				p += 4;
-			}
-			for (n = dwFill & 3; n != 0; n--)
-			{
-				*p = (BYTE)dwPat;
-				p++;
-			}
-			pDst += g_dwUnk_4A4A34;
+			memset(pDst, bPix, dwFill);
+			pDst += g_dwRowPitch;
 			dwStep--;
 		} while (dwStep != 0);
 		return;
 	}
-	dwS = (DWORD)(1 << (BYTE)g_dwUnk_461CFC);
+	dwS = (DWORD)(1 << g_dwMipBias);
 	dwV = (DWORD)(0x280 / (int)dwS);
 	dwBX = dwV * 6;
-	dwV = (dwV << 0x10) / g_dwUnk_4A454C;
-	cl = (BYTE)g_dwUnk_461CFC;
-	g_dwUnk_4A4A50 = dwV;
-	pEntry = &pView->m_pUnk70->m_pUnk28[g_dwUnk_461CFC];
-	g_dwUnk_4A4A20 = pEntry->m_dwUnk04;
+	dwV = (dwV << 0x10) / g_dwViewWidth;
+	g_dwUStep = dwV;
+	pEntry = &pView->m_pSkyTex->m_pFrames[g_dwMipBias];
+	g_dwUMask = pEntry->m_dwUnk04;
 	dwV = (DWORD)(0xF0 / (int)dwS);
-	dwV = (dwV << 0x10) / g_dwUnk_4A1D70;
-	dwS = g_dwUnk_4A1D70 - dwB;
-	dwW = g_dwUnk_4A4534;
+	dwS = g_dwHorizonY;
+	dwV = (dwV << 0x10) / dwS;
+	dwS -= dwB;
+	dwW = g_dwCurColumn;
 	dwV = (DWORD)((int)(dwV * dwS) >> 0x10);
+	dwV = (dwV & pEntry->m_dwColMask) * pEntry->m_dwHeight +
+		(DWORD)pEntry->m_pPixels;
+	g_dwTexels = dwV;
 	dwCount = dwW - dwA;
-	dwV &= pEntry->m_dwUnk00;
-	dwV = dwV * pEntry->m_dwUnk0C + pEntry->m_dwUnk18;
-	g_dwUnk_4A4A1C = dwV;
-	if (pView->m_dwUnk68 != 0)
+	if (pView->m_bMirror != 0)
 	{
-		dwV2 = dwB * g_dwUnk_4A4A34 + pView->m_dwUnk28 - dwW + g_dwUnk_4A454C -
+		dwV2 = dwB * g_dwRowPitch + (DWORD)pView->m_pScanOrigin - dwW + g_dwViewWidth -
 			1;
-		dwW = dwW - g_dwUnk_4A454C + 1;
-		g_dwUnk_4A4A4C = dwV2;
-		dwV3 = pView->m_dwUnk54;
+		dwW = dwW - g_dwViewWidth + 1;
+		g_dwDst = dwV2;
+		dwV3 = pView->m_dwCamAngle;
 		// The mirrored start column: the run's own left edge dwA folded
 		// through the viewport, NOT the texture offset computed above
 		// (hover.exe:0x406878 re-reads the dwA argument here).
-		dwV = dwA - g_dwUnk_4A454C + 1;
-		dwW *= g_dwUnk_4A4A50;
+		dwV = dwA - g_dwViewWidth + 1;
+		dwW *= g_dwUStep;
 		dwV3 += 0x55;
-		dwV *= g_dwUnk_4A4A50;
+		dwV *= g_dwUStep;
 		dwV3 &= 0x1FF;
 		dwV3 = (dwV3 * dwBX) << 7;
 		dwV += dwV3;
@@ -1817,46 +1802,46 @@ void CSub402E00::Sub_406740(DWORD dwA, DWORD dwB)
 		if ((int)dwBX <= (int)dwV2)
 		{
 			dwV2 -= dwBX;
-			cl = (BYTE)g_dwUnk_4A4554;
-			dwT10 = (DWORD)((int)dwV2 / (int)g_dwUnk_4A4A50);
+			cl = (BYTE)g_dwLogColStep;
+			dwT10 = (DWORD)((int)dwV2 / (int)g_dwUStep);
 			dwCount -= dwT10;
 			dwCount = (DWORD)((int)dwCount >> cl);
-			dwT14 = g_dwUnk_4A4A50;
-			g_dwUnk_4A4A50 <<= cl;
-			g_dwUnk_4A4A50 = 0 - g_dwUnk_4A4A50;
-			g_dwUnk_4A4A18 = dwV2;
-			g_dwUnk_4A4A14 = (DWORD)(((int)dwT10 >> cl) + 1);
-			pView->m_pfnUnk04();
-			dwW = g_dwUnk_4A455C;
-			g_dwUnk_4A4A14 = dwCount;
+			dwT14 = g_dwUStep;
+			g_dwUStep <<= cl;
+			g_dwUStep = 0 - g_dwUStep;
+			g_dwSkyU = dwV2;
+			g_dwSpanCount = (DWORD)(((int)dwT10 >> cl) + 1);
+			pView->m_pfnDrawSky();
+			dwW = g_dwColStep;
+			g_dwSpanCount = dwCount;
 			dwV4 = (dwW - 1) & dwT10;
 			if (dwV4 != 0)
 			{
-				g_dwUnk_4A4A4C += dwT10 - dwV4 + dwW;
-				g_dwUnk_4A4A18 = (dwV4 - dwW) * dwT14 + dwBX;
+				g_dwDst += dwT10 - dwV4 + dwW;
+				g_dwSkyU = (dwV4 - dwW) * dwT14 + dwBX;
 			}
 			else
 			{
-				g_dwUnk_4A4A18 = dwBX;
-				g_dwUnk_4A4A4C += dwT10;
+				g_dwSkyU = dwBX;
+				g_dwDst += dwT10;
 			}
-			g_pUnk_4A1D68->m_pfnUnk04();
+			g_pRenderCtx->m_pfnDrawSky();
 			return;
 		}
-		cl = (BYTE)g_dwUnk_4A4554;
-		g_dwUnk_4A4A18 = dwV2;
+		cl = (BYTE)g_dwLogColStep;
+		g_dwSkyU = dwV2;
 		dwCount = (DWORD)((int)dwCount >> cl);
-		g_dwUnk_4A4A50 <<= cl;
-		g_dwUnk_4A4A14 = dwCount;
-		g_dwUnk_4A4A50 = 0 - g_dwUnk_4A4A50;
-		pView->m_pfnUnk04();
+		g_dwUStep <<= cl;
+		g_dwSpanCount = dwCount;
+		g_dwUStep = 0 - g_dwUStep;
+		pView->m_pfnDrawSky();
 		return;
 	}
-	g_dwUnk_4A4A4C = dwB * g_dwUnk_4A4A34 + pView->m_dwUnk28 + dwA;
-	dwV3 = pView->m_dwUnk54 & 0x1FF;
-	dwW *= g_dwUnk_4A4A50;
+	g_dwDst = (DWORD)(dwB * g_dwRowPitch + pView->m_pScanOrigin + dwA);
+	dwV3 = pView->m_dwCamAngle & 0x1FF;
+	dwW *= g_dwUStep;
 	dwV3 = (dwV3 * dwBX) << 7;
-	dwV = dwA * g_dwUnk_4A4A50;
+	dwV = dwA * g_dwUStep;
 	dwV2 = dwV + dwV3;
 	dwV3 += dwW;
 	dwBX <<= 0x10;
@@ -1868,48 +1853,48 @@ void CSub402E00::Sub_406740(DWORD dwA, DWORD dwB)
 	if ((int)dwBX <= (int)dwV3)
 	{
 		dwV = dwBX - dwV2;
-		cl = (BYTE)g_dwUnk_4A4554;
-		dwT10 = (DWORD)((int)dwV / (int)g_dwUnk_4A4A50);
+		cl = (BYTE)g_dwLogColStep;
+		dwT10 = (DWORD)((int)dwV / (int)g_dwUStep);
 		dwCount -= dwT10;
 		dwV4 = dwT10;
 		dwCount = (DWORD)((int)dwCount >> cl);
-		dwT14 = g_dwUnk_4A4A50;
-		g_dwUnk_4A4A18 = dwV2;
-		g_dwUnk_4A4A50 <<= cl;
-		g_dwUnk_4A4A14 = (DWORD)(((int)dwV4 >> cl) + 1);
-		pView->m_pfnUnk04();
-		dwW = g_dwUnk_4A455C;
-		g_dwUnk_4A4A14 = dwCount;
+		dwT14 = g_dwUStep;
+		g_dwSkyU = dwV2;
+		g_dwUStep <<= cl;
+		g_dwSpanCount = (DWORD)(((int)dwV4 >> cl) + 1);
+		pView->m_pfnDrawSky();
+		dwW = g_dwColStep;
+		g_dwSpanCount = dwCount;
 		dwV = (dwW - 1) & dwV4;
 		if (dwV != 0)
 		{
 			dwV4 = dwV4 - dwV + dwW;
-			// Not the mirror branch's (dwV - dwW): here g_dwUnk_4A4A50 is
+			// Not the mirror branch's (dwV - dwW): here g_dwUStep is
 			// still positive, and hover.exe:0x406a40 subtracts the other
 			// way round.
 			dwV = (dwW - dwV) * dwT14;
-			g_dwUnk_4A4A4C += dwV4;
-			g_dwUnk_4A4A18 = dwV;
+			g_dwDst += dwV4;
+			g_dwSkyU = dwV;
 		}
 		else
 		{
-			g_dwUnk_4A4A18 = 0;
-			g_dwUnk_4A4A4C += dwV4;
+			g_dwSkyU = 0;
+			g_dwDst += dwV4;
 		}
-		g_pUnk_4A1D68->m_pfnUnk04();
+		g_pRenderCtx->m_pfnDrawSky();
 		return;
 	}
-	cl = (BYTE)g_dwUnk_4A4554;
-	g_dwUnk_4A4A18 = dwV2;
+	cl = (BYTE)g_dwLogColStep;
+	g_dwSkyU = dwV2;
 	dwCount = (DWORD)((int)dwCount >> cl);
-	g_dwUnk_4A4A50 <<= cl;
-	g_dwUnk_4A4A14 = dwCount;
-	pView->m_pfnUnk04();
+	g_dwUStep <<= cl;
+	g_dwSpanCount = dwCount;
+	pView->m_pfnDrawSky();
 }
 
 // hover.exe:0x406A80
 // FUNCTION: HOVER 0x406a80
-void Hover_sub_406A80(RENDEROBJ* pObj)
+void Hover_SortBehindNeighbours(RENDEROBJ* pObj)
 {
 	RENDEROBJ* pStop;
 	RENDEROBJ* pCur;
@@ -1917,139 +1902,139 @@ void Hover_sub_406A80(RENDEROBJ* pObj)
 	RENDEROBJ* pPrev;
 	RENDEROBJ* pOld;
 
-	pStop = pObj->m_pUnk40;
+	pStop = pObj->m_pTopNeighbour;
 	if (pStop != 0)
 	{
 		if (pStop == (RENDEROBJ*)-1)
 			pStop = 0;
-		if (pObj->m_pUnk3C != pStop)
+		if (pObj->m_pActivePrev != pStop)
 		{
 			pCur = pObj;
 			do
 			{
-				pCur = pCur->m_pUnk3C;
+				pCur = pCur->m_pActivePrev;
 				if (pCur == 0)
 					break;
-				if ((int)pObj->m_dwUnk6C > 0)
+				if ((int)pObj->m_dwTopDZ > 0)
 				{
-					if (pCur->m_dwUnk8C != 0)
-						Hover_sub_406A80(pCur);
-					if ((int)pObj->m_dwUnk60 >= (int)pCur->m_dwUnk60)
+					if (pCur->m_bHasFlats != 0)
+						Hover_SortBehindNeighbours(pCur);
+					if ((int)pObj->m_dwTopZ >= (int)pCur->m_dwTopZ)
 					{
-						pNext = pCur->m_pUnk3C;
-						pPrev = pCur->m_pUnk38;
-						pOld = pObj->m_pUnk38;
+						pNext = pCur->m_pActivePrev;
+						pPrev = pCur->m_pActiveNext;
+						pOld = pObj->m_pActiveNext;
 						if (pNext != 0)
-							pNext->m_pUnk38 = pPrev;
+							pNext->m_pActiveNext = pPrev;
 						if (pPrev != 0)
-							pPrev->m_pUnk3C = pNext;
-						pObj->m_pUnk38 = pCur;
+							pPrev->m_pActivePrev = pNext;
+						pObj->m_pActiveNext = pCur;
 						if (pOld != 0)
-							pOld->m_pUnk3C = pCur;
-						pCur->m_pUnk3C = pObj;
-						pCur->m_pUnk38 = pOld;
+							pOld->m_pActivePrev = pCur;
+						pCur->m_pActivePrev = pObj;
+						pCur->m_pActiveNext = pOld;
 						pCur = pPrev;
 					}
 				}
 				else
 				{
-					if (pCur->m_dwUnk8C != 0)
-						Hover_sub_406A80(pCur);
-					if ((int)pObj->m_dwUnk60 <= (int)pCur->m_dwUnk64)
+					if (pCur->m_bHasFlats != 0)
+						Hover_SortBehindNeighbours(pCur);
+					if ((int)pObj->m_dwTopZ <= (int)pCur->m_dwBottomZ)
 					{
-						pNext = pCur->m_pUnk3C;
-						pPrev = pCur->m_pUnk38;
-						pOld = pObj->m_pUnk38;
+						pNext = pCur->m_pActivePrev;
+						pPrev = pCur->m_pActiveNext;
+						pOld = pObj->m_pActiveNext;
 						if (pNext != 0)
-							pNext->m_pUnk38 = pPrev;
+							pNext->m_pActiveNext = pPrev;
 						if (pPrev != 0)
-							pPrev->m_pUnk3C = pNext;
-						pObj->m_pUnk38 = pCur;
+							pPrev->m_pActivePrev = pNext;
+						pObj->m_pActiveNext = pCur;
 						if (pOld != 0)
-							pOld->m_pUnk3C = pCur;
-						pCur->m_pUnk3C = pObj;
-						pCur->m_pUnk38 = pOld;
+							pOld->m_pActivePrev = pCur;
+						pCur->m_pActivePrev = pObj;
+						pCur->m_pActiveNext = pOld;
 						pCur = pPrev;
 					}
 				}
-			} while (pCur->m_pUnk3C != pStop);
+			} while (pCur->m_pActivePrev != pStop);
 		}
 	}
-	pStop = pObj->m_pUnk4C;
+	pStop = pObj->m_pBottomNeighbour;
 	if (pStop != 0)
 	{
 		if (pStop == (RENDEROBJ*)-1)
 			pStop = 0;
-		if (pObj->m_pUnk3C != pStop)
+		if (pObj->m_pActivePrev != pStop)
 		{
 			pCur = pObj;
 			do
 			{
-				pCur = pCur->m_pUnk3C;
+				pCur = pCur->m_pActivePrev;
 				if (pCur == 0)
 					break;
-				if ((int)pObj->m_dwUnk70 > 0)
+				if ((int)pObj->m_dwBottomDZ > 0)
 				{
-					if (pCur->m_dwUnk8C != 0)
-						Hover_sub_406A80(pCur);
-					if ((int)pCur->m_dwUnk60 <= (int)pObj->m_dwUnk64)
+					if (pCur->m_bHasFlats != 0)
+						Hover_SortBehindNeighbours(pCur);
+					if ((int)pCur->m_dwTopZ <= (int)pObj->m_dwBottomZ)
 					{
-						pNext = pCur->m_pUnk3C;
-						pPrev = pCur->m_pUnk38;
-						pOld = pObj->m_pUnk38;
+						pNext = pCur->m_pActivePrev;
+						pPrev = pCur->m_pActiveNext;
+						pOld = pObj->m_pActiveNext;
 						if (pNext != 0)
-							pNext->m_pUnk38 = pPrev;
+							pNext->m_pActiveNext = pPrev;
 						if (pPrev != 0)
-							pPrev->m_pUnk3C = pNext;
-						pObj->m_pUnk38 = pCur;
+							pPrev->m_pActivePrev = pNext;
+						pObj->m_pActiveNext = pCur;
 						if (pOld != 0)
-							pOld->m_pUnk3C = pCur;
-						pCur->m_pUnk3C = pObj;
-						pCur->m_pUnk38 = pOld;
+							pOld->m_pActivePrev = pCur;
+						pCur->m_pActivePrev = pObj;
+						pCur->m_pActiveNext = pOld;
 						pCur = pPrev;
 					}
 				}
 				else
 				{
-					if (pCur->m_dwUnk8C != 0)
-						Hover_sub_406A80(pCur);
-					if ((int)pCur->m_dwUnk64 >= (int)pObj->m_dwUnk64)
+					if (pCur->m_bHasFlats != 0)
+						Hover_SortBehindNeighbours(pCur);
+					if ((int)pCur->m_dwBottomZ >= (int)pObj->m_dwBottomZ)
 					{
-						pNext = pCur->m_pUnk3C;
-						pPrev = pCur->m_pUnk38;
-						pOld = pObj->m_pUnk38;
+						pNext = pCur->m_pActivePrev;
+						pPrev = pCur->m_pActiveNext;
+						pOld = pObj->m_pActiveNext;
 						if (pNext != 0)
-							pNext->m_pUnk38 = pPrev;
+							pNext->m_pActiveNext = pPrev;
 						if (pPrev != 0)
-							pPrev->m_pUnk3C = pNext;
-						pObj->m_pUnk38 = pCur;
+							pPrev->m_pActivePrev = pNext;
+						pObj->m_pActiveNext = pCur;
 						if (pOld != 0)
-							pOld->m_pUnk3C = pCur;
-						pCur->m_pUnk3C = pObj;
-						pCur->m_pUnk38 = pOld;
+							pOld->m_pActivePrev = pCur;
+						pCur->m_pActivePrev = pObj;
+						pCur->m_pActiveNext = pOld;
 						pCur = pPrev;
 					}
 				}
-			} while (pCur->m_pUnk3C != pStop);
+			} while (pCur->m_pActivePrev != pStop);
 		}
 	}
 }
 
 // hover.exe:0x406D00
 // FUNCTION: HOVER 0x406d00
-void CSub403980::Sub_406D00(DWORD dwA, DWORD dwB)
+void CFlatRunHeap::AddSkyRun(DWORD dwA, DWORD dwB)
 {
-	SPANNODE* pNode;
+	FLATNODE* pNode;
 	WORD* pw;
 	WORD** ppw;
 	DWORD dwCount;
 
-	pNode = m_pUnk08;
-	dwCount = pNode->m_dwUnk14;
+	pNode = m_pSkyNode;
+	dwCount = pNode->m_dwCurRuns;
 	if ((int)dwCount < 0x28)
 	{
-		ppw = pNode->m_pUnk0C;
-		pNode->m_dwUnk14 = ++dwCount;
+		ppw = pNode->m_ppCurRuns;
+		pNode->m_dwCurRuns = ++dwCount;
 		pw = *ppw + (dwCount - 1) * 2;
 		pw[1] = (WORD)dwB;
 		pw[0] = (WORD)dwA;

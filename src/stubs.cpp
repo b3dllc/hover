@@ -19,9 +19,9 @@
 #include "gameobj.h"
 #include "texheap.h"
 #include "bumpview.h"
-#include "bumperdoc.h"		// CSub425050
+#include "bumperdoc.h"		// CMidiStream
 #include "texload.h"		// CCollider
-#include "mazeobj.h"		// CPodObj::Sub_42AD40
+#include "mazeobj.h"		// CPodObj::OnTouch
 #include "optionsdlg.h"
 #include "mazeobj.h"
 
@@ -37,9 +37,9 @@ void Hover_StubAlert(const char* funcName, DWORD addr)
 
 /////////////////////////////////////////////////////////////////////////////
 // Subsystem helpers reached from the per-frame game step
-// (CBumperView::Sub_408D00 / Sub_427D40).
+// (CBumperView::GameStep / StepObjects).
 
-// The MIDI stream (re)open path taken by CSub425050::Sub_413710 when the
+// The MIDI stream (re)open path taken by CMidiStream::ResumeMusic when the
 // object has no open device: it calls the resolved midiStreamOpen /
 // midiOutPrepareHeader / midiStreamProperty / midiStreamOut entry points on
 // the buffer list at m_dwUnk10.

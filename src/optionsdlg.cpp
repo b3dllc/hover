@@ -12,6 +12,8 @@
 #include "bumpview.h"
 #include "optionsdlg.h"
 
+extern CPoint g_ptSplashAnchor;		// hover.exe:0x4A4878 (hover.cpp)
+
 #include <math.h>
 #include <string.h>	// _stricmp
 
@@ -54,13 +56,13 @@ static __inline double FixToDbl(FIXED1616 fx)
 #define DBL_TO_FIX(d)	((long)((d) * 65536.0))
 
 // hover.exe:0x42E420 (defined below, next to its only caller)
-void Hover_sub_42E420();
+void Hover_SavePlayerControls();
 
 // joy.cpl's exported joystick calibration entry point
 typedef void (WINAPI* LPSHOWJOYCPL)(HWND hWnd);
 
 /////////////////////////////////////////////////////////////////////////////
-// Key display name lookup table used by Hover_sub_42DC50 and by the key
+// Key display name lookup table used by Hover_KeyNameToVK and by the key
 // combo boxes of the Player Controls / Keyboard Settings dialogs: string
 // resource ID of the key's display name -> virtual key code,
 // zero-terminated (hover.exe:0x4BDAC8).
@@ -71,7 +73,8 @@ typedef struct tagKEYNAME
 	DWORD dwVK;		// virtual key code
 } KEYNAME;
 
-static const KEYNAME g_aKeyNames[] =
+// GLOBAL: HOVER 0x4bdac8
+extern const KEYNAME g_aKeyNames[] =
 {
 	{ IDS_KEY_BACKSPACE, VK_BACK },
 	{ IDS_KEY_TAB, VK_TAB },
@@ -114,7 +117,7 @@ static const KEYNAME g_aKeyNames[] =
 
 // hover.exe:0x42DC50
 // FUNCTION: HOVER 0x42dc50
-int Hover_sub_42DC50(UINT nID)
+int Hover_KeyNameToVK(UINT nID)
 {
 	CString strName;
 	CString strKey;
@@ -143,10 +146,11 @@ int Hover_sub_42DC50(UINT nID)
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// CSub413F10 dialog ("Customize Game")
+// CCustomizeDialog dialog ("Customize Game")
 
 // hover.exe:0x4BD5E8
-static DWORD s_adwCustomizeHelp[] =
+// GLOBAL: HOVER 0x4bd5e8
+DWORD s_adwCustomizeHelp[] =
 {
 	IDC_CUST_SPEEDDETAIL, 2100,
 	IDC_CUST_EASY, 2120,
@@ -160,8 +164,8 @@ static DWORD s_adwCustomizeHelp[] =
 	0, 0
 };
 
-BEGIN_MESSAGE_MAP(CSub413F10, CDialog)
-	//{{AFX_MSG_MAP(CSub413F10)
+BEGIN_MESSAGE_MAP(CCustomizeDialog, CDialog)
+	//{{AFX_MSG_MAP(CCustomizeDialog)
 	ON_MESSAGE(WM_HELP, OnHelpInfo)
 	ON_MESSAGE(WM_CONTEXTMENU, OnHelpContextMenu)
 	//}}AFX_MSG_MAP
@@ -169,11 +173,11 @@ END_MESSAGE_MAP()
 
 // hover.exe:0x413F10
 // FUNCTION: HOVER 0x413f10
-CSub413F10::CSub413F10(CWnd* pParent) : CDialog(IDD_CUSTOMIZE, pParent)
+CCustomizeDialog::CCustomizeDialog(CWnd* pParent) : CDialog(IDD_CUSTOMIZE, pParent)
 {
-	m_nRearView = theApp.m_dwUnk01D0;
-	m_nMazeType = theApp.m_dwUnk01CC;
-	m_nSkill = theApp.m_dwUnk01C8;
+	m_nRearView = theApp.m_bRearView;
+	m_nMazeType = theApp.m_dwMazeOrder;
+	m_nSkill = theApp.m_dwSkill;
 }
 
 // The radio groups are not exchanged with DDX_Radio: on the way in the
@@ -183,9 +187,9 @@ CSub413F10::CSub413F10(CWnd* pParent) : CDialog(IDD_CUSTOMIZE, pParent)
 
 // hover.exe:0x40E480
 // FUNCTION: HOVER 0x40e480
-void CSub413F10::DoDataExchange(CDataExchange* pDX)
+void CCustomizeDialog::DoDataExchange(CDataExchange* pDX)
 {
-	//{{AFX_DATA_MAP(CSub413F10)
+	//{{AFX_DATA_MAP(CCustomizeDialog)
 	DDX_Control(pDX, IDC_CUST_SPEEDDETAIL, m_sliderSpeed);
 	DDX_Check(pDX, IDC_CUST_REARVIEW, m_nRearView);
 	//}}AFX_DATA_MAP
@@ -193,34 +197,34 @@ void CSub413F10::DoDataExchange(CDataExchange* pDX)
 	if (!pDX->m_bSaveAndValidate)
 	{
 		::CheckRadioButton(pDX->m_pDlgWnd->m_hWnd, IDC_CUST_EASY,
-			IDC_CUST_DIFFICULT, IDC_CUST_EASY + theApp.m_dwUnk01C8);
+			IDC_CUST_DIFFICULT, IDC_CUST_EASY + theApp.m_dwSkill);
 		::CheckRadioButton(pDX->m_pDlgWnd->m_hWnd, IDC_CUST_SEQUENTIAL,
-			IDC_CUST_RANDOM, IDC_CUST_SEQUENTIAL + theApp.m_dwUnk01CC);
+			IDC_CUST_RANDOM, IDC_CUST_SEQUENTIAL + theApp.m_dwMazeOrder);
 		::CheckRadioButton(pDX->m_pDlgWnd->m_hWnd, IDC_CUST_ROTATEMAP,
 			IDC_CUST_ROTATECRAFT,
-			IDC_CUST_ROTATEMAP + (theApp.m_dwUnk01D4 == 0));
+			IDC_CUST_ROTATEMAP + (theApp.m_bRotateMap == 0));
 		m_sliderSpeed.SetRange(0, 5);
 		::SendMessage(m_sliderSpeed.m_hWnd, TBM_SETPOS, TRUE,
-			theApp.m_dwUnk01C4);
+			theApp.m_dwSpeedDetail);
 	}
 }
 
 // hover.exe:0x413FD0
 // FUNCTION: HOVER 0x413fd0
-BOOL CSub413F10::OnInitDialog()
+BOOL CCustomizeDialog::OnInitDialog()
 {
 	CDialog::OnInitDialog();
 	return TRUE;
 }
 
 // Applies the settings. Only a changed "Show Rear View" needs the
-// offscreen bitmap resized (Sub_4274B0) and only a changed speed/detail
+// offscreen bitmap resized (RequestResize) and only a changed speed/detail
 // slider needs the view's detail tables rebuilt; either one pushes the
 // worker thread through a frame.
 
 // hover.exe:0x413FE0
 // FUNCTION: HOVER 0x413fe0
-void CSub413F10::OnOK()
+void CCustomizeDialog::OnOK()
 {
 	int nSpeed;
 	CBumperView* pView;
@@ -228,43 +232,43 @@ void CSub413F10::OnOK()
 
 	UpdateData(TRUE);
 
-	theApp.m_dwUnk01CC = GetCheckedRadioButton(IDC_CUST_SEQUENTIAL,
+	theApp.m_dwMazeOrder = GetCheckedRadioButton(IDC_CUST_SEQUENTIAL,
 		IDC_CUST_RANDOM) - IDC_CUST_SEQUENTIAL;
-	theApp.m_dwUnk01C8 = GetCheckedRadioButton(IDC_CUST_EASY,
+	theApp.m_dwSkill = GetCheckedRadioButton(IDC_CUST_EASY,
 		IDC_CUST_DIFFICULT) - IDC_CUST_EASY;
-	theApp.m_dwUnk01D4 = (GetCheckedRadioButton(IDC_CUST_ROTATEMAP,
+	theApp.m_bRotateMap = (GetCheckedRadioButton(IDC_CUST_ROTATEMAP,
 		IDC_CUST_ROTATECRAFT) - IDC_CUST_ROTATEMAP) == 0;
 
 	nSpeed = (int)::SendMessage(m_sliderSpeed.m_hWnd, TBM_GETPOS, 0, 0);
 	bChanged = 0;
-	pView = Hover_sub_401140();
+	pView = Hover_GetView();
 
-	if ((DWORD)m_nRearView != theApp.m_dwUnk01D0)
+	if ((DWORD)m_nRearView != theApp.m_bRearView)
 	{
 		DWORD* pdw;
-		theApp.m_dwUnk01D0 = m_nRearView;
-		pdw = &Hover_sub_401140()->m_dwUnk00A4;
-		pView->Sub_4274B0(pdw[0], pdw[1], 1);
+		theApp.m_bRearView = m_nRearView;
+		pdw = &Hover_GetView()->m_dwRequestedWidth;
+		pView->RequestResize(pdw[0], pdw[1], 1);
 		bChanged = 1;
 	}
 
-	if ((DWORD)nSpeed != theApp.m_dwUnk01C4)
+	if ((DWORD)nSpeed != theApp.m_dwSpeedDetail)
 	{
 		bChanged = 1;
-		pView->Sub_413A00(nSpeed, bChanged);
-		pView->Sub_413B10(bChanged);
-		pView->m_dwUnk0080 = bChanged;
+		pView->RequestDetailLevel(nSpeed, bChanged);
+		pView->RequestDashboardRebuild(bChanged);
+		pView->m_bNeedRepaint = bChanged;
 	}
 
 	if (bChanged)
-		pView->Sub_40DC20(1);
+		pView->RequestRenderFrame(1);
 
 	CDialog::OnOK();
 }
 
 // hover.exe:0x42D140
 // FUNCTION: HOVER 0x42d140
-LRESULT CSub413F10::OnHelpInfo(WPARAM wParam, LPARAM lParam)
+LRESULT CCustomizeDialog::OnHelpInfo(WPARAM wParam, LPARAM lParam)
 {
 	return ::WinHelp((HWND)((LPHELPINFO)lParam)->hItemHandle, "hover.hlp",
 		HELP_WM_HELP, (DWORD)s_adwCustomizeHelp);
@@ -272,7 +276,7 @@ LRESULT CSub413F10::OnHelpInfo(WPARAM wParam, LPARAM lParam)
 
 // hover.exe:0x42D160
 // FUNCTION: HOVER 0x42d160
-LRESULT CSub413F10::OnHelpContextMenu(WPARAM wParam, LPARAM lParam)
+LRESULT CCustomizeDialog::OnHelpContextMenu(WPARAM wParam, LPARAM lParam)
 {
 	::WinHelp((HWND)wParam, "hover.hlp", HELP_CONTEXTMENU,
 		(DWORD)s_adwCustomizeHelp);
@@ -280,22 +284,22 @@ LRESULT CSub413F10::OnHelpContextMenu(WPARAM wParam, LPARAM lParam)
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// CSub42C890 dialog (debug template 130: camera/view geometry)
+// CPodTimesDialog dialog (debug template 130: pod effect durations)
 
-BEGIN_MESSAGE_MAP(CSub42C890, CDialog)
-	//{{AFX_MSG_MAP(CSub42C890)
+BEGIN_MESSAGE_MAP(CPodTimesDialog, CDialog)
+	//{{AFX_MSG_MAP(CPodTimesDialog)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
 // hover.exe:0x42C890
 // FUNCTION: HOVER 0x42c890
-CSub42C890::CSub42C890(CWnd* pParent) : CDialog(IDD_DBG_130, pParent)
+CPodTimesDialog::CPodTimesDialog(CWnd* pParent) : CDialog(IDD_DBG_PODTIMES, pParent)
 {
-	m_dwUnk44 = 0;
-	m_dwUnk48 = 0;
-	m_dwUnk4C = 0;
-	m_dwUnk50 = 0;
-	m_dwUnk54 = 0;
+	m_nInvincibleTime = 0;
+	m_nSlowTime = 0;
+	m_nSmokeTime = 0;
+	m_nSpeedTime = 0;
+	m_nWallTime = 0;
 	m_dblUnk58 = 0.0;
 	m_dblUnk60 = 0.0;
 	m_dblUnk68 = 0.0;
@@ -303,19 +307,19 @@ CSub42C890::CSub42C890(CWnd* pParent) : CDialog(IDD_DBG_130, pParent)
 
 // hover.exe:0x42C920
 // FUNCTION: HOVER 0x42c920
-void CSub42C890::DoDataExchange(CDataExchange* pDX)
+void CPodTimesDialog::DoDataExchange(CDataExchange* pDX)
 {
-	//{{AFX_DATA_MAP(CSub42C890)
-	DDX_Text(pDX, 1008, m_dwUnk44);
-	DDV_MinMaxInt(pDX, m_dwUnk44, 0, 5000);
-	DDX_Text(pDX, 1007, m_dwUnk48);
-	DDV_MinMaxInt(pDX, m_dwUnk48, 0, 5000);
-	DDX_Text(pDX, 1010, m_dwUnk4C);
-	DDV_MinMaxInt(pDX, m_dwUnk4C, 0, 5000);
-	DDX_Text(pDX, 1006, m_dwUnk50);
-	DDV_MinMaxInt(pDX, m_dwUnk50, 0, 5000);
-	DDX_Text(pDX, 1011, m_dwUnk54);
-	DDV_MinMaxInt(pDX, m_dwUnk54, 0, 5000);
+	//{{AFX_DATA_MAP(CPodTimesDialog)
+	DDX_Text(pDX, 1008, m_nInvincibleTime);
+	DDV_MinMaxInt(pDX, m_nInvincibleTime, 0, 5000);
+	DDX_Text(pDX, 1007, m_nSlowTime);
+	DDV_MinMaxInt(pDX, m_nSlowTime, 0, 5000);
+	DDX_Text(pDX, 1010, m_nSmokeTime);
+	DDV_MinMaxInt(pDX, m_nSmokeTime, 0, 5000);
+	DDX_Text(pDX, 1006, m_nSpeedTime);
+	DDV_MinMaxInt(pDX, m_nSpeedTime, 0, 5000);
+	DDX_Text(pDX, 1011, m_nWallTime);
+	DDV_MinMaxInt(pDX, m_nWallTime, 0, 5000);
 	DDX_Text(pDX, 1017, m_dblUnk58);
 	DDV_MinMaxDouble(pDX, m_dblUnk58, 0.0, 1.0);
 	DDX_Text(pDX, 1019, m_dblUnk60);
@@ -326,10 +330,11 @@ void CSub42C890::DoDataExchange(CDataExchange* pDX)
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// CSub42D910 dialog ("Player Controls")
+// CPlayerControlsDialog dialog ("Player Controls")
 
 // hover.exe:0x4BDBB8
-static DWORD s_adwControlsHelp[] =
+// GLOBAL: HOVER 0x4bdbb8
+DWORD s_adwControlsHelp[] =
 {
 	IDC_CTRL_JOYSTICK, 2400,
 	IDC_CTRL_KEYBOARD, 2400,
@@ -346,8 +351,8 @@ static DWORD s_adwControlsHelp[] =
 	0, 0
 };
 
-BEGIN_MESSAGE_MAP(CSub42D910, CDialog)
-	//{{AFX_MSG_MAP(CSub42D910)
+BEGIN_MESSAGE_MAP(CPlayerControlsDialog, CDialog)
+	//{{AFX_MSG_MAP(CPlayerControlsDialog)
 	ON_COMMAND(IDC_CTRL_SETKEYS, OnSetKeys)
 	ON_COMMAND(IDC_CTRL_DEFAULT, OnDefault)
 	ON_COMMAND(IDC_CTRL_CALIBRATE, OnCalibrate)
@@ -359,15 +364,15 @@ END_MESSAGE_MAP()
 
 // hover.exe:0x42D910
 // FUNCTION: HOVER 0x42d910
-CSub42D910::CSub42D910(CWnd* pParent) : CDialog(IDD_PLAYERCONTROLS, pParent)
+CPlayerControlsDialog::CPlayerControlsDialog(CWnd* pParent) : CDialog(IDD_PLAYERCONTROLS, pParent)
 {
 }
 
 // hover.exe:0x42DAE0
 // FUNCTION: HOVER 0x42dae0
-void CSub42D910::DoDataExchange(CDataExchange* pDX)
+void CPlayerControlsDialog::DoDataExchange(CDataExchange* pDX)
 {
-	//{{AFX_DATA_MAP(CSub42D910)
+	//{{AFX_DATA_MAP(CPlayerControlsDialog)
 	DDX_Control(pDX, IDC_CTRL_JOYSTICK, m_btnJoystick);
 	DDX_Control(pDX, IDC_CTRL_CALIBRATE, m_btnCalibrate);
 	DDX_Control(pDX, IDC_CTRL_WALL, m_comboWall);
@@ -382,7 +387,7 @@ void CSub42D910::DoDataExchange(CDataExchange* pDX)
 
 // hover.exe:0x42DB60
 // FUNCTION: HOVER 0x42db60
-BOOL CSub42D910::Sub_42DB60(DWORD* avk, int nCount)
+BOOL CPlayerControlsDialog::AreKeysUnique(DWORD* avk, int nCount)
 {
 	int i, j;
 	DWORD* p;
@@ -420,7 +425,7 @@ BOOL CSub42D910::Sub_42DB60(DWORD* avk, int nCount)
 
 // hover.exe:0x42DBE0
 // FUNCTION: HOVER 0x42dbe0
-void CSub42D910::Sub_42DBE0(CWnd* pCombo, DWORD dwVK)
+void CPlayerControlsDialog::SelectKey(CWnd* pCombo, DWORD dwVK)
 {
 	int i;
 
@@ -443,7 +448,7 @@ void CSub42D910::Sub_42DBE0(CWnd* pCombo, DWORD dwVK)
 
 // hover.exe:0x42DD70
 // FUNCTION: HOVER 0x42dd70
-void CSub42D910::Sub_42DD70(CWnd* pCombo, DWORD dwVK, BOOL bLettersOnly)
+void CPlayerControlsDialog::FillKeyCombo(CWnd* pCombo, DWORD dwVK, BOOL bLettersOnly)
 {
 	CString str;
 	const KEYNAME* pKey;
@@ -501,7 +506,7 @@ void CSub42D910::Sub_42DD70(CWnd* pCombo, DWORD dwVK, BOOL bLettersOnly)
 
 // hover.exe:0x42DEF0
 // FUNCTION: HOVER 0x42def0
-BOOL CSub42D910::OnInitDialog()
+BOOL CPlayerControlsDialog::OnInitDialog()
 {
 	CDialog::OnInitDialog();
 
@@ -529,9 +534,9 @@ BOOL CSub42D910::OnInitDialog()
 	::CheckDlgButton(m_hWnd, IDC_CTRL_JOYSTICK, theApp.m_avkControls[11]);
 	::EnableWindow(m_btnCalibrate.m_hWnd, theApp.m_avkControls[11]);
 
-	Sub_42DD70(&m_comboWall, theApp.m_avkControls[1], TRUE);
-	Sub_42DD70(&m_comboCloak, theApp.m_avkControls[0], TRUE);
-	Sub_42DD70(&m_comboJump, theApp.m_avkControls[2], TRUE);
+	FillKeyCombo(&m_comboWall, theApp.m_avkControls[1], TRUE);
+	FillKeyCombo(&m_comboCloak, theApp.m_avkControls[0], TRUE);
+	FillKeyCombo(&m_comboJump, theApp.m_avkControls[2], TRUE);
 	return TRUE;
 }
 
@@ -541,9 +546,9 @@ BOOL CSub42D910::OnInitDialog()
 
 // hover.exe:0x42DFF0
 // FUNCTION: HOVER 0x42dff0
-void CSub42D910::OnSetKeys()
+void CPlayerControlsDialog::OnSetKeys()
 {
-	CSub42FE20 dlg(NULL);
+	CKeyboardDialog dlg(NULL);
 
 	dlg.m_dwWallKey = m_comboWall.GetItemData(m_comboWall.GetCurSel());
 	dlg.m_dwCloakKey = m_comboCloak.GetItemData(m_comboCloak.GetCurSel());
@@ -556,7 +561,7 @@ void CSub42D910::OnSetKeys()
 
 // hover.exe:0x42E0F0
 // FUNCTION: HOVER 0x42e0f0
-void CSub42D910::OnOK()
+void CPlayerControlsDialog::OnOK()
 {
 	DWORD avk[11];
 
@@ -572,7 +577,7 @@ void CSub42D910::OnOK()
 	avk[9] = theApp.m_avkControls[4];
 	avk[10] = theApp.m_avkControls[10];
 
-	if (!Sub_42DB60(avk, 11))
+	if (!AreKeysUnique(avk, 11))
 	{
 		CString str;
 		str.LoadString(IDS_DUPLICATE_KEYS);
@@ -584,7 +589,7 @@ void CSub42D910::OnOK()
 	theApp.m_avkControls[0] = m_comboCloak.GetItemData(m_comboCloak.GetCurSel());
 	theApp.m_avkControls[2] = m_comboJump.GetItemData(m_comboJump.GetCurSel());
 	theApp.m_avkControls[11] = ::IsDlgButtonChecked(m_hWnd, IDC_CTRL_JOYSTICK);
-	Hover_sub_42E420();
+	Hover_SavePlayerControls();
 	CDialog::OnOK();
 }
 
@@ -592,7 +597,7 @@ void CSub42D910::OnOK()
 
 // hover.exe:0x42E2D0
 // FUNCTION: HOVER 0x42e2d0
-void CSub42D910::OnDefault()
+void CPlayerControlsDialog::OnDefault()
 {
 	int i;
 
@@ -632,7 +637,7 @@ void CSub42D910::OnDefault()
 
 // hover.exe:0x42E3F0
 // FUNCTION: HOVER 0x42e3f0
-void CSub42D910::OnCalibrate()
+void CPlayerControlsDialog::OnCalibrate()
 {
 	HINSTANCE hLib;
 	LPSHOWJOYCPL pfnShowJoyCPL;
@@ -648,7 +653,7 @@ void CSub42D910::OnCalibrate()
 
 // hover.exe:0x42E4F0
 // FUNCTION: HOVER 0x42e4f0
-LRESULT CSub42D910::OnHelpInfo(WPARAM wParam, LPARAM lParam)
+LRESULT CPlayerControlsDialog::OnHelpInfo(WPARAM wParam, LPARAM lParam)
 {
 	return ::WinHelp((HWND)((LPHELPINFO)lParam)->hItemHandle, "hover.hlp",
 		HELP_WM_HELP, (DWORD)s_adwControlsHelp);
@@ -656,7 +661,7 @@ LRESULT CSub42D910::OnHelpInfo(WPARAM wParam, LPARAM lParam)
 
 // hover.exe:0x42E510
 // FUNCTION: HOVER 0x42e510
-LRESULT CSub42D910::OnHelpContextMenu(WPARAM wParam, LPARAM lParam)
+LRESULT CPlayerControlsDialog::OnHelpContextMenu(WPARAM wParam, LPARAM lParam)
 {
 	::WinHelp((HWND)wParam, "hover.hlp", HELP_CONTEXTMENU,
 		(DWORD)s_adwControlsHelp);
@@ -667,19 +672,19 @@ LRESULT CSub42D910::OnHelpContextMenu(WPARAM wParam, LPARAM lParam)
 
 // hover.exe:0x42E530
 // FUNCTION: HOVER 0x42e530
-void CSub42D910::OnJoystick()
+void CPlayerControlsDialog::OnJoystick()
 {
 	::EnableWindow(m_btnCalibrate.m_hWnd,
 		::IsDlgButtonChecked(m_hWnd, IDC_CTRL_JOYSTICK));
 }
 
 // Saves the eleven key bindings plus the joystick flag as the 0x30-byte
-// "PlayerControls" REG_BINARY value, in the order Hover_sub_4232E0 reads
+// "PlayerControls" REG_BINARY value, in the order Hover_LoadControls reads
 // them back in.
 
 // hover.exe:0x42E420
 // FUNCTION: HOVER 0x42e420
-void Hover_sub_42E420()
+void Hover_SavePlayerControls()
 {
 	HKEY hKey;
 	DWORD dwDisposition;
@@ -709,11 +714,12 @@ void Hover_sub_42E420()
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// CSub42FE20 dialog ("Keyboard Settings")
+// CKeyboardDialog dialog ("Keyboard Settings")
 
 // hover.exe:0x4BF1E0. The first entry is the dialog's own template id and
 // IDC_KEY_FORWARD appears twice; both are as in hover.exe.
-static DWORD s_adwKeyboardHelp[] =
+// GLOBAL: HOVER 0x4bf1e0
+DWORD s_adwKeyboardHelp[] =
 {
 	IDD_KEYBOARD, 2500,
 	IDC_KEY_FWDLEFT, 2500,
@@ -729,8 +735,8 @@ static DWORD s_adwKeyboardHelp[] =
 	0, 0
 };
 
-BEGIN_MESSAGE_MAP(CSub42FE20, CDialog)
-	//{{AFX_MSG_MAP(CSub42FE20)
+BEGIN_MESSAGE_MAP(CKeyboardDialog, CDialog)
+	//{{AFX_MSG_MAP(CKeyboardDialog)
 	ON_COMMAND(IDC_KEY_DEFAULT, OnDefault)
 	ON_MESSAGE(WM_HELP, OnHelpInfo)
 	ON_MESSAGE(WM_CONTEXTMENU, OnHelpContextMenu)
@@ -739,15 +745,15 @@ END_MESSAGE_MAP()
 
 // hover.exe:0x42FE20
 // FUNCTION: HOVER 0x42fe20
-CSub42FE20::CSub42FE20(CWnd* pParent) : CDialog(IDD_KEYBOARD, pParent)
+CKeyboardDialog::CKeyboardDialog(CWnd* pParent) : CDialog(IDD_KEYBOARD, pParent)
 {
 }
 
 // hover.exe:0x4300E0
 // FUNCTION: HOVER 0x4300e0
-void CSub42FE20::DoDataExchange(CDataExchange* pDX)
+void CKeyboardDialog::DoDataExchange(CDataExchange* pDX)
 {
-	//{{AFX_DATA_MAP(CSub42FE20)
+	//{{AFX_DATA_MAP(CKeyboardDialog)
 	DDX_Control(pDX, IDC_KEY_REVRIGHT, m_comboRevRight);
 	DDX_Control(pDX, IDC_KEY_REVLEFT, m_comboRevLeft);
 	DDX_Control(pDX, IDC_KEY_LEFT, m_comboLeft);
@@ -761,23 +767,23 @@ void CSub42FE20::DoDataExchange(CDataExchange* pDX)
 
 // hover.exe:0x4304B0
 // FUNCTION: HOVER 0x4304b0
-BOOL CSub42FE20::OnInitDialog()
+BOOL CKeyboardDialog::OnInitDialog()
 {
 	CDialog::OnInitDialog();
-	m_pParentDlg->Sub_42DD70(&m_comboFwdLeft, theApp.m_avkControls[7], FALSE);
-	m_pParentDlg->Sub_42DD70(&m_comboForward, theApp.m_avkControls[3], FALSE);
-	m_pParentDlg->Sub_42DD70(&m_comboFwdRight, theApp.m_avkControls[8], FALSE);
-	m_pParentDlg->Sub_42DD70(&m_comboLeft, theApp.m_avkControls[5], FALSE);
-	m_pParentDlg->Sub_42DD70(&m_comboRight, theApp.m_avkControls[6], FALSE);
-	m_pParentDlg->Sub_42DD70(&m_comboRevLeft, theApp.m_avkControls[9], FALSE);
-	m_pParentDlg->Sub_42DD70(&m_comboReverse, theApp.m_avkControls[4], FALSE);
-	m_pParentDlg->Sub_42DD70(&m_comboRevRight, theApp.m_avkControls[10], FALSE);
+	m_pParentDlg->FillKeyCombo(&m_comboFwdLeft, theApp.m_avkControls[7], FALSE);
+	m_pParentDlg->FillKeyCombo(&m_comboForward, theApp.m_avkControls[3], FALSE);
+	m_pParentDlg->FillKeyCombo(&m_comboFwdRight, theApp.m_avkControls[8], FALSE);
+	m_pParentDlg->FillKeyCombo(&m_comboLeft, theApp.m_avkControls[5], FALSE);
+	m_pParentDlg->FillKeyCombo(&m_comboRight, theApp.m_avkControls[6], FALSE);
+	m_pParentDlg->FillKeyCombo(&m_comboRevLeft, theApp.m_avkControls[9], FALSE);
+	m_pParentDlg->FillKeyCombo(&m_comboReverse, theApp.m_avkControls[4], FALSE);
+	m_pParentDlg->FillKeyCombo(&m_comboRevRight, theApp.m_avkControls[10], FALSE);
 	return TRUE;
 }
 
 // hover.exe:0x430190
 // FUNCTION: HOVER 0x430190
-void CSub42FE20::OnOK()
+void CKeyboardDialog::OnOK()
 {
 	DWORD avk[11];
 
@@ -793,7 +799,7 @@ void CSub42FE20::OnOK()
 	avk[9] = m_comboReverse.GetItemData(m_comboReverse.GetCurSel());
 	avk[10] = m_comboRevRight.GetItemData(m_comboRevRight.GetCurSel());
 
-	if (!m_pParentDlg->Sub_42DB60(avk, 11))
+	if (!m_pParentDlg->AreKeysUnique(avk, 11))
 	{
 		CString str;
 		str.LoadString(IDS_DUPLICATE_KEYS);
@@ -817,21 +823,21 @@ void CSub42FE20::OnOK()
 
 // hover.exe:0x430580
 // FUNCTION: HOVER 0x430580
-void CSub42FE20::OnDefault()
+void CKeyboardDialog::OnDefault()
 {
-	m_pParentDlg->Sub_42DBE0(&m_comboFwdLeft, VK_HOME);
-	m_pParentDlg->Sub_42DBE0(&m_comboForward, VK_UP);
-	m_pParentDlg->Sub_42DBE0(&m_comboFwdRight, VK_PRIOR);
-	m_pParentDlg->Sub_42DBE0(&m_comboLeft, VK_LEFT);
-	m_pParentDlg->Sub_42DBE0(&m_comboRight, VK_RIGHT);
-	m_pParentDlg->Sub_42DBE0(&m_comboRevLeft, VK_END);
-	m_pParentDlg->Sub_42DBE0(&m_comboReverse, VK_DOWN);
-	m_pParentDlg->Sub_42DBE0(&m_comboRevRight, VK_NEXT);
+	m_pParentDlg->SelectKey(&m_comboFwdLeft, VK_HOME);
+	m_pParentDlg->SelectKey(&m_comboForward, VK_UP);
+	m_pParentDlg->SelectKey(&m_comboFwdRight, VK_PRIOR);
+	m_pParentDlg->SelectKey(&m_comboLeft, VK_LEFT);
+	m_pParentDlg->SelectKey(&m_comboRight, VK_RIGHT);
+	m_pParentDlg->SelectKey(&m_comboRevLeft, VK_END);
+	m_pParentDlg->SelectKey(&m_comboReverse, VK_DOWN);
+	m_pParentDlg->SelectKey(&m_comboRevRight, VK_NEXT);
 }
 
 // hover.exe:0x430610
 // FUNCTION: HOVER 0x430610
-LRESULT CSub42FE20::OnHelpInfo(WPARAM wParam, LPARAM lParam)
+LRESULT CKeyboardDialog::OnHelpInfo(WPARAM wParam, LPARAM lParam)
 {
 	return ::WinHelp((HWND)((LPHELPINFO)lParam)->hItemHandle, "hover.hlp",
 		HELP_WM_HELP, (DWORD)s_adwKeyboardHelp);
@@ -839,7 +845,7 @@ LRESULT CSub42FE20::OnHelpInfo(WPARAM wParam, LPARAM lParam)
 
 // hover.exe:0x430630
 // FUNCTION: HOVER 0x430630
-LRESULT CSub42FE20::OnHelpContextMenu(WPARAM wParam, LPARAM lParam)
+LRESULT CKeyboardDialog::OnHelpContextMenu(WPARAM wParam, LPARAM lParam)
 {
 	::WinHelp((HWND)wParam, "hover.hlp", HELP_CONTEXTMENU,
 		(DWORD)s_adwKeyboardHelp);
@@ -847,10 +853,11 @@ LRESULT CSub42FE20::OnHelpContextMenu(WPARAM wParam, LPARAM lParam)
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// CSub42E790 dialog ("Sound Options")
+// CSoundOptionsDialog dialog ("Sound Options")
 
 // hover.exe:0x4BDFE0
-static DWORD s_adwSoundHelp[] =
+// GLOBAL: HOVER 0x4bdfe0
+DWORD s_adwSoundHelp[] =
 {
 	IDC_SOUND_EFFECTSBOX, 2300,
 	IDC_SOUND_MUSIC, 2300,
@@ -860,8 +867,8 @@ static DWORD s_adwSoundHelp[] =
 	0, 0
 };
 
-BEGIN_MESSAGE_MAP(CSub42E790, CDialog)
-	//{{AFX_MSG_MAP(CSub42E790)
+BEGIN_MESSAGE_MAP(CSoundOptionsDialog, CDialog)
+	//{{AFX_MSG_MAP(CSoundOptionsDialog)
 	ON_MESSAGE(WM_HELP, OnHelpInfo)
 	ON_MESSAGE(WM_CONTEXTMENU, OnHelpContextMenu)
 	ON_COMMAND(IDC_SOUND_MIXING, OnMixing)
@@ -870,7 +877,7 @@ END_MESSAGE_MAP()
 
 // hover.exe:0x42E790
 // FUNCTION: HOVER 0x42e790
-CSub42E790::CSub42E790(CWnd* pParent) : CDialog(IDD_SOUNDOPTIONS, pParent)
+CSoundOptionsDialog::CSoundOptionsDialog(CWnd* pParent) : CDialog(IDD_SOUNDOPTIONS, pParent)
 {
 	m_nEngine = 0;
 	m_nMusic = 0;
@@ -880,18 +887,18 @@ CSub42E790::CSub42E790(CWnd* pParent) : CDialog(IDD_SOUNDOPTIONS, pParent)
 
 // hover.exe:0x42E920
 // FUNCTION: HOVER 0x42e920
-void CSub42E790::DoDataExchange(CDataExchange* pDX)
+void CSoundOptionsDialog::DoDataExchange(CDataExchange* pDX)
 {
 	if (!pDX->m_bSaveAndValidate)
 	{
-		Hover_sub_4234F0();
-		m_nEngine = theApp.m_dwUnk0404;
-		m_nGameSounds = theApp.m_dwUnk0408;
-		m_nMusic = theApp.m_dwUnk040C;
-		m_nMixing = g_dwUnk_4C56D8;
+		Hover_LoadSoundSettings();
+		m_nEngine = theApp.m_bEngineSound;
+		m_nGameSounds = theApp.m_bGameSounds;
+		m_nMusic = theApp.m_bMusic;
+		m_nMixing = g_bUseWaveMix;
 	}
 
-	//{{AFX_DATA_MAP(CSub42E790)
+	//{{AFX_DATA_MAP(CSoundOptionsDialog)
 	DDX_Control(pDX, IDC_SOUND_ENGINE, m_btnEngine);
 	DDX_Control(pDX, IDC_SOUND_GAMESOUNDS, m_btnGameSounds);
 	DDX_Control(pDX, IDC_SOUND_MIXING, m_btnMixing);
@@ -908,12 +915,12 @@ void CSub42E790::DoDataExchange(CDataExchange* pDX)
 
 // hover.exe:0x42EA00
 // FUNCTION: HOVER 0x42ea00
-BOOL CSub42E790::OnInitDialog()
+BOOL CSoundOptionsDialog::OnInitDialog()
 {
 	CDialog::OnInitDialog();
-	Hover_sub_4234F0();
+	Hover_LoadSoundSettings();
 
-	if (g_dwUnk_4C56D4 == 0 && g_dwUnk_4C56D0 == 0)
+	if (g_bWaveOutAvailable == 0 && g_bMixSessionOpen == 0)
 	{
 		::EnableWindow(m_btnEngine.m_hWnd, FALSE);
 		::EnableWindow(m_btnGameSounds.m_hWnd, FALSE);
@@ -923,7 +930,7 @@ BOOL CSub42E790::OnInitDialog()
 		m_nEngine = 0;
 	}
 
-	if (theApp.m_dwUnk0410 == 0)
+	if (theApp.m_bMidiAvailable == 0)
 	{
 		::EnableWindow(m_btnMusic.m_hWnd, FALSE);
 		m_nMusic = 0;
@@ -935,7 +942,7 @@ BOOL CSub42E790::OnInitDialog()
 
 // hover.exe:0x42EB40
 // FUNCTION: HOVER 0x42eb40
-void CSub42E790::OnOK()
+void CSoundOptionsDialog::OnOK()
 {
 	HKEY hKey;
 	DWORD dwDisposition;
@@ -943,19 +950,19 @@ void CSub42E790::OnOK()
 				// only the first four of which it ever writes
 
 	UpdateData(TRUE);
-	theApp.m_dwUnk0404 = m_nEngine;
-	theApp.m_dwUnk0408 = m_nGameSounds;
-	theApp.m_dwUnk040C = m_nMusic;
-	g_dwUnk_4C56D8 = m_nMixing;
+	theApp.m_bEngineSound = m_nEngine;
+	theApp.m_bGameSounds = m_nGameSounds;
+	theApp.m_bMusic = m_nMusic;
+	g_bUseWaveMix = m_nMixing;
 
 	if (RegCreateKeyExA(HKEY_CURRENT_USER, "Software\\Microsoft\\Hover!", 0,
 			NULL, 0, KEY_ALL_ACCESS, NULL, &hKey, &dwDisposition)
 			== ERROR_SUCCESS)
 	{
-		buf[0] = (BYTE)theApp.m_dwUnk040C;
-		buf[1] = (BYTE)theApp.m_dwUnk0404;
-		buf[2] = (BYTE)theApp.m_dwUnk0408;
-		buf[3] = (BYTE)g_dwUnk_4C56D8;
+		buf[0] = (BYTE)theApp.m_bMusic;
+		buf[1] = (BYTE)theApp.m_bEngineSound;
+		buf[2] = (BYTE)theApp.m_bGameSounds;
+		buf[3] = (BYTE)g_bUseWaveMix;
 		RegSetValueExA(hKey, "SoundSettings", 0, REG_BINARY, buf, 4);
 		RegCloseKey(hKey);
 	}
@@ -969,21 +976,21 @@ void CSub42E790::OnOK()
 
 // hover.exe:0x42EAE0
 // FUNCTION: HOVER 0x42eae0
-void CSub42E790::OnMixing()
+void CSoundOptionsDialog::OnMixing()
 {
 	UpdateData(TRUE);
 	::SetCursor(::LoadCursor(NULL, IDC_WAIT));
-	theApp.m_pBumperDoc->Sub_426EE0();
-	Hover_sub_422E30();
-	g_dwUnk_4C56D8 = m_nMixing;
-	Hover_sub_423140();
-	theApp.m_pBumperDoc->Sub_426E90();
+	theApp.m_pBumperDoc->DestroySounds();
+	Hover_ShutdownSound();
+	g_bUseWaveMix = m_nMixing;
+	Hover_InitSound();
+	theApp.m_pBumperDoc->CreateSounds();
 	::SetCursor(::LoadCursor(NULL, IDC_ARROW));
 }
 
 // hover.exe:0x42EAA0
 // FUNCTION: HOVER 0x42eaa0
-LRESULT CSub42E790::OnHelpInfo(WPARAM wParam, LPARAM lParam)
+LRESULT CSoundOptionsDialog::OnHelpInfo(WPARAM wParam, LPARAM lParam)
 {
 	return ::WinHelp((HWND)((LPHELPINFO)lParam)->hItemHandle, "hover.hlp",
 		HELP_WM_HELP, (DWORD)s_adwSoundHelp);
@@ -991,7 +998,7 @@ LRESULT CSub42E790::OnHelpInfo(WPARAM wParam, LPARAM lParam)
 
 // hover.exe:0x42EAC0
 // FUNCTION: HOVER 0x42eac0
-LRESULT CSub42E790::OnHelpContextMenu(WPARAM wParam, LPARAM lParam)
+LRESULT CSoundOptionsDialog::OnHelpContextMenu(WPARAM wParam, LPARAM lParam)
 {
 	::WinHelp((HWND)wParam, "hover.hlp", HELP_CONTEXTMENU,
 		(DWORD)s_adwSoundHelp);
@@ -999,15 +1006,18 @@ LRESULT CSub42E790::OnHelpContextMenu(WPARAM wParam, LPARAM lParam)
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// CSub42F640 dialog ("Start At")
+// CStartAtDialog dialog ("Start At")
 
 // hover.exe:0x4BED50 / 0x4BED60: the settings summary strings.
-static UINT s_anSkillNames[] =
+// GLOBAL: HOVER 0x4bed50
+UINT s_anSkillNames[] =
 	{ IDS_SKILL_EASY, IDS_SKILL_INTERMEDIATE, IDS_SKILL_DIFFICULT, 0 };
-static UINT s_anMazeNames[] = { IDS_MAZE_SEQUENTIAL, IDS_MAZE_RANDOM };
+// GLOBAL: HOVER 0x4bed60
+UINT s_anMazeNames[] = { IDS_MAZE_SEQUENTIAL, IDS_MAZE_RANDOM };
 
 // hover.exe:0x4BECD0
-static DWORD s_adwStartAtHelp[] =
+// GLOBAL: HOVER 0x4becd0
+DWORD s_adwStartAtHelp[] =
 {
 	IDC_STARTAT_LEVEL, 2000,
 	IDC_STARTAT_SPIN, 2000,
@@ -1027,8 +1037,8 @@ static DWORD s_adwStartAtHelp[] =
 	0, 0
 };
 
-BEGIN_MESSAGE_MAP(CSub42F640, CDialog)
-	//{{AFX_MSG_MAP(CSub42F640)
+BEGIN_MESSAGE_MAP(CStartAtDialog, CDialog)
+	//{{AFX_MSG_MAP(CStartAtDialog)
 	ON_MESSAGE(WM_HELP, OnHelpInfo)
 	ON_MESSAGE(WM_CONTEXTMENU, OnHelpContextMenu)
 	ON_COMMAND(IDC_STARTAT_CUSTOMIZE, OnCustomize)
@@ -1038,14 +1048,14 @@ END_MESSAGE_MAP()
 
 // hover.exe:0x42F640
 // FUNCTION: HOVER 0x42f640
-CSub42F640::CSub42F640(CWnd* pParent) : CDialog(IDD_STARTAT, pParent)
+CStartAtDialog::CStartAtDialog(CWnd* pParent) : CDialog(IDD_STARTAT, pParent)
 {
-	m_nLevel = g_dwUnk_46048C;
+	m_nLevel = g_dwStartAtLevel;
 }
 
 // hover.exe:0x42F890
 // FUNCTION: HOVER 0x42f890
-BOOL CSub42F640::OnInitDialog()
+BOOL CStartAtDialog::OnInitDialog()
 {
 	CString str;
 
@@ -1054,30 +1064,30 @@ BOOL CSub42F640::OnInitDialog()
 	m_spinLevel.SetBuddy(&m_editLevel);
 	OnChangeLevel();
 
-	str.LoadString(s_anMazeNames[theApp.m_dwUnk01CC]);
+	str.LoadString(s_anMazeNames[theApp.m_dwMazeOrder]);
 	::SetDlgItemText(m_hWnd, IDC_STARTAT_MAZETYPE, str);
-	str.LoadString(s_anSkillNames[theApp.m_dwUnk01C8]);
+	str.LoadString(s_anSkillNames[theApp.m_dwSkill]);
 	::SetDlgItemText(m_hWnd, IDC_STARTAT_CONTROLS, str);
 	return TRUE;
 }
 
 // hover.exe:0x42FCC0
 // FUNCTION: HOVER 0x42fcc0
-void CSub42F640::OnOK()
+void CStartAtDialog::OnOK()
 {
 	if (UpdateData(TRUE))
 	{
-		g_dwUnk_46048C = m_nLevel;
+		g_dwStartAtLevel = m_nLevel;
 		CDialog::OnOK();
 	}
 }
 
 // Formats dwScore with thousands separators into the static control nID
-// (the same code as CSub424BD0::Sub_433860).
+// (the same code as CHighScoresDialog::SetScoreText).
 
 // hover.exe:0x42FA80
 // FUNCTION: HOVER 0x42fa80
-void CSub42F640::Sub_42FA80(UINT nID, DWORD dwScore)
+void CStartAtDialog::SetScoreText(UINT nID, DWORD dwScore)
 {
 	CString strDigits;
 	CString strOut;
@@ -1100,15 +1110,15 @@ void CSub42F640::Sub_42FA80(UINT nID, DWORD dwScore)
 
 // hover.exe:0x42F990
 // FUNCTION: HOVER 0x42f990
-void CSub42F640::OnCustomize()
+void CStartAtDialog::OnCustomize()
 {
-	CSub413F10 dlg(NULL);
+	CCustomizeDialog dlg(NULL);
 	CString str;
 
 	dlg.DoModal();
-	str.LoadString(s_anMazeNames[theApp.m_dwUnk01CC]);
+	str.LoadString(s_anMazeNames[theApp.m_dwMazeOrder]);
 	::SetDlgItemText(m_hWnd, IDC_STARTAT_MAZETYPE, str);
-	str.LoadString(s_anSkillNames[theApp.m_dwUnk01C8]);
+	str.LoadString(s_anSkillNames[theApp.m_dwSkill]);
 	::SetDlgItemText(m_hWnd, IDC_STARTAT_CONTROLS, str);
 	OnChangeLevel();
 }
@@ -1119,7 +1129,7 @@ void CSub42F640::OnCustomize()
 
 // hover.exe:0x42FB60
 // FUNCTION: HOVER 0x42fb60
-void CSub42F640::OnChangeLevel()
+void CStartAtDialog::OnChangeLevel()
 {
 	CString str1;
 	CString str2;
@@ -1134,19 +1144,19 @@ void CSub42F640::OnChangeLevel()
 		nLevel = nUpper;
 	nLevel--;
 
-	Sub_42FA80(IDC_STARTAT_CAPTURED,
-		(&LVLPARAM(nLevel).m_dwUnk40)[theApp.m_dwUnk01C8]);
-	Sub_42FA80(IDC_STARTAT_REMAINING,
-		(&LVLPARAM(nLevel).m_dwUnk4C)[theApp.m_dwUnk01C8]);
-	Sub_42FA80(IDC_STARTAT_LEVELSCORE,
-		(&LVLPARAM(nLevel).m_dwUnk34)[theApp.m_dwUnk01C8]);
+	SetScoreText(IDC_STARTAT_CAPTURED,
+		LVLPARAM(nLevel).m_anCaptureScore[theApp.m_dwSkill]);
+	SetScoreText(IDC_STARTAT_REMAINING,
+		LVLPARAM(nLevel).m_anRemainingScore[theApp.m_dwSkill]);
+	SetScoreText(IDC_STARTAT_LEVELSCORE,
+		LVLPARAM(nLevel).m_anLevelScore[theApp.m_dwSkill]);
 }
 
 // hover.exe:0x42F7D0
 // FUNCTION: HOVER 0x42f7d0
-void CSub42F640::DoDataExchange(CDataExchange* pDX)
+void CStartAtDialog::DoDataExchange(CDataExchange* pDX)
 {
-	//{{AFX_DATA_MAP(CSub42F640)
+	//{{AFX_DATA_MAP(CStartAtDialog)
 	DDX_Control(pDX, IDC_STARTAT_CUSTOMIZE, m_btnCustomize);
 	DDX_Control(pDX, IDOK, m_btnOK);
 	DDX_Control(pDX, IDC_STARTAT_LEVEL, m_editLevel);
@@ -1158,7 +1168,7 @@ void CSub42F640::DoDataExchange(CDataExchange* pDX)
 
 // hover.exe:0x42F850
 // FUNCTION: HOVER 0x42f850
-LRESULT CSub42F640::OnHelpInfo(WPARAM wParam, LPARAM lParam)
+LRESULT CStartAtDialog::OnHelpInfo(WPARAM wParam, LPARAM lParam)
 {
 	return ::WinHelp((HWND)((LPHELPINFO)lParam)->hItemHandle, "hover.hlp",
 		HELP_WM_HELP, (DWORD)s_adwStartAtHelp);
@@ -1166,7 +1176,7 @@ LRESULT CSub42F640::OnHelpInfo(WPARAM wParam, LPARAM lParam)
 
 // hover.exe:0x42F870
 // FUNCTION: HOVER 0x42f870
-LRESULT CSub42F640::OnHelpContextMenu(WPARAM wParam, LPARAM lParam)
+LRESULT CStartAtDialog::OnHelpContextMenu(WPARAM wParam, LPARAM lParam)
 {
 	::WinHelp((HWND)wParam, "hover.hlp", HELP_CONTEXTMENU,
 		(DWORD)s_adwStartAtHelp);
@@ -1174,10 +1184,10 @@ LRESULT CSub42F640::OnHelpContextMenu(WPARAM wParam, LPARAM lParam)
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// CSub430780 dialog (debug template 148: human player parameters)
+// CHumanParamsDialog dialog (debug template 148: human player parameters)
 
-BEGIN_MESSAGE_MAP(CSub430780, CDialog)
-	//{{AFX_MSG_MAP(CSub430780)
+BEGIN_MESSAGE_MAP(CHumanParamsDialog, CDialog)
+	//{{AFX_MSG_MAP(CHumanParamsDialog)
 	ON_COMMAND(IDRETRY, OnDeleteSettings)
 	ON_COMMAND(IDABORT, OnSaveSettings)
 	//}}AFX_MSG_MAP
@@ -1185,7 +1195,7 @@ END_MESSAGE_MAP()
 
 // hover.exe:0x430780
 // FUNCTION: HOVER 0x430780
-CSub430780::CSub430780(CWnd* pParent) : CDialog(IDD_DBG_148, pParent)
+CHumanParamsDialog::CHumanParamsDialog(CWnd* pParent) : CDialog(IDD_DBG_HUMANPARAMS, pParent)
 {
 	m_adblParams[0] = 0.0;
 	m_adblParams[1] = 0.0;
@@ -1221,9 +1231,9 @@ CSub430780::CSub430780(CWnd* pParent) : CDialog(IDD_DBG_148, pParent)
 
 // hover.exe:0x430930
 // FUNCTION: HOVER 0x430930
-void CSub430780::DoDataExchange(CDataExchange* pDX)
+void CHumanParamsDialog::DoDataExchange(CDataExchange* pDX)
 {
-	//{{AFX_DATA_MAP(CSub430780)
+	//{{AFX_DATA_MAP(CHumanParamsDialog)
 	DDX_Text(pDX, 1046, m_adblParams[0]);
 	DDX_Text(pDX, 1055, m_adblParams[1]);
 	DDV_MinMaxDouble(pDX, m_adblParams[1], -1.0, 0.0);
@@ -1261,7 +1271,7 @@ void CSub430780::DoDataExchange(CDataExchange* pDX)
 
 // hover.exe:0x430B80
 // FUNCTION: HOVER 0x430b80
-BOOL CSub430780::OnInitDialog()
+BOOL CHumanParamsDialog::OnInitDialog()
 {
 	FIXED1616 fx;
 
@@ -1331,7 +1341,7 @@ BOOL CSub430780::OnInitDialog()
 
 // hover.exe:0x4315E0
 // FUNCTION: HOVER 0x4315e0
-void CSub430780::Sub_4315E0()
+void CHumanParamsDialog::ApplyParams()
 {
 	g_HBegParams.m_adw[0] = DBL_TO_FIX(m_adblParams[0]);
 	g_HBegParams.m_adw[1] = DBL_TO_FIX(m_adblParams[1]);
@@ -1363,22 +1373,22 @@ void CSub430780::Sub_4315E0()
 	g_HIntParams.m_adw[8] = DBL_TO_FIX(m_adblParams[27]);
 	g_HIntParams.m_adw[9] = DBL_TO_FIX(m_adblParams[28]);
 	g_HIntParams.m_adw[10] = DBL_TO_FIX(m_adblParams[29]);
-	Hover_sub_401140()->m_obj00E8.Sub_4140E0();
+	Hover_GetView()->m_needle.ComputeScale();
 }
 
 // hover.exe:0x431880
 // FUNCTION: HOVER 0x431880
-void CSub430780::OnOK()
+void CHumanParamsDialog::OnOK()
 {
 	CDialog::OnOK();
-	Sub_4315E0();
+	ApplyParams();
 }
 
 // Button 4: drops the three saved parameter blocks from the registry.
 
 // hover.exe:0x4318A0
 // FUNCTION: HOVER 0x4318a0
-void CSub430780::OnDeleteSettings()
+void CHumanParamsDialog::OnDeleteSettings()
 {
 	HKEY hKey;
 
@@ -1396,13 +1406,13 @@ void CSub430780::OnDeleteSettings()
 
 // hover.exe:0x431900
 // FUNCTION: HOVER 0x431900
-void CSub430780::OnSaveSettings()
+void CHumanParamsDialog::OnSaveSettings()
 {
 	HKEY hKey;
 	DWORD dwDisposition;
 
 	UpdateData(TRUE);
-	Sub_4315E0();
+	ApplyParams();
 
 	if (RegCreateKeyExA(HKEY_CURRENT_USER, "Software\\Microsoft\\Hover!", 0,
 			NULL, 0, KEY_ALL_ACCESS, NULL, &hKey, &dwDisposition)
@@ -1419,13 +1429,13 @@ void CSub430780::OnSaveSettings()
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// CSub4319A0 dialog (debug template 149: robot player parameters)
+// CRobotParamsDialog dialog (debug template 149: robot player parameters)
 //
 // Entries 7 and 8 of each block (m_adblParams 7/8, 18/19, 29/30) have no
 // control and are never touched.
 
-BEGIN_MESSAGE_MAP(CSub4319A0, CDialog)
-	//{{AFX_MSG_MAP(CSub4319A0)
+BEGIN_MESSAGE_MAP(CRobotParamsDialog, CDialog)
+	//{{AFX_MSG_MAP(CRobotParamsDialog)
 	ON_COMMAND(IDRETRY, OnDeleteSettings)
 	ON_COMMAND(IDABORT, OnSaveSettings)
 	//}}AFX_MSG_MAP
@@ -1433,7 +1443,7 @@ END_MESSAGE_MAP()
 
 // hover.exe:0x4319A0
 // FUNCTION: HOVER 0x4319a0
-CSub4319A0::CSub4319A0(CWnd* pParent) : CDialog(IDD_DBG_149, pParent)
+CRobotParamsDialog::CRobotParamsDialog(CWnd* pParent) : CDialog(IDD_DBG_ROBOTPARAMS, pParent)
 {
 	m_adblParams[0] = 0.0;
 	m_adblParams[1] = 0.0;
@@ -1466,9 +1476,9 @@ CSub4319A0::CSub4319A0(CWnd* pParent) : CDialog(IDD_DBG_149, pParent)
 
 // hover.exe:0x431B20
 // FUNCTION: HOVER 0x431b20
-void CSub4319A0::DoDataExchange(CDataExchange* pDX)
+void CRobotParamsDialog::DoDataExchange(CDataExchange* pDX)
 {
-	//{{AFX_DATA_MAP(CSub4319A0)
+	//{{AFX_DATA_MAP(CRobotParamsDialog)
 	DDX_Text(pDX, 1046, m_adblParams[0]);
 	DDX_Text(pDX, 1055, m_adblParams[1]);
 	DDX_Text(pDX, 1043, m_adblParams[2]);
@@ -1506,7 +1516,7 @@ void CSub4319A0::DoDataExchange(CDataExchange* pDX)
 
 // hover.exe:0x432660
 // FUNCTION: HOVER 0x432660
-void CSub4319A0::Sub_432660()
+void CRobotParamsDialog::ApplyParams()
 {
 	g_RBegParams.m_adw[0] = DBL_TO_FIX(m_adblParams[0]);
 	g_RBegParams.m_adw[1] = DBL_TO_FIX(m_adblParams[1]);
@@ -1545,7 +1555,7 @@ void CSub4319A0::Sub_432660()
 
 // hover.exe:0x431D10
 // FUNCTION: HOVER 0x431d10
-BOOL CSub4319A0::OnInitDialog()
+BOOL CRobotParamsDialog::OnInitDialog()
 {
 	FIXED1616 fx;
 
@@ -1609,15 +1619,15 @@ BOOL CSub4319A0::OnInitDialog()
 
 // hover.exe:0x432930
 // FUNCTION: HOVER 0x432930
-void CSub4319A0::OnOK()
+void CRobotParamsDialog::OnOK()
 {
 	CDialog::OnOK();
-	Sub_432660();
+	ApplyParams();
 }
 
 // hover.exe:0x432950
 // FUNCTION: HOVER 0x432950
-void CSub4319A0::OnDeleteSettings()
+void CRobotParamsDialog::OnDeleteSettings()
 {
 	HKEY hKey;
 
@@ -1633,13 +1643,13 @@ void CSub4319A0::OnDeleteSettings()
 
 // hover.exe:0x4329B0
 // FUNCTION: HOVER 0x4329b0
-void CSub4319A0::OnSaveSettings()
+void CRobotParamsDialog::OnSaveSettings()
 {
 	HKEY hKey;
 	DWORD dwDisposition;
 
 	UpdateData(TRUE);
-	Sub_432660();
+	ApplyParams();
 
 	if (RegCreateKeyExA(HKEY_CURRENT_USER, "Software\\Microsoft\\Hover!", 0,
 			NULL, 0, KEY_ALL_ACCESS, NULL, &hKey, &dwDisposition)
@@ -1656,10 +1666,10 @@ void CSub4319A0::OnSaveSettings()
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// CSub432A50 dialog (debug template 152: robot AI parameters)
+// CRobotAIParamsDialog dialog (debug template 152: robot AI parameters)
 
-BEGIN_MESSAGE_MAP(CSub432A50, CDialog)
-	//{{AFX_MSG_MAP(CSub432A50)
+BEGIN_MESSAGE_MAP(CRobotAIParamsDialog, CDialog)
+	//{{AFX_MSG_MAP(CRobotAIParamsDialog)
 	ON_COMMAND(IDRETRY, OnDeleteSettings)
 	ON_COMMAND(IDABORT, OnSaveSettings)
 	//}}AFX_MSG_MAP
@@ -1667,7 +1677,7 @@ END_MESSAGE_MAP()
 
 // hover.exe:0x432A50
 // FUNCTION: HOVER 0x432a50
-CSub432A50::CSub432A50(CWnd* pParent) : CDialog(IDD_DBG_152, pParent)
+CRobotAIParamsDialog::CRobotAIParamsDialog(CWnd* pParent) : CDialog(IDD_DBG_ROBOTAIPARAMS, pParent)
 {
 	m_nBeg1 = 0;
 	m_dblBeg2 = 0.0;
@@ -1703,9 +1713,9 @@ CSub432A50::CSub432A50(CWnd* pParent) : CDialog(IDD_DBG_152, pParent)
 
 // hover.exe:0x432B70
 // FUNCTION: HOVER 0x432b70
-void CSub432A50::DoDataExchange(CDataExchange* pDX)
+void CRobotAIParamsDialog::DoDataExchange(CDataExchange* pDX)
 {
-	//{{AFX_DATA_MAP(CSub432A50)
+	//{{AFX_DATA_MAP(CRobotAIParamsDialog)
 	DDX_Text(pDX, 1107, m_nBeg1);
 	DDX_Text(pDX, 1108, m_dblBeg2);
 	DDX_Text(pDX, 1106, m_dblBeg0);
@@ -1744,7 +1754,7 @@ void CSub432A50::DoDataExchange(CDataExchange* pDX)
 
 // hover.exe:0x432DB0
 // FUNCTION: HOVER 0x432db0
-void CSub432A50::Sub_432DB0()
+void CRobotAIParamsDialog::ApplyParams()
 {
 	g_RobotAIBegParams.m_adw[1] = m_nBeg1;
 	g_RobotAIBegParams.m_adw[2] = DBL_TO_FIX(m_dblBeg2);
@@ -1780,7 +1790,7 @@ void CSub432A50::Sub_432DB0()
 
 // hover.exe:0x432F50
 // FUNCTION: HOVER 0x432f50
-BOOL CSub432A50::OnInitDialog()
+BOOL CRobotAIParamsDialog::OnInitDialog()
 {
 	FIXED1616 fx;
 
@@ -1826,15 +1836,15 @@ BOOL CSub432A50::OnInitDialog()
 
 // hover.exe:0x432F30
 // FUNCTION: HOVER 0x432f30
-void CSub432A50::OnOK()
+void CRobotAIParamsDialog::OnOK()
 {
 	CDialog::OnOK();
-	Sub_432DB0();
+	ApplyParams();
 }
 
 // hover.exe:0x433270
 // FUNCTION: HOVER 0x433270
-void CSub432A50::OnDeleteSettings()
+void CRobotAIParamsDialog::OnDeleteSettings()
 {
 	HKEY hKey;
 
@@ -1850,13 +1860,13 @@ void CSub432A50::OnDeleteSettings()
 
 // hover.exe:0x4332D0
 // FUNCTION: HOVER 0x4332d0
-void CSub432A50::OnSaveSettings()
+void CRobotAIParamsDialog::OnSaveSettings()
 {
 	HKEY hKey;
 	DWORD dwDisposition;
 
 	UpdateData(TRUE);
-	Sub_432DB0();
+	ApplyParams();
 
 	if (RegCreateKeyExA(HKEY_CURRENT_USER, "Software\\Microsoft\\Hover!", 0,
 			NULL, 0, KEY_ALL_ACCESS, NULL, &hKey, &dwDisposition)
@@ -1873,50 +1883,50 @@ void CSub432A50::OnSaveSettings()
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// CSub424720 dialog ("Please Wait")
+// CLoadingDialog dialog ("Please Wait")
 
 // GLOBAL: HOVER 0x4c57c4
-DWORD g_dwUnk_4C57C4;			// hover.exe:0x4C57C4 items done
+DWORD g_dwLoadDone;			// hover.exe:0x4C57C4 items done
 // GLOBAL: HOVER 0x4c57c8
-DWORD g_dwUnk_4C57C8;			// hover.exe:0x4C57C8 items total
+DWORD g_dwLoadTotal;			// hover.exe:0x4C57C8 items total
 
-BEGIN_MESSAGE_MAP(CSub424720, CDialog)
-	//{{AFX_MSG_MAP(CSub424720)
+BEGIN_MESSAGE_MAP(CLoadingDialog, CDialog)
+	//{{AFX_MSG_MAP(CLoadingDialog)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
 // hover.exe:0x4247D0
 // FUNCTION: HOVER 0x4247d0
-void CSub424720::DoDataExchange(CDataExchange* pDX)
+void CLoadingDialog::DoDataExchange(CDataExchange* pDX)
 {
-	//{{AFX_DATA_MAP(CSub424720)
+	//{{AFX_DATA_MAP(CLoadingDialog)
 	DDX_Control(pDX, IDC_LOADING_FRAME, m_staticFrame);
 	//}}AFX_DATA_MAP
 }
 
-// Positions the dialog. While the splash screen is up it hands down its
-// own centre in g_dwUnk_4A4878/4A487C and the dialog is hung under it;
-// otherwise the dialog is centred on the view (or, once the view has a
-// board rectangle, put just below it).
+// Positions the dialog. If g_ptSplashAnchor is set the dialog is hung
+// under it, centred on its x; otherwise the dialog is centred on the view
+// (or, once the view has a board rectangle, put just below it). Nothing in
+// hover.exe ever sets the anchor, so only the second branch runs.
 
 // hover.exe:0x4247F0
 // FUNCTION: HOVER 0x4247f0
-BOOL CSub424720::OnInitDialog()
+BOOL CLoadingDialog::OnInitDialog()
 {
 	RECT rc;
 
 	CDialog::OnInitDialog();
 	::GetWindowRect(m_hWnd, &rc);
 
-	if (g_dwUnk_4A4878 != (DWORD)-1)
+	if (g_ptSplashAnchor.x != -1)
 	{
 		int x;
 		int cx, cy;
 
 		cy = rc.bottom - rc.top;
 		cx = rc.right - rc.left;
-		x = g_dwUnk_4A4878 + (rc.left - rc.right) / 2;
-		::MoveWindow(m_hWnd, x, g_dwUnk_4A487C, cx, cy, FALSE);
+		x = g_ptSplashAnchor.x + (rc.left - rc.right) / 2;
+		::MoveWindow(m_hWnd, x, g_ptSplashAnchor.y, cx, cy, FALSE);
 	}
 	else
 	{
@@ -1924,8 +1934,8 @@ BOOL CSub424720::OnInitDialog()
 		CBumperView* pView;
 		int x, y;
 
-		pView = Hover_sub_401140();
-		rcView = pView->m_rcUnk0094;
+		pView = Hover_GetView();
+		rcView = pView->m_rcMessage;
 		if (rcView.bottom != -1)
 		{
 			::ClientToScreen(pView->m_hWnd, (LPPOINT)&rcView);
@@ -1946,7 +1956,7 @@ BOOL CSub424720::OnInitDialog()
 }
 
 // The texture loader's progress callback, installed in g_pfnUnk_4C4DAC by
-// CHoverApp::Sub_41C8E0 while a level loads. It pumps the wave mixer (the
+// CHoverApp::StartLevel while a level loads. It pumps the wave mixer (the
 // load blocks the message loop, so the music would otherwise stop) and
 // paints a percentage bar over the IDD_LOADING frame control: the same
 // "nnn%" string is drawn twice with the two colour pairs swapped, clipped
@@ -1961,17 +1971,17 @@ BOOL CSub424720::OnInitDialog()
 
 // hover.exe:0x40EB50
 // FUNCTION: HOVER 0x40eb50
-void __cdecl Hover_sub_40EB50(DWORD dwDone, DWORD dwTotal)
+void __cdecl Hover_LoadProgress(DWORD dwDone, DWORD dwTotal)
 {
 	CString str;
-	CSub424720* pDlg;
+	CLoadingDialog* pDlg;
 
-	Hover_sub_439A80();
+	WaveMixPump();
 
-	g_dwUnk_4C57C4 = dwDone;
-	g_dwUnk_4C57C8 = dwTotal;
+	g_dwLoadDone = dwDone;
+	g_dwLoadTotal = dwTotal;
 
-	pDlg = g_pLoadDlg_4C57D4;
+	pDlg = g_pLoadingDlg;
 	if (pDlg != NULL)
 	{
 		CClientDC dc(pDlg);
@@ -1987,26 +1997,26 @@ void __cdecl Hover_sub_40EB50(DWORD dwDone, DWORD dwTotal)
 			(HFONT)::GetStockObject(SYSTEM_FONT)));
 
 		// The frame control's rectangle in the dialog's client coordinates.
-		g_pLoadDlg_4C57D4->m_staticFrame.GetClientRect(&rc);
+		g_pLoadingDlg->m_staticFrame.GetClientRect(&rc);
 		nWidth = rc.right;
 		nHeight = rc.bottom;
-		g_pLoadDlg_4C57D4->m_staticFrame.ClientToScreen(&rc);
-		g_pLoadDlg_4C57D4->ScreenToClient(&rc);
+		g_pLoadingDlg->m_staticFrame.ClientToScreen(&rc);
+		g_pLoadingDlg->ScreenToClient(&rc);
 		rc.right = rc.left + nWidth - 1;
 		rc.bottom = rc.top + nHeight - 1;
 
-		nTotal = (int)g_dwUnk_4C57C8;
+		nTotal = (int)g_dwLoadTotal;
 		if (nTotal <= 0)
 			nTotal = 1;
-		if ((int)g_dwUnk_4C57C4 > nTotal)
-			g_dwUnk_4C57C4 = nTotal;
-		g_dwUnk_4C57C8 = nTotal;
+		if ((int)g_dwLoadDone > nTotal)
+			g_dwLoadDone = nTotal;
+		g_dwLoadTotal = nTotal;
 
 		rcFilled = rc;
 
 		nPercent = (int)g_dwUnk_4C57CC;
 		nPercent += ((int)g_dwUnk_4C57D0 - nPercent)
-			* (int)g_dwUnk_4C57C4 / nTotal;
+			* (int)g_dwLoadDone / nTotal;
 
 		rc.left += ((rc.right - rc.left) * nPercent) / 100;
 		rcFilled.right = rc.left;

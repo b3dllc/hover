@@ -5,6 +5,8 @@
 #include "hover.h"
 #include "bumpview.h"
 
+extern CPoint g_ptSplashAnchor;		// hover.exe:0x4A4878 (hover.cpp)
+
 #include <stdlib.h>
 
 /////////////////////////////////////////////////////////////////////////////
@@ -59,7 +61,7 @@ BOOL CSplashDialog::OnInitDialog()
 	// own m_hInstance at each call rather than caching it in a local, and
 	// goes through the MFC-style FindResource wrapper at hover.exe:0x453352,
 	// not AfxGetInstanceHandle()/FindResource.
-	HRSRC hRsrc = Hover_sub_453352((HINSTANCE)theApp.m_hInstance,
+	HRSRC hRsrc = Hover_FindResource((HINSTANCE)theApp.m_hInstance,
 		MAKEINTRESOURCE(IDB_SPLASH), RT_BITMAP);
 	HGLOBAL hDib = LoadResource((HINSTANCE)theApp.m_hInstance, hRsrc);
 	m_pDib = (LPBYTE)LockResource(hDib);
@@ -166,8 +168,8 @@ void CSplashDialog::OnDestroy()
 	DeleteObject(m_hBitmap);
 	DeleteDC(m_hMemDC);
 
-	g_dwUnk_4A4878 = (DWORD)-1;
-	g_dwUnk_4A487C = (DWORD)-1;
+	g_ptSplashAnchor.x = -1;
+	g_ptSplashAnchor.y = -1;
 }
 
 // hover.exe:0x4245D0
@@ -202,7 +204,7 @@ void CSplashDialog::PostNcDestroy()
 
 	// show the Quick Help dialog unless the user asked to skip it
 	CQuickHelpDialog dlg(NULL);
-	if (dlg.Sub_424F30() == 0)
+	if (dlg.ReadQuickHelpFlag() == 0)
 		dlg.DoModal();
 
 	delete this;
@@ -239,7 +241,7 @@ void CQuickHelpDialog::DoDataExchange(CDataExchange* pDX)
 
 // hover.exe:0x424F30
 // FUNCTION: HOVER 0x424f30
-int CQuickHelpDialog::Sub_424F30()
+int CQuickHelpDialog::ReadQuickHelpFlag()
 {
 	// Read the QuickHelpFlag value from the registry. Returns 0 when the
 	// value cannot be read, in which case the dialog is shown.
@@ -252,6 +254,8 @@ int CQuickHelpDialog::Sub_424F30()
 			0, KEY_ALL_ACCESS, &hKey) == ERROR_SUCCESS)
 	{
 		DWORD dwType = REG_BINARY;
+		// Original bug: the size passed is 0x3C, not sizeof(abFlag), so
+		// a QuickHelpFlag value of 9-60 bytes would overrun the frame.
 		DWORD cbData = 0x3C;
 		if (RegQueryValueExA(hKey, "QuickHelpFlag", NULL, &dwType,
 				abFlag, &cbData) != ERROR_SUCCESS)
@@ -283,6 +287,8 @@ BOOL CQuickHelpDialog::OnInitDialog()
 			0, KEY_ALL_ACCESS, &hKey) == ERROR_SUCCESS)
 	{
 		DWORD dwType = REG_BINARY;
+		// Original bug: the size passed is 0x3C, not sizeof(abSkip), so
+		// a QuickHelpFlag value of 9-60 bytes would overrun the frame.
 		DWORD cbData = 0x3C;
 		if (RegQueryValueExA(hKey, "QuickHelpFlag", NULL, &dwType,
 				abSkip, &cbData) != ERROR_SUCCESS)
@@ -295,7 +301,7 @@ BOOL CQuickHelpDialog::OnInitDialog()
 	{
 		abSkip[0] = 0;
 	}
-	::CheckDlgButton(m_hWnd, IDC_QUICKHELP_SKIP, abSkip[0]);
+	::CheckDlgButton(m_hWnd, IDC_QUICKHELP_SKIP, (char)abSkip[0]);
 
 	return TRUE;
 }

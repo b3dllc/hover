@@ -21,7 +21,7 @@ class CBumperView;
 
 // hover.exe:0x42D760 MM_WOM_DONE completion: look the finished MIXWAVE up
 // in the wave map (hover.exe:0x4A4820) and close it again
-void Hover_sub_42D760(void* pMixWave);
+void Hover_OnWaveMixDone(void* pMixWave);
 
 class CMainFrame : public CFrameWnd
 {
@@ -34,22 +34,22 @@ public:
 	// thunk at 0x41D600 (notes/perfect-match.md rule 221).
 	CMainFrame()			// hover.exe:0x41D600
 	{
-		m_dwUnk00C0 = 0;
-		m_dwUnk00C4 = 0;
-		m_dwUnk00C8 = 0;
-		m_dwUnk00D0 = 0;
+		m_bViewPrecreated = 0;
+		m_hLibrary = 0;
+		m_bInSizeMove = 0;
+		m_bWindowRectValid = 0;
 	}
 	// The compiler folded the destructor into the scalar deleting
 	// destructor at hover.exe:0x41DFD0 (slot 1 of the vtable).
 	virtual ~CMainFrame()	// hover.exe:0x41DFD0
 	{
-		if (m_dwUnk00C4 != 0)
-			::FreeLibrary((HINSTANCE)m_dwUnk00C4);
+		if (m_hLibrary != 0)
+			::FreeLibrary(m_hLibrary);
 	}
 
 	// hover.exe:0x408A70 show pszText in pane nPane of the status bar
 	// (called by CBumperView::OnSize through GetParentFrame())
-	void Sub_408A70(int nPane, const char* pszText);
+	void SetPaneMessage(int nPane, const char* pszText);
 
 // Overrides
 	// hover.exe:0x41DDF0 drop FWS_ADDTOTITLE and place the frame at the
@@ -62,7 +62,7 @@ public:
 public:
 	// hover.exe:0x426CF0 realize the game palette on the frame, black out
 	// the view's client area, then put the old palette back
-	void Sub_426CF0();
+	void RealizeGamePalette();
 
 	// hover.exe:0x41D850 turn the client rectangle in *lpRect into the
 	// window rectangle the current display mode wants: it picks the mode
@@ -70,7 +70,7 @@ public:
 	// size, adds the non-client metrics with AdjustWindowRectEx and the
 	// status bar height, and either offsets the rect (bCenter == 0) or
 	// centres it on the screen.
-	void Sub_41D850(LPRECT lpRect, BOOL bCenter, DWORD dwStyle,
+	void SnapWindowRect(LPRECT lpRect, BOOL bCenter, DWORD dwStyle,
 		DWORD dwExStyle);
 
 protected:
@@ -83,8 +83,8 @@ protected:
 	afx_msg void OnHelpIndex();		// hover.exe:0x426BC0
 	afx_msg void OnHelpHowToPlay();	// hover.exe:0x426C00
 	afx_msg void OnActivateApp(BOOL bActive, HTASK hTask);	// hover.exe:0x415300
-	afx_msg void OnCmd34010();		// hover.exe:0x426C20
-	afx_msg void OnUpdateCmd34010(CCmdUI* pCmdUI);	// hover.exe:0x426CA0
+	afx_msg void OnDbgStatusBar();		// hover.exe:0x426C20
+	afx_msg void OnUpdateDbgStatusBar(CCmdUI* pCmdUI);	// hover.exe:0x426CA0
 	afx_msg BOOL OnQueryNewPalette();		// hover.exe:0x40EE60
 	afx_msg void OnPaletteChanged(CWnd* pFocusWnd);	// hover.exe:0x4142C0
 	afx_msg void OnClose();			// hover.exe:0x41D6B0
@@ -104,14 +104,15 @@ protected:
 
 public:
 // Member variables (hover.exe offsets in comments)
-	DWORD m_dwUnk00C0;		// +0xC0 = 0
-	DWORD m_dwUnk00C4;		// +0xC4 = 0
-	DWORD m_dwUnk00C8;		// +0xC8 = 0 set between WM_ENTERSIZEMOVE and
+	DWORD m_bViewPrecreated;		// +0xC0 = 0
+	HINSTANCE m_hLibrary;		// +0xC4 = 0
+	DWORD m_bInSizeMove;		// +0xC8 = 0 set between WM_ENTERSIZEMOVE and
 							// WM_EXITSIZEMOVE; suppresses the OnSize snap
-	DWORD m_dwUnk00CC;		// +0xCC = 1 while the status bar is managed by
-							// the frame (cleared by the ID_CMD_34010 toggle)
-	DWORD m_dwUnk00D0;		// +0xD0 = 0 set once m_rcUnk00D4 is valid
-	RECT m_rcUnk00D4;		// +0xD4 saved window rect, restored by OnClose
+	DWORD m_bAutoStatusBar;		// +0xCC = 1 while the status bar is managed by
+							// the frame (cleared by the ID_DBG_STATUSBAR
+							// toggle)
+	DWORD m_bWindowRectValid;		// +0xD0 = 0 set once m_rcWindow is valid
+	RECT m_rcWindow;		// +0xD4 saved window rect, restored by OnClose
 							// when the window is iconic
 	CStatusBar m_wndStatusBar;	// +0xE4 (hover.exe CRuntimeClass "CStatusBar"
 							// at 0x4C7118, size 0x74: 0xE4+0x74 = 0x158)

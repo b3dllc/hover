@@ -51,7 +51,7 @@ CMapStringToOb g_mapUnk_4A4768;	// object name -> CMerlinLocation point
 // hover.exe:0x461D00
 // GLOBAL: HOVER 0x461d00
 void* g_pUnk_461D00;			// fixed texture heap cursor (reset to
-								// g_pUnk_46003C by CBumperDoc::OnOpenDocument)
+								// g_pTextureHeap by CBumperDoc::OnOpenDocument)
 
 DWORD g_dwUnk_4C4DA0;			// hover.exe:0x4C4DA0 texture count
 DWORD g_dwUnk_4C4DA8;			// hover.exe:0x4C4DA8 textures loaded so far
@@ -65,7 +65,7 @@ DWORD g_dwUnk_4A1D10;			// hover.exe:0x4A1D10 texture total
 // GLOBAL: HOVER 0x4c57cc
 DWORD g_dwUnk_4C57CC;			// hover.exe:0x4C57CC load progress base
 // GLOBAL: HOVER 0x4c57d0
-DWORD g_dwUnk_4C57D0;			// hover.exe:0x4C57D0 load progress range
+DWORD g_dwUnk_4C57D0 = 100;		// hover.exe:0x4C57D0 load progress range (in .data)
 
 // hover.exe:0x4C48F0
 // GLOBAL: HOVER 0x4c48f0
@@ -89,10 +89,10 @@ const char* g_apszUnk_4C4928[10] = {	// flag/pod texture base names
 CMerlinObject::CMerlinObject()
 {
 	m_dwUnk10 = 0;
-	m_strUnk04.Empty();
+	m_strName.Empty();
 }
 
-// The body is empty -- only the m_strUnk04 CString is destroyed, by the
+// The body is empty -- only the m_strName CString is destroyed, by the
 // compiler-generated member call. The original emits this out of line
 // because the maze loaders build Merlin objects on the stack, and inlines
 // a second copy into the scalar deleting destructor (hover.exe:0x42D620).
@@ -152,12 +152,12 @@ void CMerlinObject::Serialize(CArchive& ar)
 	byPad = 0;
 	if (ar.IsStoring())
 	{
-		*pAr << m_strUnk04;
+		*pAr << m_strName;
 		pAr->WriteWord((WORD)0);
 	}
 	else
 	{
-		*pAr >> m_strUnk04;
+		*pAr >> m_strName;
 		sCount = (short)pAr->ReadWord();
 		if (sCount > 0)			// trailing comment bytes, skipped
 		{
@@ -173,6 +173,7 @@ void CMerlinObject::Serialize(CArchive& ar)
 // FUNCTION: HOVER 0x412980
 void CMerlinTexture::Serialize(CArchive& ar)
 {
+	LPPROGRESSFN pfnProgress;
 	CMerlinArchive* pAr = (CMerlinArchive*)&ar;
 	int nLevel;
 	int i;
@@ -196,41 +197,41 @@ void CMerlinTexture::Serialize(CArchive& ar)
 	// dword members, exactly as in the original.
 	// Store-into-destination form: the original writes the member before
 	// it advances the archive cursor (hover.exe:0x4129C6/0x4129CA).
-	pAr->ReadWord((WORD*)&m_dwUnk1C);
-	pAr->ReadWord((WORD*)&m_dwUnk2C);
-	g_mapUnk_4A1D30[m_strUnk04] = this;
-	m_pUnk28 = (MERLIN_TEXENTRY*)g_pUnk_461D00;
-	g_pUnk_461D00 = (BYTE*)g_pUnk_461D00 + m_dwUnk2C * 0x20;
-	for (nLevel = 0; nLevel < (int)m_dwUnk2C; nLevel++)
+	pAr->ReadWord((WORD*)&m_bTransparent);
+	pAr->ReadWord((WORD*)&m_dwFrameCount);
+	g_mapUnk_4A1D30[m_strName] = this;
+	m_pFrames = (MERLIN_TEXFRAME*)g_pUnk_461D00;
+	g_pUnk_461D00 = (BYTE*)g_pUnk_461D00 + m_dwFrameCount * 0x20;
+	for (nLevel = 0; nLevel < (int)m_dwFrameCount; nLevel++)
 	{
-		m_pUnk28[nLevel].m_dwUnk08 = (short)pAr->ReadWord();
-		m_pUnk28[nLevel].m_dwUnk00 = (short)pAr->ReadWord();
-		m_pUnk28[nLevel].m_dwUnk0C = (short)pAr->ReadWord();
-		m_pUnk28[nLevel].m_dwUnk04 = (short)pAr->ReadWord();
-		m_pUnk28[nLevel].m_dwUnk10 = (short)pAr->ReadWord();
-		m_pUnk28[nLevel].m_dwUnk14 = pAr->ReadDWord();
-		if (m_pUnk28[nLevel].m_dwUnk14 != 0)
+		m_pFrames[nLevel].m_dwWidth = (short)pAr->ReadWord();
+		m_pFrames[nLevel].m_dwColMask = (short)pAr->ReadWord();
+		m_pFrames[nLevel].m_dwHeight = (short)pAr->ReadWord();
+		m_pFrames[nLevel].m_dwUnk04 = (short)pAr->ReadWord();
+		m_pFrames[nLevel].m_dwUnk10 = (short)pAr->ReadWord();
+		m_pFrames[nLevel].m_cbPixels = pAr->ReadDWord();
+		if (m_pFrames[nLevel].m_cbPixels != 0)
 		{
-			if (nLevel < (int)g_dwUnk_461CFC && (int)m_dwUnk2C > 1)
+			if (nLevel < (int)g_dwMipBias && (int)m_dwFrameCount > 1)
 			{
 				// mip levels below the memory configuration mode are
 				// skipped, not loaded
-				for (i = 0; i < (int)m_pUnk28[nLevel].m_dwUnk14; i++)
+				for (i = 0; i < (int)m_pFrames[nLevel].m_cbPixels; i++)
 					pAr->ReadByte();
 			}
 			else
 			{
-				m_pUnk28[nLevel].m_dwUnk18 = (DWORD)g_pUnk_461D00;
-				g_pUnk_461D00 = (BYTE*)g_pUnk_461D00 + m_pUnk28[nLevel].m_dwUnk14;
-				ar.Read((void*)m_pUnk28[nLevel].m_dwUnk18, m_pUnk28[nLevel].m_dwUnk14);
+				m_pFrames[nLevel].m_pPixels = (BYTE*)g_pUnk_461D00;
+				g_pUnk_461D00 = (BYTE*)g_pUnk_461D00 + m_pFrames[nLevel].m_cbPixels;
+				ar.Read((void*)m_pFrames[nLevel].m_pPixels, m_pFrames[nLevel].m_cbPixels);
 			}
 		}
 		else
-			m_pUnk28[nLevel].m_dwUnk18 = 0;
-		if (nLevel < (int)g_dwUnk_461CFC && (int)m_dwUnk2C > 1)
+			m_pFrames[nLevel].m_pPixels = 0;
+		if (nLevel < (int)g_dwMipBias && (int)m_dwFrameCount > 1)
 		{
 			pAr->ReadDWord();	// skipped
-			for (i = 0; i < (int)m_pUnk28[nLevel].m_dwUnk08; i++)
+			for (i = 0; i < (int)m_pFrames[nLevel].m_dwWidth; i++)
 			{
 				nSpans = (short)pAr->ReadWord();
 				while (nSpans > 0)
@@ -244,25 +245,25 @@ void CMerlinTexture::Serialize(CArchive& ar)
 		else
 		{
 			dwSize = pAr->ReadDWord();
-			m_pUnk28[nLevel].m_dwUnk1C = (DWORD)g_pUnk_461D00;
+			m_pFrames[nLevel].m_pColumns = (tagTEXCOLUMN*)g_pUnk_461D00;
 			// pPts comes off the heap cursor before it moves on:
 			// hover.exe:0x412d27 reuses the value loaded at 0x412cfb.
-			pPts = (BYTE*)m_pUnk28[nLevel].m_dwUnk1C + m_pUnk28[nLevel].m_dwUnk08 * 8;
+			pPts = (BYTE*)m_pFrames[nLevel].m_pColumns + m_pFrames[nLevel].m_dwWidth * 8;
 			g_pUnk_461D00 = (BYTE*)g_pUnk_461D00 +
-				(m_pUnk28[nLevel].m_dwUnk08 + dwSize) * 8;
-			dwAccum = m_pUnk28[nLevel].m_dwUnk18;
-			for (i = 0; i < (int)m_pUnk28[nLevel].m_dwUnk08; i++)
+				(m_pFrames[nLevel].m_dwWidth + dwSize) * 8;
+			dwAccum = (DWORD)m_pFrames[nLevel].m_pPixels;
+			for (i = 0; i < (int)m_pFrames[nLevel].m_dwWidth; i++)
 			{
 				nSpans = (short)pAr->ReadWord();
-				*(WORD*)((BYTE*)m_pUnk28[nLevel].m_dwUnk1C + i * 8) = (WORD)nSpans;
-				*(DWORD*)((BYTE*)m_pUnk28[nLevel].m_dwUnk1C + i * 8 + 4) =
+				*(WORD*)((BYTE*)m_pFrames[nLevel].m_pColumns + i * 8) = (WORD)nSpans;
+				*(DWORD*)((BYTE*)m_pFrames[nLevel].m_pColumns + i * 8 + 4) =
 					(DWORD)pPts;
 				while (nSpans > 0)
 				{
 					wY = pAr->ReadWord();
 					*(WORD*)pPts = wY;
-					*(DWORD*)(pPts + 4) = dwAccum;
 					wX = pAr->ReadWord();
+					*(DWORD*)(pPts + 4) = dwAccum;
 					*(WORD*)(pPts + 2) = wX;
 					pPts += 8;
 					dwAccum += (short)((short)wX >> nLevel) -
@@ -278,15 +279,21 @@ void CMerlinTexture::Serialize(CArchive& ar)
 			nSpans--;
 		}
 	}
-	m_wUnk14 = (WORD)m_pUnk28[0].m_dwUnk08;
-	m_wUnk16 = (WORD)m_pUnk28[0].m_dwUnk00;
-	m_wUnk18 = (WORD)m_pUnk28[0].m_dwUnk0C;
-	m_wUnk1A = (WORD)m_pUnk28[0].m_dwUnk04;
+	m_wWidth = (WORD)m_pFrames[0].m_dwWidth;
+	m_wColMask = (WORD)m_pFrames[0].m_dwColMask;
+	m_wHeight = (WORD)m_pFrames[0].m_dwHeight;
+	m_wUnk1A = (WORD)m_pFrames[0].m_dwUnk04;
 	m_dwUnk34 = 0;
 	m_dwUnk24 = 0;
-	m_dwUnk20 = m_pUnk28[0].m_dwUnk18;
-	if (g_pfnUnk_4C4DAC != NULL)
-		g_pfnUnk_4C4DAC(g_dwUnk_4C4DA8++, g_obArrUnk_4A1D08.GetSize() - 1);
+	m_dwUnk20 = (DWORD)m_pFrames[0].m_pPixels;
+	// the count advances after the callback returns, as in hover.exe,
+	// which calls through a register copy of the pointer
+	pfnProgress = g_pfnUnk_4C4DAC;
+	if (pfnProgress != NULL)
+	{
+		pfnProgress(g_dwUnk_4C4DA8, g_obArrUnk_4A1D08.GetSize() - 1);
+		g_dwUnk_4C4DA8++;
+	}
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -294,7 +301,7 @@ void CMerlinTexture::Serialize(CArchive& ar)
 
 // hover.exe:0x41A4E0
 // FUNCTION: HOVER 0x41a4e0
-CObject* Hover_sub_41A4E0(const CString& strName)
+CObject* Hover_FindStatic(const CString& strName)
 {
 	CObject* pOb;
 
@@ -305,7 +312,7 @@ CObject* Hover_sub_41A4E0(const CString& strName)
 
 // hover.exe:0x40FE40
 // FUNCTION: HOVER 0x40fe40
-CObject* Hover_sub_40FE40(const CString& strName)
+CObject* Hover_FindLocation(const CString& strName)
 {
 	CObject* pOb;
 
@@ -315,18 +322,18 @@ CObject* Hover_sub_40FE40(const CString& strName)
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// CBumperDoc::Sub_412250 — place a flag/pod object on a random free pad
+// CBumperDoc::PlaceObject — place a flag/pod object on a random free pad
 // ("FLAG_HUMAN_"/"FLAG_ROBOT_" pads for flags, "POD_RANDOM_" pods
 // otherwise); bUnk spawns a nested "POD06_" pod at the same point.
 
 // hover.exe:0x412250 (the coverage table lists this function as 0x412256,
 // the address after the 6-byte "mov eax,fs:0" SEH prefix)
 // FUNCTION: HOVER 0x412250
-void CBumperDoc::Sub_412250(CGameObj* pObj, int bUnk)
+void CBumperDoc::PlaceObject(CGameObj* pObj, int bUnk)
 {
 	CMerlinLocation* pTex;
-	// The point handed to CCollider::Sub_40F9B0 is built by hand rather
-	// than through CMerlinLocation::GetPoint(): VC 2.1 does not elide the
+	// The point handed to CCollider::IsSpotBlocked is built by hand rather
+	// than through a POINT-returning accessor: VC 2.1 does not elide the
 	// copy out of a POINT-returning inline (rule 174), and the extra
 	// 8-byte temporary per search loop wrecks the frame.  Spelt this way
 	// the four calls match the original instruction for instruction,
@@ -346,7 +353,7 @@ void CBumperDoc::Sub_412250(CGameObj* pObj, int bUnk)
 		adwPad[0] = 0;
 		if (pObj->IsKindOf(RUNTIME_CLASS(CFlag)))
 		{
-			if (((CPodObj*)pObj)->m_dwUnkCC != 0)
+			if (((CPodObj*)pObj)->m_bRobotFlag != 0)
 			{
 				char szName[0x80];
 				CMerlinLocation* pT;
@@ -355,15 +362,15 @@ void CBumperDoc::Sub_412250(CGameObj* pObj, int bUnk)
 				nDist = 0x50;
 				do
 				{
-					sprintf(szName, "%s%02d", g_apszUnk_4C4910[3],
-						rand() % (int)m_adwUnk83D0[3]);
-					pT = (CMerlinLocation*)Hover_sub_40FE40(
+					sprintf(szName, "%s%02d", g_apszSpawnFamilies[3],
+						rand() % (int)m_adwSpawnPoints[3]);
+					pT = (CMerlinLocation*)Hover_FindLocation(
 						CString(szName));
 				}
 				while (pT != NULL &&
-					(pt.x = (short)pT->m_wUnk14,
-					 pt.y = (short)pT->m_wUnk16,
-					 ((CCollider*)m_dwUnk8388)->Sub_40F9B0(pt, nDist)));
+					(pt.x = (short)pT->m_wX,
+					 pt.y = (short)pT->m_wY,
+					 (m_pCollider)->IsSpotBlocked(pt, nDist)));
 				pTex = pT;
 			}
 			else
@@ -375,15 +382,15 @@ void CBumperDoc::Sub_412250(CGameObj* pObj, int bUnk)
 				nDist = 0x50;
 				do
 				{
-					sprintf(szName, "%s%02d", g_apszUnk_4C4910[2],
-						rand() % (int)m_adwUnk83D0[2]);
-					pT = (CMerlinLocation*)Hover_sub_40FE40(
+					sprintf(szName, "%s%02d", g_apszSpawnFamilies[2],
+						rand() % (int)m_adwSpawnPoints[2]);
+					pT = (CMerlinLocation*)Hover_FindLocation(
 						CString(szName));
 				}
 				while (pT != NULL &&
-					(pt.x = (short)pT->m_wUnk14,
-					 pt.y = (short)pT->m_wUnk16,
-					 ((CCollider*)m_dwUnk8388)->Sub_40F9B0(pt, nDist)));
+					(pt.x = (short)pT->m_wX,
+					 pt.y = (short)pT->m_wY,
+					 (m_pCollider)->IsSpotBlocked(pt, nDist)));
 				pTex = pT;
 			}
 		}
@@ -396,24 +403,24 @@ void CBumperDoc::Sub_412250(CGameObj* pObj, int bUnk)
 			nDist = 0x50;
 			do
 			{
-				sprintf(szName, "%s%02d", g_apszUnk_4C4910[4],
-					rand() % (int)m_adwUnk83D0[4]);
-				pT = (CMerlinLocation*)Hover_sub_40FE40(
+				sprintf(szName, "%s%02d", g_apszSpawnFamilies[4],
+					rand() % (int)m_adwSpawnPoints[4]);
+				pT = (CMerlinLocation*)Hover_FindLocation(
 					CString(szName));
 			}
 			while (pT != NULL &&
-				(pt.x = (short)pT->m_wUnk14,
-				 pt.y = (short)pT->m_wUnk16,
-				 ((CCollider*)m_dwUnk8388)->Sub_40F9B0(pt, nDist)));
+				(pt.x = (short)pT->m_wX,
+				 pt.y = (short)pT->m_wY,
+				 (m_pCollider)->IsSpotBlocked(pt, nDist)));
 			pTex = pT;
 		}
-		((CPodObj*)pObj)->Sub_40F880((short)pTex->m_wUnk14,
-			(short)pTex->m_wUnk16);
-		((CPodObj*)pObj)->m_dwUnk94 = 1;
-		((CPodObj*)pObj)->m_dwUnkA4 = (short)pTex->m_wUnk1A;
-		((CPodObj*)pObj)->Sub_408530();
-		((CCollider*)m_dwUnk8388)->Sub_40F900((CPodObj*)pObj);
-		m_list838C.AddTail((CPodObj*)pObj);
+		((CPodObj*)pObj)->SetCellPos((short)pTex->m_wX,
+			(short)pTex->m_wY);
+		((CPodObj*)pObj)->m_bOnBoard = 1;
+		((CPodObj*)pObj)->m_dwBaseZ = (short)pTex->m_wHeight;
+		((CPodObj*)pObj)->QueueBeginFrame();
+		(m_pCollider)->AddStatic((CPodObj*)pObj);
+		m_listMazeObjs.AddTail((CPodObj*)pObj);
 		return;
 	}
 	{
@@ -424,26 +431,26 @@ void CBumperDoc::Sub_412250(CGameObj* pObj, int bUnk)
 	nDist = 0x50;
 	do
 	{
-		sprintf(szName, "%s%02d", g_apszUnk_4C4910[4],
-			rand() % (int)m_adwUnk83D0[4]);
-		pT = (CMerlinLocation*)Hover_sub_40FE40(CString(szName));
+		sprintf(szName, "%s%02d", g_apszSpawnFamilies[4],
+			rand() % (int)m_adwSpawnPoints[4]);
+		pT = (CMerlinLocation*)Hover_FindLocation(CString(szName));
 	}
 	while (pT != NULL &&
-		(pt.x = (short)pT->m_wUnk14,
-		 pt.y = (short)pT->m_wUnk16,
-		 ((CCollider*)m_dwUnk8388)->Sub_40F9B0(pt, nDist)));
+		(pt.x = (short)pT->m_wX,
+		 pt.y = (short)pT->m_wY,
+		 (m_pCollider)->IsSpotBlocked(pt, nDist)));
 	pTex = pT;
 	}
-	((CPodObj*)pObj)->Sub_40F880((short)pTex->m_wUnk14,
-		(short)pTex->m_wUnk16);
-	((CPodObj*)pObj)->m_dwUnkA4 = (short)pTex->m_wUnk1A;
-	pPt = ((CPodObj*)pObj)->Sub_403880(adwPt);
+	((CPodObj*)pObj)->SetCellPos((short)pTex->m_wX,
+		(short)pTex->m_wY);
+	((CPodObj*)pObj)->m_dwBaseZ = (short)pTex->m_wHeight;
+	pPt = ((CPodObj*)pObj)->GetCellPos(adwPt);
 	pNew = new CContainer((CPodObj*)pObj, pPt[0], pPt[1],
-		((CPodObj*)pObj)->m_dwUnk9C);
-	pNew->m_dwUnk94 = 1;
-	pNew->Sub_408530();
-	((CCollider*)m_dwUnk8388)->Sub_40F900(pNew);
-	m_list838C.AddTail(pNew);
+		((CPodObj*)pObj)->m_dwRadius);
+	pNew->m_bOnBoard = 1;
+	pNew->QueueBeginFrame();
+	(m_pCollider)->AddStatic(pNew);
+	m_listMazeObjs.AddTail(pNew);
 }
 /////////////////////////////////////////////////////////////////////////////
 // Endpoint helpers for the loader's wall-chain fix-up.
@@ -452,8 +459,12 @@ void CBumperDoc::Sub_412250(CGameObj* pObj, int bUnk)
 // into an *expression* temporary, not into a named local
 // (hover.exe:0x41670A, 0x416732, 0x4167E4 and 0x41680C all store the pair
 // into a slot below the loader's named region).  A by-value POINT
-// parameter of an expanded inline is exactly such a temporary, so the two
-// places that need a pair go through these file-local inlines.
+// returned value of an expanded inline is exactly such a temporary, so
+// both places that need a pair read it through PtAt; the second
+// (hover.exe:0x416825) hands the temporaries' addresses to SetEndpoints.
+// Taking the address of a returned temporary (`&PtAt(...)`) is not
+// standard C++; MSVC accepts it (warning C4238), and it is kept because
+// that is the codegen being reproduced.
 
 // hover.exe:0x41674B -- the ring-closed test, `<CPoint temporary> !=
 // <POINT temporary>`: the object is filled first, the operator's by-value
@@ -461,13 +472,6 @@ void CBumperDoc::Sub_412250(CGameObj* pObj, int bUnk)
 inline CPoint PtAt(const DWORD* pdw)
 {
 	return *(CPoint*)pdw;
-}
-
-// hover.exe:0x416825 -- both endpoints are copied into temporaries and
-// their addresses are handed to Sub_422BF0.
-inline void SetSegment(CSub40D320* pSeg, POINT ptA, POINT ptB)
-{
-	pSeg->Sub_422BF0((DWORD*)&ptA, (DWORD*)&ptB);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -483,6 +487,76 @@ inline void SetSegment(CSub40D320* pSeg, POINT ptA, POINT ptB)
 // temporary homed on the stack, a `jmp $+5` after most statements). So is
 // ours -- VC 2.1's optimizer silently gives up on a function this large, so
 // no `#pragma optimize("", off)` (rule 49) is needed or has any effect here.
+
+// Four more file-local inlines that hover.exe's loader is built out of.
+// Each of them exists because the original materialises a temporary that
+// the obvious spelling folds away, and because the loader's whole frame
+// (0x44c, `this` at ebp-0x458, 65 references) only comes out right when
+// the count of those temporaries is exact -- rules 405-408.
+
+// hover.exe:0x416B3C.  The first of the three maze-face name tests puts
+// its `_mbscmp(...) != 0` through a 1/0 ladder into ebp-0x3f4 and closes
+// with an inline return `jmp`, so the comparison is a call, not a term
+// written out in the `&&` chain.  Assigning to a local is what pins the
+// flag: `return nCmp != 0;` is folded into the branch.
+inline BOOL MbNe(int nCmp)
+{
+	BOOL b = (nCmp != 0);
+
+	return b;
+}
+
+// hover.exe:0x416B10/0x416BA2/0x416CEE.  `CString::operator LPCTSTR` on
+// the `Left()` temporary lands in a frame temporary of its own (two
+// inline-return jumps back to back), where casting the temporary
+// directly folds the `mov eax,[eax]` into the argument push.
+inline LPCTSTR CStr(const CString& str)
+{
+	LPCTSTR psz = str;
+
+	return psz;
+}
+
+// hover.exe:0x415D1D/0x415E7A/0x415FBD.  The spawn points hand
+// CPlayer::Spawn/PlacePlayer an 8-byte point built by two `movsx`
+// stores straight into the argument temporary, with nothing homed in
+// between.  Only a constructor taking the *location pointer* does that:
+// a POINT-returning accessor homes its own `pt` and copies (two dwords
+// per site), `CPoint((short)p->m_wX, (short)p->m_wY)` homes the
+// two ctor arguments (two dwords, rule 330) and `CPoint(DWORD)` homes
+// the packed word pair and picks it apart with shr/and (one dword).  A
+// pointer argument is folded exactly like `this`, so this form homes
+// nothing.
+struct LOCPT : public tagPOINT
+{
+	LOCPT(const CMerlinLocation* p)
+	{
+		x = (short)p->m_wX;
+		y = (short)p->m_wY;
+	}
+};
+
+// hover.exe's level-parameter wrap is an inline *function* whose result
+// goes through a local, not hover.h's bare `?:` macro.  Every one of the
+// loader's fifteen LVLPARAM sites closes with the `jmp $+5` of an inline
+// return (hover.exe:0x41560C, 0x415A0E, 0x415BD8, 0x415C4B, 0x415DFF,
+// 0x415F42 and the nine pod loops at 0x416DFA..0x41748D) and parks the
+// index in a temporary that the address arithmetic then reloads.  The
+// macro gets the two arms right but not the return jump, and an inline
+// whose body is a bare `return <?:>;` is worse still: in a loop condition
+// VC duplicates the whole compare into both arms and materialises no
+// temporary at all.  Assigning the `?:` to a local first pins it.
+// Only the loader uses LVLPARAM in this file; the hover.h spelling is
+// restored below so nothing else changes.
+inline int LvlIdx(int i)
+{
+	int n = (i < 16) ? i : (i % 3 + 15);
+
+	return n;
+}
+
+#undef LVLPARAM
+#define LVLPARAM(i) (g_lvlParams[LvlIdx(i)])
 
 // hover.exe:0x415450
 // FUNCTION: HOVER 0x415450
@@ -551,28 +625,28 @@ BOOL CBumperDoc::OnOpenDocument(LPCTSTR lpszPathName)
 		g_dwUnk_4C57CC = 0;
 		g_dwUnk_4C57D0 = 0x3C;
 		SetCursor(LoadCursor(NULL, (LPCTSTR)0x7F02));	// IDC_WAIT
-		m_dwUnk83E8 = 0;
+		m_dwRobotFlags = 0;
 		// Two statements: the original re-reads the variable rather
 		// than using time()'s return value (hover.exe:0x4154D5).
 		time(&sTail.timeUnk);
 		srand((unsigned)sTail.timeUnk);
-		m_dwUnk0188 = (DWORD)new CMerlinWorld;
-		if (theApp.m_dwUnk01CC == 0)
-			nLev = g_dwUnk_46049C;
+		m_pWorld = new CMerlinWorld;
+		if (theApp.m_dwMazeOrder == 0)
+			nLev = g_dwLevel;
 		else
 			nLev = rand() % 0x14;
-		if (g_dwUnk_46049C == 0x14)
-			nLev = g_dwUnk_46049C;
+		if (g_dwLevel == 0x14)
+			nLev = g_dwLevel;
 
 		// palette + texture frames from mazes\TEXn.tex
-		lstrcpy(sDir.szPath, theApp.m_strUnk0414);
-		if (m_dwUnk8498 != 0)
+		lstrcpy(sDir.szPath, theApp.m_strDataDir);
+		if (m_bAttractMode != 0)
 			lstrcat(sDir.szPath, g_lvlParams[nLev].m_pszTextures);
 		else
 			lstrcat(sDir.szPath, LVLPARAM(nLev).m_pszTextures);
 		CFile fileTexture(sDir.szPath, CFile::modeRead | CFile::typeBinary);
 		CArchive arTexIn(&fileTexture, CArchive::load, 0x200, NULL);
-		sHead.pPal = (LOGPALETTE*)::operator new(0x408);
+		sHead.pPal = (LOGPALETTE*)::operator new(LOGPAL256_SIZE);
 		sHead.pPal->palVersion = 0x300;
 		sHead.pPal->palNumEntries = 0x100;
 		pEntry = sHead.pPal->palPalEntry;
@@ -586,12 +660,12 @@ BOOL CBumperDoc::OnOpenDocument(LPCTSTR lpszPathName)
 		// Detach, not DeleteObject: hover.exe:0x415823 calls 0x451349,
 		// which clears m_hObject and returns it without deleting the
 		// palette (0x451378 is DeleteObject and is not called here).
-		g_paletteUnk_4A1D50.Detach();
-		g_paletteUnk_4A1D50.Attach(CreatePalette(sHead.pPal));
+		g_palGame.Detach();
+		g_palGame.Attach(CreatePalette(sHead.pPal));
 		delete sHead.pPal;
-		g_pUnk_461D00 = g_pUnk_46003C;
+		g_pUnk_461D00 = g_pTextureHeap;
 		g_obArrUnk_4A1D08.Serialize(arTexIn);
-		if (g_cbUnk_46002C + (BYTE*)g_pUnk_46003C < (BYTE*)g_pUnk_461D00)
+		if (g_cbTextureHeap + (BYTE*)g_pTextureHeap < (BYTE*)g_pUnk_461D00)
 			OutputDebugString("Blowing fixed memory heap.  "
 				"Increase MAXTEXTURESIZE in CTexture.h and "
 				"re-compile.");
@@ -602,43 +676,46 @@ BOOL CBumperDoc::OnOpenDocument(LPCTSTR lpszPathName)
 		fileTexture.Close();
 
 		// maze data
-		lstrcpy(sDir.szPath, theApp.m_strUnk0414);
-		if (m_dwUnk8498 != 0)
+		lstrcpy(sDir.szPath, theApp.m_strDataDir);
+		if (m_bAttractMode != 0)
 			lstrcat(sDir.szPath, g_lvlParams[nLev].m_pszMaze);
 		else
 			lstrcat(sDir.szPath, LVLPARAM(nLev).m_pszMaze);
 		CFile fileMaze(sDir.szPath, CFile::modeRead | CFile::typeBinary);
 		CArchive arMaze(&fileMaze, CArchive::load, 0x200, NULL);
-		((CMerlinWorld*)m_dwUnk0188)->Serialize(arMaze);
+		(m_pWorld)->Serialize(arMaze);
 		arMaze.Close();
 		fileMaze.Close();
-		((CMerlinWorld*)m_dwUnk0188)->Sub_418FA0();
+		(m_pWorld)->BuildIdentityPalette();
 		g_dwUnk_4C57CC = 0x3C;
 		g_dwUnk_4C57D0 = 0x46;
-		((CSub414550*)m_pad018C)->Sub_414550(&g_paletteUnk_4A1D50,
-			m_dblUnk8478, 0xFF, 0xFF, 0xFF, m_dblUnk8480, m_dblUnk8488,
-			m_dblUnk8490);
+		m_aShade[0].BuildTable(&g_palGame,
+			m_dblShadeBase, 0xFF, 0xFF, 0xFF, m_dblShadeRed, m_dblShadeBlue,
+			m_dblShadeGreen);
 		g_dwUnk_4C57CC = 0x46;
 		g_dwUnk_4C57D0 = 0x50;
-		((CSub414550*)(m_pad018C + 0x4000))->Sub_414550(
-			&g_paletteUnk_4A1D50, m_dblUnk8478, 0xFF, 0xFF, 0xFF, 0.8,
+		m_aShade[1].BuildTable(
+			&g_palGame, m_dblShadeBase, 0xFF, 0xFF, 0xFF, 0.8,
 			1.5, 0.8);
 		if (LVLPARAM(nLev).m_pszMusic != NULL)
 		{
-			lstrcpy(sDir.szPath, theApp.m_strUnk0414);
+			lstrcpy(sDir.szPath, theApp.m_strDataDir);
 			lstrcat(sDir.szPath, LVLPARAM(nLev).m_pszMusic);
-			m_obj0060.Sub_41C030(sDir.szPath);
+			m_music.OpenMusic(sDir.szPath);
 		}
-		m_dwUnk8388 = (DWORD)new CCollider(CSize(0x5A00, 0x5A00),
+		m_pCollider = new CCollider(CSize(0x5A00, 0x5A00),
 			0x100);
-		this->Sub_417C10();
-		pLoc = (CMerlinLocation*)this->Sub_417D40(0);
-		m_humanPlayer.Sub_41B2D0(pLoc->GetPoint(),
-			(short)pLoc->m_wUnk18, (short)pLoc->m_wUnk1A);
-		m_list83A8.AddHead(&m_humanPlayer);
-		((CCollider*)m_dwUnk8388)->Sub_41B770(&m_humanPlayer);
+		this->CountSpawnPoints();
+		pLoc = (CMerlinLocation*)this->GetRandomSpawnPoint(0);
+		// The by-value point is built by LOCPT's constructor, which
+		// is expanded straight into the argument temporary at
+		// ebp-0x2bc (hover.exe:0x415D1D) and homes nothing.
+		m_humanPlayer.Spawn(LOCPT(pLoc),
+			(short)pLoc->m_wAngle, (short)pLoc->m_wHeight);
+		m_listActiveObjs.AddHead(&m_humanPlayer);
+		(m_pCollider)->AddMover(&m_humanPlayer);
 
-		if (m_dwUnk8498 == 0)
+		if (m_bAttractMode == 0)
 		{
 			// The robot loops, the animation chaining and the pad
 			// loop all draw on one frame pool in the original
@@ -670,29 +747,29 @@ BOOL CBumperDoc::OnOpenDocument(LPCTSTR lpszPathName)
 			int nK;						// ebp-0x250
 			CMerlinStatic* pTexEnt;		// ebp-0x24c
 
-			Hover_sub_422370();
+			Hover_CacheDroneFrames();
 			// robot players
-			for (sDoc.i = 0; sDoc.i < (int)LVLPARAM((int)g_dwUnk_46049C).m_dwUnk28;
+			for (sDoc.i = 0; sDoc.i < (int)LVLPARAM((int)g_dwLevel).m_dwUnk28;
 				sDoc.i++)
 			{
-				pLoc1 = (CMerlinLocation*)this->Sub_417D40(1);
+				pLoc1 = (CMerlinLocation*)this->GetRandomSpawnPoint(1);
 				pDrone = new CRobotPlayer(1);
-				pDrone->Sub_41B0E0(pLoc1->GetPoint(),
-					(short)pLoc1->m_wUnk18,
-					(short)pLoc1->m_wUnk1A);
-				m_list83A8.AddTail(pDrone);
-				((CCollider*)m_dwUnk8388)->Sub_41B770(pDrone);
+				pDrone->PlacePlayer(LOCPT(pLoc1),
+					(short)pLoc1->m_wAngle,
+					(short)pLoc1->m_wHeight);
+				m_listActiveObjs.AddTail(pDrone);
+				(m_pCollider)->AddMover(pDrone);
 			}
-			for (sDoc.i = 0; sDoc.i < (int)LVLPARAM((int)g_dwUnk_46049C).m_dwUnk2C;
+			for (sDoc.i = 0; sDoc.i < (int)LVLPARAM((int)g_dwLevel).m_dwUnk2C;
 				sDoc.i++)
 			{
-				pLoc2 = (CMerlinLocation*)this->Sub_417D40(1);
+				pLoc2 = (CMerlinLocation*)this->GetRandomSpawnPoint(1);
 				pDrone2 = new CRobotPlayer(0);
-				pDrone2->Sub_41B0E0(pLoc2->GetPoint(),
-					(short)pLoc2->m_wUnk18,
-					(short)pLoc2->m_wUnk1A);
-				m_list83A8.AddTail(pDrone2);
-				((CCollider*)m_dwUnk8388)->Sub_41B770(pDrone2);
+				pDrone2->PlacePlayer(LOCPT(pLoc2),
+					(short)pLoc2->m_wAngle,
+					(short)pLoc2->m_wHeight);
+				m_listActiveObjs.AddTail(pDrone2);
+				(m_pCollider)->AddMover(pDrone2);
 			}
 			// chain the numbered animation frames of each family
 			for (nGroup = 0; nGroup < 10; nGroup++)
@@ -716,7 +793,7 @@ BOOL CBumperDoc::OnOpenDocument(LPCTSTR lpszPathName)
 						if (g_mapUnk_4A1D30.Lookup(sTail.szName,
 							pAfter))
 						{
-							pLast->m_pUnk38 =
+							pLast->m_pNextFrame =
 								(CMerlinTexture*)pAfter;
 							pLast =
 								(CMerlinTexture*)pAfter;
@@ -724,7 +801,7 @@ BOOL CBumperDoc::OnOpenDocument(LPCTSTR lpszPathName)
 						else
 							break;
 					}
-					pLast->m_pUnk38 = (CMerlinTexture*)pFrst;
+					pLast->m_pNextFrame = (CMerlinTexture*)pFrst;
 				}
 				else
 					break;
@@ -744,7 +821,7 @@ BOOL CBumperDoc::OnOpenDocument(LPCTSTR lpszPathName)
 					// temporary is destroyed and branches on it
 					// afterwards (hover.exe:0x4161FD).
 					if ((pTexEnt = (CMerlinStatic*)
-						Hover_sub_41A4E0(CString(sTail.szName)))
+						Hover_FindStatic(CString(sTail.szName)))
 						== NULL)
 						break;
 					switch (sDoc.i)
@@ -775,88 +852,88 @@ BOOL CBumperDoc::OnOpenDocument(LPCTSTR lpszPathName)
 						break;
 					}
 					pSide1 = new CWall;
-					pSide1->Sub_414D40((CObject*)pTexEnt);
-					pFloorObj->m_list94.AddTail(pSide1);
-					pFloorObj->m_dwUnk8C = (short)pTexEnt->m_wUnkA4;
-					pSide1->m_dwUnk94 = pFloorObj->m_dwUnk8C;
-					pFloorObj->m_dwUnk90 = (short)pTexEnt->m_wUnkA6;
-					pSide1->m_dwUnk98 = pFloorObj->m_dwUnk90;
+					pSide1->SetFace(pTexEnt);
+					pFloorObj->m_listEdges.AddTail(pSide1);
+					pFloorObj->m_dwLowHeight = (short)pTexEnt->m_wBottom;
+					pSide1->m_dwBottom = pFloorObj->m_dwLowHeight;
+					pFloorObj->m_dwHighHeight = (short)pTexEnt->m_wTop;
+					pSide1->m_dwTop = pFloorObj->m_dwHighHeight;
 					while (++nK)
 					{
 						sprintf(sTail.szName, "%s%02d_%02d",
 							g_apszUnk_4C48F0[sDoc.i], nSeq, nK);
 						if ((pTexEnt = (CMerlinStatic*)
-							Hover_sub_41A4E0(
+							Hover_FindStatic(
 							CString(sTail.szName))) == NULL)
 							break;
 						pSide2 = new CWall;
-						pSide2->m_dwUnk94 =
-							(short)pTexEnt->m_wUnkA4;
-						pSide2->m_dwUnk98 =
-							(short)pTexEnt->m_wUnkA6;
-						pSide2->Sub_414D40((CObject*)pTexEnt);
-						pFloorObj->m_list94.AddTail(pSide2);
+						pSide2->m_dwBottom =
+							(short)pTexEnt->m_wBottom;
+						pSide2->m_dwTop =
+							(short)pTexEnt->m_wTop;
+						pSide2->SetFace(pTexEnt);
+						pFloorObj->m_listEdges.AddTail(pSide2);
 					}
 					nK--;
 					// Link the wall chain's endpoints with a new
 					// wall if they are not already the same point.
-					if (PtAt(&((CWall*)pFloorObj->m_list94.GetTail())->
-							m_obj04.m_dwUnk08) !=
-						PtAt(&((CWall*)pFloorObj->m_list94.GetHead())->
-							m_obj04.m_dwUnk00))
+					if (PtAt(&((CWall*)pFloorObj->m_listEdges.GetTail())->
+							m_seg.m_dwX2) !=
+						PtAt(&((CWall*)pFloorObj->m_listEdges.GetHead())->
+							m_seg.m_dwX1))
 					{
 						pSide3 = new CWall;
-						pSide3->m_obj04.Sub_422BF0(
+						pSide3->m_seg.SetEndpoints(
 							(DWORD*)&PtAt(&((CWall*)pFloorObj->
-								m_list94.GetTail())->m_obj04.
-								m_dwUnk08),
+								m_listEdges.GetTail())->m_seg.
+								m_dwX2),
 							(DWORD*)&PtAt(&((CWall*)pFloorObj->
-								m_list94.GetHead())->m_obj04.
-								m_dwUnk00));
-						posIt = pFloorObj->m_list94.GetHeadPosition();
-						pSide4 = (CWall*)pFloorObj->m_list94.GetNext(
+								m_listEdges.GetHead())->m_seg.
+								m_dwX1));
+						posIt = pFloorObj->m_listEdges.GetHeadPosition();
+						pSide4 = (CWall*)pFloorObj->m_listEdges.GetNext(
 							posIt);
 						if (sDoc.i == 7)
 						{
-							pSide3->m_dwUnk94 = pFloorObj->m_dwUnk8C;
-							pSide3->m_dwUnk98 = pFloorObj->m_dwUnk8C;
+							pSide3->m_dwBottom = pFloorObj->m_dwLowHeight;
+							pSide3->m_dwTop = pFloorObj->m_dwLowHeight;
 						}
 						else
 						{
-							pFloorObj->m_dwUnk8C = (short)(
+							pFloorObj->m_dwLowHeight = (short)(
 								(CMerlinStatic*)pSide4->
-								m_dwUnk78)->m_wUnkA4;
-							pSide4 = (CWall*)pFloorObj->m_list94.
+								m_pMerlin)->m_wBottom;
+							pSide4 = (CWall*)pFloorObj->m_listEdges.
 								GetNext(posIt);
-							pFloorObj->m_dwUnk90 = (short)(
+							pFloorObj->m_dwHighHeight = (short)(
 								(CMerlinStatic*)pSide4->
-								m_dwUnk78)->m_wUnkA6;
+								m_pMerlin)->m_wTop;
 						}
-						pFloorObj->m_list94.AddTail(pSide3);
+						pFloorObj->m_listEdges.AddTail(pSide3);
 					}
-					((CCollider*)m_dwUnk8388)->Sub_40F900(pFloorObj);
-					m_list838C.AddTail(pFloorObj);
+					(m_pCollider)->AddStatic(pFloorObj);
+					m_listMazeObjs.AddTail(pFloorObj);
 				}
 				while (++nSeq);
 			}
 		}
 
 		// maze wall records
-		sHead.nWalls = ((CMerlinWorld*)m_dwUnk0188)->m_arrUnk14.GetSize();
-		m_dwUnk83C8 = 0;
+		sHead.nWalls = (m_pWorld)->m_arrStatics.GetSize();
+		m_dwMaxWallHeight = 0;
 		for (sDoc.i = 0; sDoc.i < sHead.nWalls; sDoc.i++)
 		{
 			CMerlinStatic* pFace;
 
-			pFace = (CMerlinStatic*)((CMerlinWorld*)m_dwUnk0188)->
-				m_arrUnk14[sDoc.i];
+			pFace = (CMerlinStatic*)(m_pWorld)->
+				m_arrStatics[sDoc.i];
 			sDir.pWall = new CWall;
-			sDir.pWall->Sub_414D40((CObject*)pFace);
-			m_list838C.AddTail(sDir.pWall);
-			if ((short)pFace->m_wUnkA4 > (int)m_dwUnk83C8)
-				m_dwUnk83C8 = (short)pFace->m_wUnkA4;
-			if ((short)pFace->m_wUnkA6 > (int)m_dwUnk83C8)
-				m_dwUnk83C8 = (short)pFace->m_wUnkA6;
+			sDir.pWall->SetFace(pFace);
+			m_listMazeObjs.AddTail(sDir.pWall);
+			if ((short)pFace->m_wBottom > (int)m_dwMaxWallHeight)
+				m_dwMaxWallHeight = (short)pFace->m_wBottom;
+			if ((short)pFace->m_wTop > (int)m_dwMaxWallHeight)
+				m_dwMaxWallHeight = (short)pFace->m_wTop;
 			// All three name tests are "!= 0", i.e. the name does
 			// *not* start with the given prefix, and they are one
 			// flat if/else-if: the
@@ -865,100 +942,106 @@ BOOL CBumperDoc::OnOpenDocument(LPCTSTR lpszPathName)
 			// 0x416D14), so a face whose name ends in "PAD_" takes
 			// neither arm and everything else is either registered
 			// with the collider or flagged.
-			if (_mbscmp((const unsigned char*)(const char*)pFace->
-					m_strUnk04.Left(strlen("PAD_")),
-					(const unsigned char*)"PAD_") != 0 &&
-				_mbscmp((const unsigned char*)(const char*)
-					pFace->m_strUnk5C.Left(strlen("DECAL_")),
+			// The three sites are not spelled alike because the
+			// original's frame is not symmetric either: site one
+			// keeps three temporaries (the `!= 0` flag at
+			// ebp-0x3f4 between the string and the CString
+			// pointer) and sites two and three keep two.  MbNe
+			// buys three slots, CStr two.
+			if (MbNe(_mbscmp((const unsigned char*)(const char*)pFace->
+					m_strName.Left(strlen("PAD_")),
+					(const unsigned char*)"PAD_")) &&
+				_mbscmp((const unsigned char*)CStr(
+					pFace->m_strFrontTex.Left(strlen("DECAL_"))),
 					(const unsigned char*)"DECAL_") != 0 &&
 				// no `!= 0`: hover.exe:0x416c14 copies the member
 				// raw into its temporary and tests that
-				pFace->m_dwUnkBC)
+				pFace->m_bSolid)
 			{
-				((CCollider*)m_dwUnk8388)->Sub_40F900(sDir.pWall);
-				if ((short)pFace->m_wUnkA4 > 0)
-					sDir.pWall->m_dwUnk38 = 1;
+				(m_pCollider)->AddStatic(sDir.pWall);
+				if ((short)pFace->m_wBottom > 0)
+					sDir.pWall->m_bHideOnMap = 1;
 			}
-			else if (_mbscmp((const unsigned char*)(const char*)
-					pFace->m_strUnk04.Left(strlen("PAD_")),
+			else if (_mbscmp((const unsigned char*)CStr(
+					pFace->m_strName.Left(strlen("PAD_"))),
 					(const unsigned char*)"PAD_") != 0)
-				sDir.pWall->m_dwUnk38 = 1;
+				sDir.pWall->m_bHideOnMap = 1;
 		}
-		m_dwUnk83C4 = 0x40;
-		m_dwUnk83CC = m_dwUnk83C8 - m_dwUnk83C4;
+		m_dwFloorHeight = 0x40;
+		m_dwHeightRange = m_dwMaxWallHeight - m_dwFloorHeight;
 
-		if (m_dwUnk8498 == 0)
+		if (m_bAttractMode == 0)
 		{
-			Hover_sub_423EA0();
-			for (sDoc.i = 0; sDoc.i < (int)LVLPARAM((int)g_dwUnk_46049C).
+			Hover_BuildBeacons();
+			for (sDoc.i = 0; sDoc.i < (int)LVLPARAM((int)g_dwLevel).
 				m_adwUnk0C[0]; sDoc.i++)
-				this->Sub_412250(new CSpeedPod, rand() % 4 == 0);
-			for (sDoc.i = 0; sDoc.i < (int)LVLPARAM((int)g_dwUnk_46049C).
+				this->PlaceObject(new CSpeedPod, rand() % 4 == 0);
+			for (sDoc.i = 0; sDoc.i < (int)LVLPARAM((int)g_dwLevel).
 				m_adwUnk0C[1]; sDoc.i++)
-				this->Sub_412250(new CSlowPod, rand() % 4 == 0);
-			for (sDoc.i = 0; sDoc.i < (int)LVLPARAM((int)g_dwUnk_46049C).
+				this->PlaceObject(new CSlowPod, rand() % 4 == 0);
+			for (sDoc.i = 0; sDoc.i < (int)LVLPARAM((int)g_dwLevel).
 				m_adwUnk0C[2]; sDoc.i++)
-				this->Sub_412250(new CMapEraserPod, rand() % 4 == 0);
-			for (sDoc.i = 0; sDoc.i < (int)LVLPARAM((int)g_dwUnk_46049C).
+				this->PlaceObject(new CMapEraserPod, rand() % 4 == 0);
+			for (sDoc.i = 0; sDoc.i < (int)LVLPARAM((int)g_dwLevel).
 				m_adwUnk0C[3]; sDoc.i++)
-				this->Sub_412250(new CTempWallPod, rand() % 4 == 0);
-			for (sDoc.i = 0; sDoc.i < (int)LVLPARAM((int)g_dwUnk_46049C).
+				this->PlaceObject(new CTempWallPod, rand() % 4 == 0);
+			for (sDoc.i = 0; sDoc.i < (int)LVLPARAM((int)g_dwLevel).
 				m_adwUnk0C[4]; sDoc.i++)
-				this->Sub_412250(new CSmokeBombPod, rand() % 4 == 0);
-			for (sDoc.i = 0; sDoc.i < (int)LVLPARAM((int)g_dwUnk_46049C).
+				this->PlaceObject(new CSmokeBombPod, rand() % 4 == 0);
+			for (sDoc.i = 0; sDoc.i < (int)LVLPARAM((int)g_dwLevel).
 				m_adwUnk0C[5]; sDoc.i++)
-				this->Sub_412250(new CJumpPod, rand() % 4 == 0);
-			for (sDoc.i = 0; sDoc.i < (int)LVLPARAM((int)g_dwUnk_46049C).
+				this->PlaceObject(new CJumpPod, rand() % 4 == 0);
+			for (sDoc.i = 0; sDoc.i < (int)LVLPARAM((int)g_dwLevel).
 				m_adwUnk0C[6]; sDoc.i++)
-				this->Sub_412250(new CInviciblePod, rand() % 4 == 0);
-			for (sDoc.i = 0; sDoc.i < (int)LVLPARAM((int)g_dwUnk_46049C).m_dwUnk30;
+				this->PlaceObject(new CInviciblePod, rand() % 4 == 0);
+			for (sDoc.i = 0; sDoc.i < LVLPARAM((int)g_dwLevel).m_dwUnk30;
 				sDoc.i++)
-				this->Sub_412250(new CFlag(0), 0);
-			for (sDoc.i = 0; sDoc.i < (int)LVLPARAM((int)g_dwUnk_46049C).m_dwUnk30;
+				this->PlaceObject(new CFlag(0), 0);
+			for (sDoc.i = 0; sDoc.i < LVLPARAM((int)g_dwLevel).m_dwUnk30;
 				sDoc.i++)
-				this->Sub_412250(new CFlag(1), 0);
+				this->PlaceObject(new CFlag(1), 0);
 		}
 
 		// fix up the wall flags (the original also carries dead "|= 8"
 		// copies of these blocks; the reachable stores clear the bit)
-		for (sHead.pos = m_list838C.GetHeadPosition(); sHead.pos != NULL;)
+		for (sHead.pos = m_listMazeObjs.GetHeadPosition(); sHead.pos != NULL;)
 		{
 			// pObj is a local of the loop body, not of the try block:
 			// the original puts it at ebp-0x298, in the pool that
 			// follows the try block's own (hover.exe:0x417550).
 			CObject* pObj;
 
-			pObj = (CObject*)m_list838C.GetNext(sHead.pos);
+			pObj = (CObject*)m_listMazeObjs.GetNext(sHead.pos);
 			if (!pObj->IsKindOf(RUNTIME_CLASS(CPodObj)))
 			{
-				if (((CWall*)pObj)->m_dwUnk78 != 0)
+				if (((CWall*)pObj)->m_pMerlin != 0)
 				{
 					// HOVER_SHOWPADS is 0 in the shipped build, so the
 					// original emits the |= 8 arm as dead code behind an
 					// unconditional jump and only the &= ~8 arm runs.
 					if (HOVER_SHOWPADS)
-						((CMerlinStatic*)((CWall*)pObj)->m_dwUnk78)->
+						((CMerlinStatic*)((CWall*)pObj)->m_pMerlin)->
 							m_wFlags |= 8;
 					else
-						((CMerlinStatic*)((CWall*)pObj)->m_dwUnk78)->
+						((CMerlinStatic*)((CWall*)pObj)->m_pMerlin)->
 							m_wFlags &= ~8;
 				}
 			}
 			if (pObj->IsKindOf(RUNTIME_CLASS(CWall)))
 			{
-				if (((CWall*)pObj)->m_dwUnk78 != 0)
+				if (((CWall*)pObj)->m_pMerlin != 0)
 				{
 					if (HOVER_SHOWPADS)
-						((CMerlinStatic*)((CWall*)pObj)->m_dwUnk78)->
+						((CMerlinStatic*)((CWall*)pObj)->m_pMerlin)->
 							m_wFlags |= 8;
 					else
-						((CMerlinStatic*)((CWall*)pObj)->m_dwUnk78)->
+						((CMerlinStatic*)((CWall*)pObj)->m_pMerlin)->
 							m_wFlags &= ~8;
 				}
 			}
 		}
-		sDoc.nRet = ((CMerlinWorld*)m_dwUnk0188)->Sub_418EA0();
-		m_dwUnk0184 = 1;
+		sDoc.nRet = (m_pWorld)->GetTextureBytes();
+		m_bLevelLoaded = 1;
 		SetCursor(LoadCursor(NULL, (LPCTSTR)0x7F00));	// IDC_ARROW
 	}
 	catch (CException* e)
@@ -966,21 +1049,24 @@ BOOL CBumperDoc::OnOpenDocument(LPCTSTR lpszPathName)
 		CBumperView* pView;
 
 		SetCursor(LoadCursor(NULL, (LPCTSTR)0x7F00));	// IDC_ARROW
-		pView = Hover_sub_401140();
-		if (pView != NULL && pView->m_dwUnk0040 != 0)
+		pView = Hover_GetView();
+		if (pView != NULL && pView->m_pRenderThread != 0)
 		{
-			TerminateThread(((CWinThread*)pView->m_dwUnk0040)->
+			TerminateThread((pView->m_pRenderThread)->
 				m_hThread, 0x5F);
-			delete (CWinThread*)pView->m_dwUnk0040;
-			pView->m_dwUnk0040 = 0;
+			delete pView->m_pRenderThread;
+			pView->m_pRenderThread = 0;
 		}
-		if (g_pThreadUnk_4C56E0 != NULL)
+		if (g_pSoundThread != NULL)
 		{
-			TerminateThread(g_pThreadUnk_4C56E0->m_hThread, 0x5F);
-			delete g_pThreadUnk_4C56E0;
-			g_pThreadUnk_4C56E0 = NULL;
+			TerminateThread(g_pSoundThread->m_hThread, 0x5F);
+			delete g_pSoundThread;
+			g_pSoundThread = NULL;
 		}
-		Hover_sub_4262B0(e);
+		Hover_FatalException(e);
 	}
 	return 1;
 }
+
+#undef LVLPARAM
+#define LVLPARAM(i) (g_lvlParams[((i) < 16) ? (i) : ((i) % 3 + 15)])

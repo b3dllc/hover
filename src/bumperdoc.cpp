@@ -4,7 +4,7 @@
 
 #include "hover.h"
 #include "bumperdoc.h"
-#include "texload.h"		// CCollider (Sub_412630)
+#include "texload.h"		// CCollider (RetireObject)
 #include "bumpview.h"
 #include "texmisc.h"
 
@@ -20,50 +20,50 @@ IMPLEMENT_DYNCREATE(CBumperDoc, CDocument)
 // build's menu. The order below is the original table's order.
 BEGIN_MESSAGE_MAP(CBumperDoc, CDocument)
 	//{{AFX_MSG_MAP(CBumperDoc)
-	ON_COMMAND(ID_CMD_34002, OnCmd34002)
-	ON_COMMAND(ID_CMD_34027, OnCmd34027)
-	ON_COMMAND(ID_CMD_34026, OnCmd34026)
-	ON_COMMAND(ID_CMD_34021, OnCmd34021)
-	ON_COMMAND(ID_CMD_34028, OnCmd34028)
-	ON_COMMAND(ID_CMD_34025, OnCmd34025)
-	ON_COMMAND(ID_CMD_34024, OnCmd34024)
-	ON_COMMAND(ID_CMD_34023, OnCmd34023)
-	ON_COMMAND(ID_CMD_34022, OnCmd34022)
+	ON_COMMAND(ID_DBG_SETPOSITION, OnDbgSetPosition)
+	ON_COMMAND(ID_DBG_SHADE_GREEN_DEC, OnDbgShadeGreenDec)
+	ON_COMMAND(ID_DBG_SHADE_GREEN_INC, OnDbgShadeGreenInc)
+	ON_COMMAND(ID_DBG_SHADE_BASE_DEC, OnDbgShadeBaseDec)
+	ON_COMMAND(ID_DBG_SHADE_BASE_INC, OnDbgShadeBaseInc)
+	ON_COMMAND(ID_DBG_SHADE_BLUE_DEC, OnDbgShadeBlueDec)
+	ON_COMMAND(ID_DBG_SHADE_BLUE_INC, OnDbgShadeBlueInc)
+	ON_COMMAND(ID_DBG_SHADE_RED_DEC, OnDbgShadeRedDec)
+	ON_COMMAND(ID_DBG_SHADE_RED_INC, OnDbgShadeRedInc)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
 // hover.exe:0x4C590C
 // GLOBAL: HOVER 0x4c590c
-LPMIDIDEVICEFN g_pfnUnk_4C590C;
+LPMIDIDEVICEFN g_pfnMidiStreamClose;
 
 // hover.exe:0x4C591C
 // GLOBAL: HOVER 0x4c591c
-LPMIDIDEVICEFN g_pfnUnk_4C591C;
+LPMIDIDEVICEFN g_pfnMidiStreamPause;
 
 // midiStreamRestart, resolved by the MIDI stream loader in texload.cpp
 // (declared there too; repeated here so this file does not have to pull in
 // the whole renderer header).
-extern LPMIDIDEVICEFN g_pfnUnk_4C5920;	// hover.exe:0x4C5920
+extern LPMIDIDEVICEFN g_pfnMidiStreamRestart;	// hover.exe:0x4C5920
 
-// The three texture maps DeleteContents empties along with g_mapUnk_4A4728
+// The three texture maps DeleteContents empties along with g_mapDynamicSprites
 // (defined in texture.cpp; declared here so this file does not have to
 // pull in the whole texture header).
 extern CMapStringToOb g_mapUnk_4A1D30;	// hover.exe:0x4A1D30
 extern CMapStringToOb g_mapUnk_4A4578;	// hover.exe:0x4A4578
 extern CMapStringToOb g_mapUnk_4A4768;	// hover.exe:0x4A4768
 
-// The beacon table Hover_sub_4151E0 empties (defined in mazeobj.cpp).
-extern CObArray g_obArrUnk_4A4840;		// hover.exe:0x4A4840
+// The beacon table Hover_DeleteBeacons empties (defined in mazeobj.cpp).
+extern CObArray g_arrBeacons;		// hover.exe:0x4A4840
 
 // hover.exe:0x4A4728
 // GLOBAL: HOVER 0x4a4728
-CMapStringToOb g_mapUnk_4A4728;
+CMapStringToOb g_mapDynamicSprites;
 
 // The sound slot names, in the order CBumperDoc::OnNewDocument creates
 // them: indices 0x1A-0x1D are the engine loop slots the player uses.
 // hover.exe:0x4C4950
 // GLOBAL: HOVER 0x4c4950
-const char* g_apszUnk_4C4950[34] =
+const char* g_apszSoundNames[34] =
 {
 	"skid_st",
 	"levlstrt",
@@ -101,144 +101,143 @@ const char* g_apszUnk_4C4950[34] =
 	"flagr_dr",
 };
 
-// Deletes every beacon built into the g_obArrUnk_4A4840 table and empties
+// Deletes every beacon built into the g_arrBeacons table and empties
 // the array. Called by CBumperDoc::DeleteContents.
 // hover.exe:0x4151E0
 // FUNCTION: HOVER 0x4151e0
-void Hover_sub_4151E0()
+void Hover_DeleteBeacons()
 {
 	int i;
 
-	for (i = 0; i < g_obArrUnk_4A4840.GetSize(); i++)
-		delete g_obArrUnk_4A4840[i];
-	g_obArrUnk_4A4840.RemoveAll();
+	for (i = 0; i < g_arrBeacons.GetSize(); i++)
+		delete g_arrBeacons[i];
+	g_arrBeacons.RemoveAll();
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// CSub425050
+// CMidiStream
 
 // hover.exe:0x425050
 // FUNCTION: HOVER 0x425050
-CSub425050::CSub425050()
+CMidiStream::CMidiStream()
 {
-	m_dwUnk04 = 0xFFFFFFFF;
-	m_dwUnk10 = 0;
-	m_dwUnk14 = 0;
-	m_dwUnk18 = 0;
-	m_dwUnk1C = 0;
-	m_dwUnk20 = 0;
+	m_hFile = INVALID_HANDLE_VALUE;
+	m_pFreeHead = 0;
+	m_pFreeTail = 0;
+	m_hStream = 0;
+	m_dwQueued = 0;
+	m_bStopping = 0;
 }
 
 // hover.exe:0x4250C0
 // FUNCTION: HOVER 0x4250c0
-CSub425050::~CSub425050()
+CMidiStream::~CMidiStream()
 {
-	Sub_438260();
+	CloseStream();
 }
 
 // hover.exe:0x438260
 // FUNCTION: HOVER 0x438260
-void CSub425050::Sub_438260()
+void CMidiStream::CloseStream()
 {
 	LPMIDIDEVICEFN pfnClose;
-	DWORD* pNode;
+	LPMIDIHDR pNode;
 
-	if (m_dwUnk18 != 0)
+	if (m_hStream != 0)
 	{
-		m_dwUnk20 = 1;
-		midiOutReset((HMIDIOUT)m_dwUnk18);
-		// unprepares every prepared MIDIHDR on the m_dwUnk10 list
-		// (nodes are chained through the dword at +0x14)
-		pNode = (DWORD*)m_dwUnk10;
+		m_bStopping = 1;
+		midiOutReset((HMIDIOUT)m_hStream);
+		// unprepares every prepared MIDIHDR on the m_pFreeHead list
+		pNode = m_pFreeHead;
 		while (pNode != NULL)
 		{
-			midiOutUnprepareHeader((HMIDIOUT)m_dwUnk18, (LPMIDIHDR)pNode,
-				0x40);
-			pNode = (DWORD*)pNode[5];
+			midiOutUnprepareHeader((HMIDIOUT)m_hStream, pNode,
+				sizeof(MIDIHDR));
+			pNode = pNode->lpNext;
 		}
-		pfnClose = g_pfnUnk_4C590C;
+		pfnClose = g_pfnMidiStreamClose;
 		if (pfnClose != NULL)
-			pfnClose(m_dwUnk18);
+			pfnClose(m_hStream);
 	}
-	m_dwUnk18 = 0;
-	while (m_dwUnk10 != 0)
+	m_hStream = 0;
+	while (m_pFreeHead != 0)
 	{
-		pNode = (DWORD*)m_dwUnk10;
-		m_dwUnk10 = pNode[5];
+		pNode = m_pFreeHead;
+		m_pFreeHead = pNode->lpNext;
 		GlobalUnlock(GlobalHandle(pNode));
 		GlobalFree(GlobalHandle(pNode));
 	}
-	m_dwUnk10 = 0;
-	m_dwUnk14 = 0;
+	m_pFreeHead = 0;
+	m_pFreeTail = 0;
 }
 
 // hover.exe:0x412220
 // FUNCTION: HOVER 0x412220
-int CSub425050::Sub_412220()
+int CMidiStream::PauseMusic()
 {
 	LPMIDIDEVICEFN pfnClose;
 
-	pfnClose = g_pfnUnk_4C591C;
+	pfnClose = g_pfnMidiStreamPause;
 	if (pfnClose != NULL)
-		pfnClose(m_dwUnk18);
+		pfnClose(m_hStream);
 	return 1;
 }
 
 // Restart playback of the stream this object has open. With no open device
-// the whole open sequence is run again (Sub_438300); the original tail-jumps
+// the whole open sequence is run again (StartStream); the original tail-jumps
 // into it.
 
 // hover.exe:0x413710
 // FUNCTION: HOVER 0x413710
-int CSub425050::Sub_413710()
+int CMidiStream::ResumeMusic()
 {
 	LPMIDIDEVICEFN pfnRestart;
 
-	if (m_dwUnk18 != 0)
+	if (m_hStream != 0)
 	{
-		pfnRestart = g_pfnUnk_4C5920;
+		pfnRestart = g_pfnMidiStreamRestart;
 		if (pfnRestart != NULL)
-			pfnRestart(m_dwUnk18);
+			pfnRestart(m_hStream);
 		return 1;
 	}
-	return Sub_438300();
+	return StartStream();
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// CSub41E1E0
+// CGameObjList
 
 // hover.exe:0x41E1E0
 // FUNCTION: HOVER 0x41e1e0
-CSub41E1E0::~CSub41E1E0()
+CGameObjList::~CGameObjList()
 {
 	// trivial destructor in the original
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// CSub42CFE0: the debug "set player position" dialog opened by
-// CBumperDoc::OnCmd34002 (ID_CMD_34002). Dialog template 133, three edit
-// controls holding the player's X (0..23000), Y (0..23000) and heading
-// (0..511). It has no DECLARE_DYNAMIC (vtable slot 0 is the inherited
-// CDialog::GetRuntimeClass) and an empty message map
-// (AFX_MSGMAP at hover.exe:0x4BD4A0 with a single end marker), so the class
-// name is unknown. vtable at hover.exe:0x4BD4E8, sizeof = 0x50.
+// CSetPositionDialog: the debug "set player position" dialog opened by
+// CBumperDoc::OnDbgSetPosition (ID_DBG_SETPOSITION). Dialog template 133,
+// three edit controls holding the player's X (0..23000), Y (0..23000) and
+// heading (0..511). It has no DECLARE_DYNAMIC (vtable slot 0 is the inherited
+// CDialog::GetRuntimeClass) and an empty message map (AFX_MSGMAP at
+// hover.exe:0x4BD4A0 with a single end marker), so the class name is unknown.
+// vtable at hover.exe:0x4BD4E8, sizeof = 0x50.
 //
 // The dialog template was stripped from the shipped hover.exe, so
 // DoModal() returns -1 at runtime and the handler never applies anything.
 //
 // The class is declared here rather than in bumperdoc.h because
-// CBumperDoc::OnCmd34002 is its only user and bumperdoc.h is included by
+// CBumperDoc::OnDbgSetPosition is its only user and bumperdoc.h is included by
 // half the project (adding a class to it reshuffles register allocation in
 // every translation unit -- see notes/perfect-match.md rules 14 and 18).
 
-class CSub42CFE0 : public CDialog
+class CSetPositionDialog : public CDialog
 {
 // Construction
 public:
-	CSub42CFE0(CWnd* pParent = NULL);	// hover.exe:0x42CFE0
+	CSetPositionDialog(CWnd* pParent = NULL);	// hover.exe:0x42CFE0
 
 // Dialog Data
-	//{{AFX_DATA(CSub42CFE0)
+	//{{AFX_DATA(CSetPositionDialog)
 	enum { IDD = IDD_DEBUG_SETPOSITION };
 	int m_nX;				// +0x44 = 0
 	int m_nY;				// +0x48 = 0
@@ -254,14 +253,14 @@ protected:
 	DECLARE_MESSAGE_MAP()	// empty map at hover.exe:0x4BD4A0
 };							// sizeof = 0x50 in hover.exe
 
-BEGIN_MESSAGE_MAP(CSub42CFE0, CDialog)
-	//{{AFX_MSG_MAP(CSub42CFE0)
+BEGIN_MESSAGE_MAP(CSetPositionDialog, CDialog)
+	//{{AFX_MSG_MAP(CSetPositionDialog)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
 // hover.exe:0x42CFE0
 // FUNCTION: HOVER 0x42cfe0
-CSub42CFE0::CSub42CFE0(CWnd* pParent) : CDialog(IDD_DEBUG_SETPOSITION, pParent)
+CSetPositionDialog::CSetPositionDialog(CWnd* pParent) : CDialog(IDD_DEBUG_SETPOSITION, pParent)
 {
 	m_nX = 0;
 	m_nY = 0;
@@ -270,11 +269,11 @@ CSub42CFE0::CSub42CFE0(CWnd* pParent) : CDialog(IDD_DEBUG_SETPOSITION, pParent)
 
 // hover.exe:0x42D050
 // FUNCTION: HOVER 0x42d050
-void CSub42CFE0::DoDataExchange(CDataExchange* pDX)
+void CSetPositionDialog::DoDataExchange(CDataExchange* pDX)
 {
 	// NOTE: unlike every other dialog in hover.exe this one does not call
 	// CDialog::DoDataExchange first.
-	//{{AFX_DATA_MAP(CSub42CFE0)
+	//{{AFX_DATA_MAP(CSetPositionDialog)
 	DDX_Text(pDX, IDC_DEBUG_X, m_nX);
 	DDV_MinMaxInt(pDX, m_nX, 0, 23000);
 	DDX_Text(pDX, IDC_DEBUG_Y, m_nY);
@@ -292,17 +291,17 @@ void CSub42CFE0::DoDataExchange(CDataExchange* pDX)
 CBumperDoc::CBumperDoc()
 {
 	theApp.m_pBumperDoc = this;
-	m_dwUnk0188 = 0;
-	m_dwUnk8388 = 0;
-	m_dwUnk83E4 = 0;
-	memset(m_adwUnk83EC, 0, sizeof(m_adwUnk83EC));
-	m_dblUnk8478 = 0.985;
-	m_dblUnk8480 = 1.2;
-	m_dblUnk8488 = 1.2;
-	m_dblUnk8490 = 1.2;
-	m_dwUnk0184 = 0;
-	m_dwUnk83CC = 0x200;
-	m_dwUnk8498 = 1;
+	m_pWorld = 0;
+	m_pCollider = 0;
+	m_dwScore = 0;
+	memset(m_adwSounds, 0, sizeof(m_adwSounds));
+	m_dblShadeBase = 0.985;
+	m_dblShadeRed = 1.2;
+	m_dblShadeBlue = 1.2;
+	m_dblShadeGreen = 1.2;
+	m_bLevelLoaded = 0;
+	m_dwHeightRange = 0x200;
+	m_bAttractMode = 1;
 }
 
 // Deletes the 34 sound slots created by OnNewDocument. Everything else
@@ -325,8 +324,8 @@ CBumperDoc::~CBumperDoc()
 
 	for (i = 0; i < 34; i++)
 	{
-		delete (CObject*)m_adwUnk83EC[i];
-		m_adwUnk83EC[i] = 0;
+		delete (CObject*)m_adwSounds[i];
+		m_adwSounds[i] = 0;
 	}
 }
 #endif
@@ -357,37 +356,37 @@ void CBumperDoc::DeleteContents()
 	POSITION pos;
 	CObject* pObj;
 
-	m_humanPlayer.Sub_414BD0(0);
+	m_humanPlayer.ClearPods(0);
 
-	pos = m_list838C.GetHeadPosition();
+	pos = m_listMazeObjs.GetHeadPosition();
 	while (pos != NULL)
 	{
-		pObj = m_list838C.GetNext(pos);
+		pObj = m_listMazeObjs.GetNext(pos);
 		delete pObj;
 	}
-	m_list838C.RemoveAll();
+	m_listMazeObjs.RemoveAll();
 
-	pos = m_list83A8.GetHeadPosition();
+	pos = m_listActiveObjs.GetHeadPosition();
 	while (pos != NULL)
 	{
-		pObj = m_list83A8.GetNext(pos);
+		pObj = m_listActiveObjs.GetNext(pos);
 		if (pObj != (CObject*)&m_humanPlayer)
 			delete pObj;
 	}
-	m_list83A8.RemoveAll();
+	m_listActiveObjs.RemoveAll();
 
-	delete (CObject*)m_dwUnk8388;
-	m_dwUnk8388 = 0;
-	delete (CObject*)m_dwUnk0188;
-	m_dwUnk0188 = 0;
+	delete (CObject*)m_pCollider;
+	m_pCollider = 0;
+	delete (CObject*)m_pWorld;
+	m_pWorld = 0;
 
-	g_mapUnk_4A4728.RemoveAll();
+	g_mapDynamicSprites.RemoveAll();
 	g_mapUnk_4A4578.RemoveAll();
 	g_mapUnk_4A1D30.RemoveAll();
 	g_mapUnk_4A4768.RemoveAll();
-	Hover_sub_4151E0();
-	g_dwUnk_4C52D8 = 0;
-	g_dwUnk_4C52DC = 0;
+	Hover_DeleteBeacons();
+	g_pDirtyObjList = 0;
+	g_pDrawObjList = 0;
 	CDocument::DeleteContents();
 	_heapmin();
 }
@@ -395,8 +394,8 @@ void CBumperDoc::DeleteContents()
 // Runs on ID_FILE_NEW, i.e. on the Start Game command (CWinApp::OnFileNew
 // -> CDocTemplate::OpenDocumentFile -> OnNewDocument). The 34 sound slots
 // are created once, on the first new document; the level itself is then
-// loaded by the OnOpenDocument virtual. The m_dwUnk8498 branch only changes
-// the progress-dialog step budget (g_dwUnk_46049C) around the load.
+// loaded by the OnOpenDocument virtual. The m_bAttractMode branch only changes
+// the progress-dialog step budget (g_dwLevel) around the load.
 
 // hover.exe:0x417B00
 // FUNCTION: HOVER 0x417b00
@@ -408,18 +407,18 @@ BOOL CBumperDoc::OnNewDocument()
 	if (!CDocument::OnNewDocument())
 		return FALSE;
 
-	if (m_adwUnk83EC[0] == 0)
+	if (m_adwSounds[0] == 0)
 	{
 		for (i = 0; i < 34; i++)
-			m_adwUnk83EC[i] = (DWORD)new CSub40B800(g_apszUnk_4C4950[i], 0);
+			m_adwSounds[i] = (DWORD)new CSoundSlot(g_apszSoundNames[i], 0);
 	}
 
-	if (m_dwUnk8498 != 0)
+	if (m_bAttractMode != 0)
 	{
-		dwSaved = g_dwUnk_46049C;
-		g_dwUnk_46049C = 20;
+		dwSaved = g_dwLevel;
+		g_dwLevel = 20;
 		OnOpenDocument(NULL);
-		g_dwUnk_46049C = dwSaved;
+		g_dwLevel = dwSaved;
 	}
 	else
 	{
@@ -431,7 +430,7 @@ BOOL CBumperDoc::OnNewDocument()
 /////////////////////////////////////////////////////////////////////////////
 // Wave slot objects
 //
-// hover.exe:0x4C4950 the 34 wave file base names of m_adwUnk83EC (indices
+// hover.exe:0x4C4950 the 34 wave file base names of m_adwSounds (indices
 // 12/13 and 11/14 deliberately share "speed_en"/"speed_re").
 
 // Creates the 34 wave slot objects; a slot whose allocation fails stays
@@ -439,36 +438,36 @@ BOOL CBumperDoc::OnNewDocument()
 
 // hover.exe:0x426E90
 // FUNCTION: HOVER 0x426e90
-void CBumperDoc::Sub_426E90()
+void CBumperDoc::CreateSounds()
 {
 	const char** ppszName;
 	DWORD* pSlot;
 
-	ppszName = g_apszUnk_4C4950;
-	pSlot = m_adwUnk83EC;
+	ppszName = g_apszSoundNames;
+	pSlot = m_adwSounds;
 	do
 	{
-		*pSlot = (DWORD)new CSub40B800(*ppszName, 0);
+		*pSlot = (DWORD)new CSoundSlot(*ppszName, 0);
 		ppszName++;
 		pSlot++;
 	}
-	while (ppszName < g_apszUnk_4C4950 + 34);
+	while (ppszName < g_apszSoundNames + 34);
 }
 
 // Destroys the 34 wave slot objects and clears the slots.
 
 // hover.exe:0x426EE0
 // FUNCTION: HOVER 0x426ee0
-void CBumperDoc::Sub_426EE0()
+void CBumperDoc::DestroySounds()
 {
 	DWORD* pSlot;
 	int i;
 
-	pSlot = m_adwUnk83EC;
+	pSlot = m_adwSounds;
 	for (i = 0x22; i != 0; i--)
 	{
 		if (*pSlot != 0)
-			delete (CSub40B800*)*pSlot;
+			delete (CSoundSlot*)*pSlot;
 		*pSlot = 0;
 		pSlot++;
 	}
@@ -479,23 +478,23 @@ void CBumperDoc::Sub_426EE0()
 //
 // All nine are unlisted debug commands (no menu item, no accelerator).
 // The eight shade commands below nudge one of the four shade-table
-// parameters and immediately rebuild the primary CSub414550 shade table at
-// +0x18C from the level palette, so the effect is visible on the next
-// frame; the secondary table at +0x418C (built with the fixed 0.8/1.5/0.8
+// parameters and immediately rebuild the primary shade table m_aShade[0]
+// from the level palette, so the effect is visible on the next
+// frame; the secondary m_aShade[1] (built with the fixed 0.8/1.5/0.8
 // scales) is left alone.
 
 // Opens the debug position dialog on the human player: the current
 // position and heading go in, and on IDOK the player is teleported there
 // with its velocity, spin and bounce state cleared, and every object in
 // the two document lists has its +0x3C field reset. The game is flagged as
-// suspended (theApp.m_dwUnk01BC) while the dialog is up. The dialog
+// suspended (theApp.m_bSuspended) while the dialog is up. The dialog
 // template (133) is not in the shipped resources, so DoModal() fails and
 // nothing is applied.
 // hover.exe:0x426F20
 // FUNCTION: HOVER 0x426f20
-void CBumperDoc::OnCmd34002()
+void CBumperDoc::OnDbgSetPosition()
 {
-	CSub42CFE0 dlg(NULL);
+	CSetPositionDialog dlg(NULL);
 	DWORD adwPos1[2];
 	DWORD adwPos2[2];
 	POSITION pos;
@@ -506,7 +505,7 @@ void CBumperDoc::OnCmd34002()
 
 	adwPad[0] = 0;
 
-	// Sub_403880 returns the position pair by value in the original, so
+	// GetCellPos returns the position pair by value in the original, so
 	// each component read compiles into its own call and its own temporary
 	// (hover.exe uses [ebp-0x30] and [ebp-0x38] for them, exactly as we do).
 	// NOTE: the original frame is 0x18 bytes larger than ours -- it leaves
@@ -514,107 +513,107 @@ void CBumperDoc::OnCmd34002()
 	// spelling of this function reproduces that (VC 2.2 drops locals it
 	// never materializes), so every ebp-relative displacement here is
 	// shifted by 0x18 against the original; see notes/perfect-match.md.
-	dlg.m_nX = m_humanPlayer.Sub_403880(adwPos1)[0];
-	dlg.m_nY = m_humanPlayer.Sub_403880(adwPos2)[1];
-	dlg.m_nAngle = (short)m_humanPlayer.m_awUnk0194[5];
-	theApp.m_dwUnk01BC = 1;
+	dlg.m_nX = m_humanPlayer.GetCellPos(adwPos1)[0];
+	dlg.m_nY = m_humanPlayer.GetCellPos(adwPos2)[1];
+	dlg.m_nAngle = (short)m_humanPlayer.m_wHeading;
+	theApp.m_bSuspended = 1;
 	if (dlg.DoModal() == IDOK)
 	{
-		m_humanPlayer.Sub_40F880(dlg.m_nX, dlg.m_nY);
-		m_humanPlayer.m_awUnk0194[4] = 0;
-		m_humanPlayer.m_awUnk0194[5] = (WORD)dlg.m_nAngle;
-		m_humanPlayer.m_awUnk01AC[1] = 0;
-		m_humanPlayer.m_awUnk01AC[0] = 0;
-		m_humanPlayer.m_awUnk01AC[3] = 0;
-		m_humanPlayer.m_awUnk01AC[2] = 0;
-		pos = m_list838C.GetHeadPosition();
+		m_humanPlayer.SetCellPos(dlg.m_nX, dlg.m_nY);
+		m_humanPlayer.m_wHeadingFrac = 0;
+		m_humanPlayer.m_wHeading = (WORD)dlg.m_nAngle;
+		m_humanPlayer.m_wVelX = 0;
+		m_humanPlayer.m_wVelXFrac = 0;
+		m_humanPlayer.m_wVelY = 0;
+		m_humanPlayer.m_wVelYFrac = 0;
+		pos = m_listMazeObjs.GetHeadPosition();
 		while (pos != NULL)
-			((CGameObj*)m_list838C.GetNext(pos))->m_dwUnk3C = 0;
-		pos = m_list83A8.GetHeadPosition();
+			((CGameObj*)m_listMazeObjs.GetNext(pos))->m_bOnMap = 0;
+		pos = m_listActiveObjs.GetHeadPosition();
 		while (pos != NULL)
-			((CGameObj*)m_list83A8.GetNext(pos))->m_dwUnk3C = 0;
+			((CGameObj*)m_listActiveObjs.GetNext(pos))->m_bOnMap = 0;
 	}
-	theApp.m_dwUnk01BC = 0;
+	theApp.m_bSuspended = 0;
 }
 
 // Darkens the green channel of the shade table by 0.05.
 // hover.exe:0x427060
 // FUNCTION: HOVER 0x427060
-void CBumperDoc::OnCmd34027()
+void CBumperDoc::OnDbgShadeGreenDec()
 {
-	m_dblUnk8490 -= 0.05;
-	((CSub414550*)m_pad018C)->Sub_414550(&g_paletteUnk_4A1D50, m_dblUnk8478,
-		0xFF, 0xFF, 0xFF, m_dblUnk8480, m_dblUnk8488, m_dblUnk8490);
+	m_dblShadeGreen -= 0.05;
+	m_aShade[0].BuildTable(&g_palGame, m_dblShadeBase,
+		0xFF, 0xFF, 0xFF, m_dblShadeRed, m_dblShadeBlue, m_dblShadeGreen);
 }
 
 // Brightens the green channel of the shade table by 0.05.
 // hover.exe:0x4270D0
 // FUNCTION: HOVER 0x4270d0
-void CBumperDoc::OnCmd34026()
+void CBumperDoc::OnDbgShadeGreenInc()
 {
-	m_dblUnk8490 += 0.05;
-	((CSub414550*)m_pad018C)->Sub_414550(&g_paletteUnk_4A1D50, m_dblUnk8478,
-		0xFF, 0xFF, 0xFF, m_dblUnk8480, m_dblUnk8488, m_dblUnk8490);
+	m_dblShadeGreen += 0.05;
+	m_aShade[0].BuildTable(&g_palGame, m_dblShadeBase,
+		0xFF, 0xFF, 0xFF, m_dblShadeRed, m_dblShadeBlue, m_dblShadeGreen);
 }
 
 // Lowers the per-level darkening base by 0.001.
 // hover.exe:0x427140
 // FUNCTION: HOVER 0x427140
-void CBumperDoc::OnCmd34021()
+void CBumperDoc::OnDbgShadeBaseDec()
 {
-	m_dblUnk8478 -= 0.001;
-	((CSub414550*)m_pad018C)->Sub_414550(&g_paletteUnk_4A1D50, m_dblUnk8478,
-		0xFF, 0xFF, 0xFF, m_dblUnk8480, m_dblUnk8488, m_dblUnk8490);
+	m_dblShadeBase -= 0.001;
+	m_aShade[0].BuildTable(&g_palGame, m_dblShadeBase,
+		0xFF, 0xFF, 0xFF, m_dblShadeRed, m_dblShadeBlue, m_dblShadeGreen);
 }
 
 // Raises the per-level darkening base by 0.001.
 // hover.exe:0x4271B0
 // FUNCTION: HOVER 0x4271b0
-void CBumperDoc::OnCmd34028()
+void CBumperDoc::OnDbgShadeBaseInc()
 {
-	m_dblUnk8478 += 0.001;
-	((CSub414550*)m_pad018C)->Sub_414550(&g_paletteUnk_4A1D50, m_dblUnk8478,
-		0xFF, 0xFF, 0xFF, m_dblUnk8480, m_dblUnk8488, m_dblUnk8490);
+	m_dblShadeBase += 0.001;
+	m_aShade[0].BuildTable(&g_palGame, m_dblShadeBase,
+		0xFF, 0xFF, 0xFF, m_dblShadeRed, m_dblShadeBlue, m_dblShadeGreen);
 }
 
 // Darkens the blue channel of the shade table by 0.05.
 // hover.exe:0x427220
 // FUNCTION: HOVER 0x427220
-void CBumperDoc::OnCmd34025()
+void CBumperDoc::OnDbgShadeBlueDec()
 {
-	m_dblUnk8488 -= 0.05;
-	((CSub414550*)m_pad018C)->Sub_414550(&g_paletteUnk_4A1D50, m_dblUnk8478,
-		0xFF, 0xFF, 0xFF, m_dblUnk8480, m_dblUnk8488, m_dblUnk8490);
+	m_dblShadeBlue -= 0.05;
+	m_aShade[0].BuildTable(&g_palGame, m_dblShadeBase,
+		0xFF, 0xFF, 0xFF, m_dblShadeRed, m_dblShadeBlue, m_dblShadeGreen);
 }
 
 // Brightens the blue channel of the shade table by 0.05.
 // hover.exe:0x427290
 // FUNCTION: HOVER 0x427290
-void CBumperDoc::OnCmd34024()
+void CBumperDoc::OnDbgShadeBlueInc()
 {
-	m_dblUnk8488 += 0.05;
-	((CSub414550*)m_pad018C)->Sub_414550(&g_paletteUnk_4A1D50, m_dblUnk8478,
-		0xFF, 0xFF, 0xFF, m_dblUnk8480, m_dblUnk8488, m_dblUnk8490);
+	m_dblShadeBlue += 0.05;
+	m_aShade[0].BuildTable(&g_palGame, m_dblShadeBase,
+		0xFF, 0xFF, 0xFF, m_dblShadeRed, m_dblShadeBlue, m_dblShadeGreen);
 }
 
 // Darkens the red channel of the shade table by 0.05.
 // hover.exe:0x427300
 // FUNCTION: HOVER 0x427300
-void CBumperDoc::OnCmd34023()
+void CBumperDoc::OnDbgShadeRedDec()
 {
-	m_dblUnk8480 -= 0.05;
-	((CSub414550*)m_pad018C)->Sub_414550(&g_paletteUnk_4A1D50, m_dblUnk8478,
-		0xFF, 0xFF, 0xFF, m_dblUnk8480, m_dblUnk8488, m_dblUnk8490);
+	m_dblShadeRed -= 0.05;
+	m_aShade[0].BuildTable(&g_palGame, m_dblShadeBase,
+		0xFF, 0xFF, 0xFF, m_dblShadeRed, m_dblShadeBlue, m_dblShadeGreen);
 }
 
 // Brightens the red channel of the shade table by 0.05.
 // hover.exe:0x427370
 // FUNCTION: HOVER 0x427370
-void CBumperDoc::OnCmd34022()
+void CBumperDoc::OnDbgShadeRedInc()
 {
-	m_dblUnk8480 += 0.05;
-	((CSub414550*)m_pad018C)->Sub_414550(&g_paletteUnk_4A1D50, m_dblUnk8478,
-		0xFF, 0xFF, 0xFF, m_dblUnk8480, m_dblUnk8488, m_dblUnk8490);
+	m_dblShadeRed += 0.05;
+	m_aShade[0].BuildTable(&g_palGame, m_dblShadeBase,
+		0xFF, 0xFF, 0xFF, m_dblShadeRed, m_dblShadeBlue, m_dblShadeGreen);
 }
 
 // Retires pObj: unregisters it from the collider and relinks it onto the
@@ -622,30 +621,30 @@ void CBumperDoc::OnCmd34022()
 
 // hover.exe:0x412630
 // FUNCTION: HOVER 0x412630
-void CBumperDoc::Sub_412630(CGameObj* pObj)
+void CBumperDoc::RetireObject(CGameObj* pObj)
 {
-	((CCollider*)m_dwUnk8388)->Sub_40E710(pObj);
-	pObj->Sub_413020();
+	(m_pCollider)->RemoveObject(pObj);
+	pObj->KillObject();
 }
 
 // Removes pObj from the pending list, or failing that from the active-pod
-// list. Called by CGameObj::Sub_413020 when an object retires itself.
+// list. Called by CGameObj::KillObject when an object retires itself.
 
 // hover.exe:0x412650
 // FUNCTION: HOVER 0x412650
-BOOL CBumperDoc::Sub_412650(CObject* pObj)
+BOOL CBumperDoc::RemoveObject(CObject* pObj)
 {
-	CSub41E1E0* pList;
+	CGameObjList* pList;
 	POSITION pos;
 
-	pList = &m_list83A8;
+	pList = &m_listActiveObjs;
 	pos = pList->Find(pObj, NULL);
 	if (pos != NULL)
 		pList->RemoveAt(pos);
 	if (pos != NULL)
 		return TRUE;
 
-	pList = &m_list838C;
+	pList = &m_listMazeObjs;
 	pos = pList->Find(pObj, NULL);
 	if (pos != NULL)
 		pList->RemoveAt(pos);

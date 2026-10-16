@@ -1,13 +1,27 @@
 // spandraw.h : the software renderer's hand-written span drawers
 //
-// The 167 parameterless span-drawing routines that CSub410F20::Sub_410F20
-// (texload.cpp) installs into the view object's drawer slots m_pfnUnk00,
-// m_pfnUnk04, m_pfnUnk0C and into the size-indexed table m_ppfnUnk08[6..15].
-// Every one of them is hand-written assembly in hover.exe and is reproduced
-// as a naked function operating on the renderer globals in texheap.cpp.
+// The 167 parameterless span-drawing routines that CRenderContext::SetMode
+// (texload.cpp) installs into the view object's drawer slots m_pfnDrawWall,
+// m_pfnDrawSky, m_pfnDrawFlat and into the size-indexed table
+// m_ppfnDrawFlatByShift[6..15]. Every one of them is hand-written assembly in
+// hover.exe and is reproduced as a naked function operating on the renderer
+// globals in texheap.cpp.
 //
 // The file is split by original address range, one .cpp (and one section
 // below) per range; see the head of each .cpp for the family descriptions.
+//
+// Names follow one scheme across the three groups:
+//   Column<W>x<H>[Lit][Reg]  a wall/object texture column (m_pfnDrawWall)
+//   Sky<W>x<H>[Reg]          an unmapped horizontal run (m_pfnDrawSky)
+//   Span<W>x<H>[Lit]_Var     a floor/ceiling span taking its v shift from
+//                            g_dwVShift at run time (m_pfnDrawFlat)
+//   Span<W>x<H>[Lit]_S<n>    the same with the shift n baked in, for a
+//                            texture 2^(16-n) texels wide
+//                            (m_ppfnDrawFlatByShift[n])
+// W is screen pixels per texel across and H rows down (the mode's
+// m_dwPixelW/m_dwPixelH), Lit means the texel goes through the shade row
+// g_dwShadeTable, and Reg is the register-loop variant SetMode installs
+// when its dwFlags bit 1 is set (every _S<n> drawer is one).
 
 #ifndef __SPANDRAW_H__
 #define __SPANDRAW_H__
@@ -15,52 +29,52 @@
 /////////////////////////////////////////////////////////////////////////////
 // group A
 
-void Hover_sub_40D600(void);	// wall column, 4-byte pixel, 2 rows per texel
-void Hover_sub_40D680(void);	// direct (unmapped) span, 4-byte pixel, 2 rows per texel
-void Hover_sub_40D900(void);	// floor/ceiling span, 4-byte pixel, 2 rows, v shift 0xA (row stride 64)
-void Hover_sub_40D9A0(void);	// floor/ceiling span, 4-byte pixel, 2 rows, v shift 0xB (row stride 32)
-void Hover_sub_40DA40(void);	// floor/ceiling span, 4-byte pixel, 2 rows, v shift 0xC (row stride 16)
-void Hover_sub_40DAE0(void);	// floor/ceiling span, 4-byte pixel, 2 rows, v shift 0xD (row stride 8)
-void Hover_sub_40DB80(void);	// floor/ceiling span, 4-byte pixel, 2 rows, v shift 0xE (row stride 4)
-void Hover_sub_40DDA0(void);	// wall column, 2-byte pixel, 2 rows per texel
-void Hover_sub_40DE20(void);	// direct (unmapped) span, 2-byte pixel, 2 rows per texel
-void Hover_sub_40DF80(void);	// floor/ceiling span, 2-byte pixel, 2 rows, v shift 0xA (row stride 64)
-void Hover_sub_40E020(void);	// floor/ceiling span, 2-byte pixel, 2 rows, v shift 0xB (row stride 32)
-void Hover_sub_40E0C0(void);	// floor/ceiling span, 2-byte pixel, 2 rows, v shift 0xC (row stride 16)
-void Hover_sub_40E160(void);	// floor/ceiling span, 2-byte pixel, 2 rows, v shift 0xD (row stride 8)
-void Hover_sub_40E200(void);	// floor/ceiling span, 2-byte pixel, 2 rows, v shift 0xE (row stride 4)
-void Hover_sub_40E5A0(void);	// wall column, 2-byte pixel, 1 row per texel
-void Hover_sub_40E600(void);	// direct (unmapped) span, 2-byte pixel, 1 row per texel
-void Hover_sub_40E850(void);	// floor/ceiling span, 2-byte pixel, 1 row, v shift 0xB (row stride 32)
-void Hover_sub_40E910(void);	// floor/ceiling span, 2-byte pixel, 1 row, v shift 0xC (row stride 16)
-void Hover_sub_40EAC0(void);	// floor/ceiling span, 2-byte pixel, 1 row, v shift 0xD (row stride 8)
-void Hover_sub_40EDD0(void);	// floor/ceiling span, 2-byte pixel, 1 row, v shift 0xE (row stride 4)
-void Hover_sub_40F540(void);	// floor/ceiling span, 2-byte pixel, 1 row, v shift 0x9 (row stride 128)
-void Hover_sub_40F5D0(void);	// floor/ceiling span, 2-byte pixel, 1 row, v shift 0xA (row stride 64)
-void Hover_sub_40F6B0(void);	// wall column, 1-byte pixel, 1 row per texel
-void Hover_sub_40F710(void);	// direct (unmapped) span, 1-byte pixel, 1 row per texel
-void Hover_sub_40FA90(void);	// floor/ceiling span, 1-byte pixel, 1 row, v shift 0x9 (row stride 128)
-void Hover_sub_40FB40(void);	// floor/ceiling span, 1-byte pixel, 1 row, v shift 0xA (row stride 64)
-void Hover_sub_40FC70(void);	// floor/ceiling span, 1-byte pixel, 1 row, v shift 0xB (row stride 32)
-void Hover_sub_40FDD0(void);	// floor/ceiling span, 1-byte pixel, 1 row, v shift 0xC (row stride 16)
-void Hover_sub_40FE70(void);	// floor/ceiling span, 1-byte pixel, 1 row, v shift 0xD (row stride 8)
-void Hover_sub_4101E0(void);	// floor/ceiling span, 1-byte pixel, 1 row, v shift 0xE (row stride 4)
-void Hover_sub_4114D0(void);	// wall column, 4-byte pixel, 4 rows per texel
-void Hover_sub_411940(void);	// floor/ceiling span, 4-byte pixel, 4 rows, v shift 0xB (row stride 32)
-void Hover_sub_411FE0(void);	// floor/ceiling span, 4-byte pixel, 4 rows, v shift 0xC (row stride 16)
-void Hover_sub_4120A0(void);	// floor/ceiling span, 4-byte pixel, 4 rows, v shift 0xD (row stride 8)
-void Hover_sub_412160(void);	// floor/ceiling span, 4-byte pixel, 4 rows, v shift 0xE (row stride 4)
-void Hover_sub_412EF0(void);	// wall column, 4-byte pixel, 1 row per texel
-void Hover_sub_412F50(void);	// direct (unmapped) span, 4-byte pixel, 1 row per texel
-void Hover_sub_412FA0(void);	// direct (unmapped) span, 4-byte pixel, 4 rows per texel
-void Hover_sub_413350(void);	// floor/ceiling span, 4-byte pixel, 1 row, v shift 0x9 (row stride 128)
-void Hover_sub_4133F0(void);	// floor/ceiling span, 4-byte pixel, 1 row, v shift 0xA (row stride 64)
-void Hover_sub_413490(void);	// floor/ceiling span, 4-byte pixel, 1 row, v shift 0xB (row stride 32)
-void Hover_sub_413530(void);	// floor/ceiling span, 4-byte pixel, 1 row, v shift 0xC (row stride 16)
-void Hover_sub_4135D0(void);	// floor/ceiling span, 4-byte pixel, 1 row, v shift 0xD (row stride 8)
-void Hover_sub_413670(void);	// floor/ceiling span, 4-byte pixel, 1 row, v shift 0xE (row stride 4)
-void Hover_sub_414220(void);	// floor/ceiling span, 2-byte pixel, 2 rows, v shift 0x8 (row stride 256)
-void Hover_sub_424FB0(void);	// floor/ceiling span, 4-byte pixel, 1 row, v shift 0x8 (row stride 256)
+void Column4x2LitReg(void);	// wall column, 4-byte pixel, 2 rows per texel
+void Sky4x2Reg(void);	// direct (unmapped) span, 4-byte pixel, 2 rows per texel
+void Span4x2Lit_S10(void);	// floor/ceiling span, 4-byte pixel, 2 rows, v shift 0xA (row stride 64)
+void Span4x2Lit_S11(void);	// floor/ceiling span, 4-byte pixel, 2 rows, v shift 0xB (row stride 32)
+void Span4x2Lit_S12(void);	// floor/ceiling span, 4-byte pixel, 2 rows, v shift 0xC (row stride 16)
+void Span4x2Lit_S13(void);	// floor/ceiling span, 4-byte pixel, 2 rows, v shift 0xD (row stride 8)
+void Span4x2Lit_S14(void);	// floor/ceiling span, 4-byte pixel, 2 rows, v shift 0xE (row stride 4)
+void Column2x2LitReg(void);	// wall column, 2-byte pixel, 2 rows per texel
+void Sky2x2Reg(void);	// direct (unmapped) span, 2-byte pixel, 2 rows per texel
+void Span2x2Lit_S10(void);	// floor/ceiling span, 2-byte pixel, 2 rows, v shift 0xA (row stride 64)
+void Span2x2Lit_S11(void);	// floor/ceiling span, 2-byte pixel, 2 rows, v shift 0xB (row stride 32)
+void Span2x2Lit_S12(void);	// floor/ceiling span, 2-byte pixel, 2 rows, v shift 0xC (row stride 16)
+void Span2x2Lit_S13(void);	// floor/ceiling span, 2-byte pixel, 2 rows, v shift 0xD (row stride 8)
+void Span2x2Lit_S14(void);	// floor/ceiling span, 2-byte pixel, 2 rows, v shift 0xE (row stride 4)
+void Column2x1LitReg(void);	// wall column, 2-byte pixel, 1 row per texel
+void Sky2x1Reg(void);	// direct (unmapped) span, 2-byte pixel, 1 row per texel
+void Span2x1Lit_S11(void);	// floor/ceiling span, 2-byte pixel, 1 row, v shift 0xB (row stride 32)
+void Span2x1Lit_S12(void);	// floor/ceiling span, 2-byte pixel, 1 row, v shift 0xC (row stride 16)
+void Span2x1Lit_S13(void);	// floor/ceiling span, 2-byte pixel, 1 row, v shift 0xD (row stride 8)
+void Span2x1Lit_S14(void);	// floor/ceiling span, 2-byte pixel, 1 row, v shift 0xE (row stride 4)
+void Span2x1Lit_S9(void);	// floor/ceiling span, 2-byte pixel, 1 row, v shift 0x9 (row stride 128)
+void Span2x1Lit_S10(void);	// floor/ceiling span, 2-byte pixel, 1 row, v shift 0xA (row stride 64)
+void Column1x1LitReg(void);	// wall column, 1-byte pixel, 1 row per texel
+void Sky1x1(void);	// direct (unmapped) span, 1-byte pixel, 1 row per texel
+void Span1x1Lit_S9(void);	// floor/ceiling span, 1-byte pixel, 1 row, v shift 0x9 (row stride 128)
+void Span1x1Lit_S10(void);	// floor/ceiling span, 1-byte pixel, 1 row, v shift 0xA (row stride 64)
+void Span1x1Lit_S11(void);	// floor/ceiling span, 1-byte pixel, 1 row, v shift 0xB (row stride 32)
+void Span1x1Lit_S12(void);	// floor/ceiling span, 1-byte pixel, 1 row, v shift 0xC (row stride 16)
+void Span1x1Lit_S13(void);	// floor/ceiling span, 1-byte pixel, 1 row, v shift 0xD (row stride 8)
+void Span1x1Lit_S14(void);	// floor/ceiling span, 1-byte pixel, 1 row, v shift 0xE (row stride 4)
+void Column4x4LitReg(void);	// wall column, 4-byte pixel, 4 rows per texel
+void Span4x4Lit_S11(void);	// floor/ceiling span, 4-byte pixel, 4 rows, v shift 0xB (row stride 32)
+void Span4x4Lit_S12(void);	// floor/ceiling span, 4-byte pixel, 4 rows, v shift 0xC (row stride 16)
+void Span4x4Lit_S13(void);	// floor/ceiling span, 4-byte pixel, 4 rows, v shift 0xD (row stride 8)
+void Span4x4Lit_S14(void);	// floor/ceiling span, 4-byte pixel, 4 rows, v shift 0xE (row stride 4)
+void Column4x1LitReg(void);	// wall column, 4-byte pixel, 1 row per texel
+void Sky4x1Reg(void);	// direct (unmapped) span, 4-byte pixel, 1 row per texel
+void Sky4x4Reg(void);	// direct (unmapped) span, 4-byte pixel, 4 rows per texel
+void Span4x1Lit_S9(void);	// floor/ceiling span, 4-byte pixel, 1 row, v shift 0x9 (row stride 128)
+void Span4x1Lit_S10(void);	// floor/ceiling span, 4-byte pixel, 1 row, v shift 0xA (row stride 64)
+void Span4x1Lit_S11(void);	// floor/ceiling span, 4-byte pixel, 1 row, v shift 0xB (row stride 32)
+void Span4x1Lit_S12(void);	// floor/ceiling span, 4-byte pixel, 1 row, v shift 0xC (row stride 16)
+void Span4x1Lit_S13(void);	// floor/ceiling span, 4-byte pixel, 1 row, v shift 0xD (row stride 8)
+void Span4x1Lit_S14(void);	// floor/ceiling span, 4-byte pixel, 1 row, v shift 0xE (row stride 4)
+void Span2x2Lit_S8(void);	// floor/ceiling span, 2-byte pixel, 2 rows, v shift 0x8 (row stride 256)
+void Span4x1Lit_S8(void);	// floor/ceiling span, 4-byte pixel, 1 row, v shift 0x8 (row stride 256)
 
 // The drawers take no arguments, return nothing and are pure assembly: the
 // original's register saves are interleaved with the working instructions,
@@ -77,80 +91,80 @@ void Hover_sub_424FB0(void);	// floor/ceiling span, 4-byte pixel, 1 row, v shift
 // the flat horizontal runs (0x42A2D0) and the two-axis floor/ceiling
 // spans (0x434470).  "N x M px" is the pixel replication: N screen
 // pixels across and M rows down per source texel.  "shaded" means the
-// texel is looked up through the shade table g_dwUnk_4A4A3C; "reg loop"
+// texel is looked up through the shade table g_dwShadeTable; "reg loop"
 // means the drawer keeps the destination and texture positions in
-// registers and never writes g_dwUnk_4A4A4C / 0x4A4A40 back.
+// registers and never writes g_dwDst / 0x4A4A40 back.
 
-void Hover_sub_429960    (void);	// 0x429960  texture column, 1 x 1 px, shaded
-void Hover_sub_4299D0    (void);	// 0x4299D0  texture column, 1 x 1 px, flat
-void Hover_sub_429A30    (void);	// 0x429A30  texture column, 1 x 1 px, flat, reg loop
-void Hover_sub_429A80    (void);	// 0x429A80  texture column, 2 x 1 px, flat
-void Hover_sub_429AF0    (void);	// 0x429AF0  texture column, 2 x 1 px, shaded
-void Hover_sub_429B70    (void);	// 0x429B70  texture column, 2 x 1 px, flat, reg loop
-void Hover_sub_429BD0    (void);	// 0x429BD0  texture column, 4 x 1 px, flat
-void Hover_sub_429C40    (void);	// 0x429C40  texture column, 4 x 1 px, shaded
-void Hover_sub_429CC0    (void);	// 0x429CC0  texture column, 4 x 1 px, flat, reg loop
-void Hover_sub_429D20    (void);	// 0x429D20  texture column, 2 x 2 px, flat
-void Hover_sub_429DC0    (void);	// 0x429DC0  texture column, 2 x 2 px, shaded
-void Hover_sub_429E60    (void);	// 0x429E60  texture column, 2 x 2 px, flat, reg loop
-void Hover_sub_429EE0    (void);	// 0x429EE0  texture column, 4 x 2 px, flat
-void Hover_sub_429F80    (void);	// 0x429F80  texture column, 4 x 2 px, shaded
-void Hover_sub_42A030    (void);	// 0x42A030  texture column, 4 x 2 px, flat, reg loop
-void Hover_sub_42A0B0    (void);	// 0x42A0B0  texture column, 4 x 4 px, flat
-void Hover_sub_42A170    (void);	// 0x42A170  texture column, 4 x 4 px, shaded
-void Hover_sub_42A240    (void);	// 0x42A240  texture column, 4 x 4 px, flat, reg loop
-void Hover_sub_42A2D0    (void);	// 0x42A2D0  flat horizontal run, 2 x 1 px, flat
-void Hover_sub_42A330    (void);	// 0x42A330  flat horizontal run, 4 x 1 px, flat
-void Hover_sub_42A390    (void);	// 0x42A390  flat horizontal run, 2 x 2 px, flat
-void Hover_sub_42A400    (void);	// 0x42A400  flat horizontal run, 4 x 2 px, flat
-void Hover_sub_42A470    (void);	// 0x42A470  flat horizontal run, 4 x 4 px, flat
-void Hover_sub_434470    (void);	// 0x434470  floor/ceiling span, size from g_dwUnk_4A4A48, 1 px/texel, flat
-void Hover_sub_434500    (void);	// 0x434500  floor/ceiling span, size from g_dwUnk_4A4A48, 1 px/texel, shaded
-void Hover_sub_434590    (void);	// 0x434590  floor/ceiling span, 1024-pixel texture, 1 px/texel, shaded, reg loop
-void Hover_sub_434600    (void);	// 0x434600  floor/ceiling span, 512-pixel texture, 1 px/texel, shaded, reg loop
-void Hover_sub_434670    (void);	// 0x434670  floor/ceiling span, 256-pixel texture, 1 px/texel, shaded, reg loop
-void Hover_sub_4346E0    (void);	// 0x4346E0  floor/ceiling span, 2-pixel texture, 1 px/texel, shaded, reg loop
-void Hover_sub_434750    (void);	// 0x434750  floor/ceiling span, 1024-pixel texture, 1 px/texel, flat, reg loop
-void Hover_sub_4347B0    (void);	// 0x4347B0  floor/ceiling span, 512-pixel texture, 1 px/texel, flat, reg loop
-void Hover_sub_434810    (void);	// 0x434810  floor/ceiling span, 256-pixel texture, 1 px/texel, flat, reg loop
-void Hover_sub_434870    (void);	// 0x434870  floor/ceiling span, 128-pixel texture, 1 px/texel, flat, reg loop
-void Hover_sub_4348D0    (void);	// 0x4348D0  floor/ceiling span, 64-pixel texture, 1 px/texel, flat, reg loop
-void Hover_sub_434930    (void);	// 0x434930  floor/ceiling span, 32-pixel texture, 1 px/texel, flat, reg loop
-void Hover_sub_434990    (void);	// 0x434990  floor/ceiling span, 16-pixel texture, 1 px/texel, flat, reg loop
-void Hover_sub_4349F0    (void);	// 0x4349F0  floor/ceiling span, 8-pixel texture, 1 px/texel, flat, reg loop
-void Hover_sub_434A50    (void);	// 0x434A50  floor/ceiling span, 4-pixel texture, 1 px/texel, flat, reg loop
-void Hover_sub_434AB0    (void);	// 0x434AB0  floor/ceiling span, 2-pixel texture, 1 px/texel, flat, reg loop
-void Hover_sub_434B10    (void);	// 0x434B10  floor/ceiling span, size from g_dwUnk_4A4A48, 2 px/texel, flat
-void Hover_sub_434BB0    (void);	// 0x434BB0  floor/ceiling span, size from g_dwUnk_4A4A48, 2 px/texel, shaded
-void Hover_sub_434C60    (void);	// 0x434C60  floor/ceiling span, 1024-pixel texture, 2 px/texel, shaded, reg loop
-void Hover_sub_434CF0    (void);	// 0x434CF0  floor/ceiling span, 512-pixel texture, 2 px/texel, shaded, reg loop
-void Hover_sub_434D80    (void);	// 0x434D80  floor/ceiling span, 256-pixel texture, 2 px/texel, shaded, reg loop
-void Hover_sub_434E10    (void);	// 0x434E10  floor/ceiling span, 2-pixel texture, 2 px/texel, shaded, reg loop
-void Hover_sub_434EA0    (void);	// 0x434EA0  floor/ceiling span, 1024-pixel texture, 2 px/texel, flat, reg loop
-void Hover_sub_434F30    (void);	// 0x434F30  floor/ceiling span, 512-pixel texture, 2 px/texel, flat, reg loop
-void Hover_sub_434FC0    (void);	// 0x434FC0  floor/ceiling span, 256-pixel texture, 2 px/texel, flat, reg loop
-void Hover_sub_435050    (void);	// 0x435050  floor/ceiling span, 128-pixel texture, 2 px/texel, flat, reg loop
-void Hover_sub_4350E0    (void);	// 0x4350E0  floor/ceiling span, 64-pixel texture, 2 px/texel, flat, reg loop
-void Hover_sub_435170    (void);	// 0x435170  floor/ceiling span, 32-pixel texture, 2 px/texel, flat, reg loop
-void Hover_sub_435200    (void);	// 0x435200  floor/ceiling span, 16-pixel texture, 2 px/texel, flat, reg loop
-void Hover_sub_435290    (void);	// 0x435290  floor/ceiling span, 8-pixel texture, 2 px/texel, flat, reg loop
-void Hover_sub_435320    (void);	// 0x435320  floor/ceiling span, 4-pixel texture, 2 px/texel, flat, reg loop
-void Hover_sub_4353B0    (void);	// 0x4353B0  floor/ceiling span, 2-pixel texture, 2 px/texel, flat, reg loop
-void Hover_sub_435440    (void);	// 0x435440  floor/ceiling span, size from g_dwUnk_4A4A48, 4 px/texel, flat
-void Hover_sub_4354F0    (void);	// 0x4354F0  floor/ceiling span, size from g_dwUnk_4A4A48, 4 px/texel, shaded
-void Hover_sub_4355B0    (void);	// 0x4355B0  floor/ceiling span, 1024-pixel texture, 4 px/texel, shaded, reg loop
-void Hover_sub_435650    (void);	// 0x435650  floor/ceiling span, 512-pixel texture, 4 px/texel, shaded, reg loop
-void Hover_sub_4356F0    (void);	// 0x4356F0  floor/ceiling span, 2-pixel texture, 4 px/texel, shaded, reg loop
-void Hover_sub_435790    (void);	// 0x435790  floor/ceiling span, 1024-pixel texture, 4 px/texel, flat, reg loop
-void Hover_sub_435820    (void);	// 0x435820  floor/ceiling span, 512-pixel texture, 4 px/texel, flat, reg loop
-void Hover_sub_4358B0    (void);	// 0x4358B0  floor/ceiling span, 256-pixel texture, 4 px/texel, flat, reg loop
-void Hover_sub_435940    (void);	// 0x435940  floor/ceiling span, 128-pixel texture, 4 px/texel, flat, reg loop
-void Hover_sub_4359D0    (void);	// 0x4359D0  floor/ceiling span, 64-pixel texture, 4 px/texel, flat, reg loop
-void Hover_sub_435A60    (void);	// 0x435A60  floor/ceiling span, 32-pixel texture, 4 px/texel, flat, reg loop
-void Hover_sub_435AF0    (void);	// 0x435AF0  floor/ceiling span, 16-pixel texture, 4 px/texel, flat, reg loop
-void Hover_sub_435B80    (void);	// 0x435B80  floor/ceiling span, 8-pixel texture, 4 px/texel, flat, reg loop
-void Hover_sub_435C10    (void);	// 0x435C10  floor/ceiling span, 4-pixel texture, 4 px/texel, flat, reg loop
-void Hover_sub_435CA0    (void);	// 0x435CA0  floor/ceiling span, 2-pixel texture, 4 px/texel, flat, reg loop
+void Column1x1Lit    (void);	// 0x429960  texture column, 1 x 1 px, shaded
+void Column1x1    (void);	// 0x4299D0  texture column, 1 x 1 px, flat
+void Column1x1Reg    (void);	// 0x429A30  texture column, 1 x 1 px, flat, reg loop
+void Column2x1    (void);	// 0x429A80  texture column, 2 x 1 px, flat
+void Column2x1Lit    (void);	// 0x429AF0  texture column, 2 x 1 px, shaded
+void Column2x1Reg    (void);	// 0x429B70  texture column, 2 x 1 px, flat, reg loop
+void Column4x1    (void);	// 0x429BD0  texture column, 4 x 1 px, flat
+void Column4x1Lit    (void);	// 0x429C40  texture column, 4 x 1 px, shaded
+void Column4x1Reg    (void);	// 0x429CC0  texture column, 4 x 1 px, flat, reg loop
+void Column2x2    (void);	// 0x429D20  texture column, 2 x 2 px, flat
+void Column2x2Lit    (void);	// 0x429DC0  texture column, 2 x 2 px, shaded
+void Column2x2Reg    (void);	// 0x429E60  texture column, 2 x 2 px, flat, reg loop
+void Column4x2    (void);	// 0x429EE0  texture column, 4 x 2 px, flat
+void Column4x2Lit    (void);	// 0x429F80  texture column, 4 x 2 px, shaded
+void Column4x2Reg    (void);	// 0x42A030  texture column, 4 x 2 px, flat, reg loop
+void Column4x4    (void);	// 0x42A0B0  texture column, 4 x 4 px, flat
+void Column4x4Lit    (void);	// 0x42A170  texture column, 4 x 4 px, shaded
+void Column4x4Reg    (void);	// 0x42A240  texture column, 4 x 4 px, flat, reg loop
+void Sky2x1    (void);	// 0x42A2D0  flat horizontal run, 2 x 1 px, flat
+void Sky4x1    (void);	// 0x42A330  flat horizontal run, 4 x 1 px, flat
+void Sky2x2    (void);	// 0x42A390  flat horizontal run, 2 x 2 px, flat
+void Sky4x2    (void);	// 0x42A400  flat horizontal run, 4 x 2 px, flat
+void Sky4x4    (void);	// 0x42A470  flat horizontal run, 4 x 4 px, flat
+void Span1x1_Var    (void);	// 0x434470  floor/ceiling span, size from g_dwVShift, 1 px/texel, flat
+void Span1x1Lit_Var    (void);	// 0x434500  floor/ceiling span, size from g_dwVShift, 1 px/texel, shaded
+void Span1x1Lit_S6    (void);	// 0x434590  floor/ceiling span, 1024-pixel texture, 1 px/texel, shaded, reg loop
+void Span1x1Lit_S7    (void);	// 0x434600  floor/ceiling span, 512-pixel texture, 1 px/texel, shaded, reg loop
+void Span1x1Lit_S8    (void);	// 0x434670  floor/ceiling span, 256-pixel texture, 1 px/texel, shaded, reg loop
+void Span1x1Lit_S15    (void);	// 0x4346E0  floor/ceiling span, 2-pixel texture, 1 px/texel, shaded, reg loop
+void Span1x1_S6    (void);	// 0x434750  floor/ceiling span, 1024-pixel texture, 1 px/texel, flat, reg loop
+void Span1x1_S7    (void);	// 0x4347B0  floor/ceiling span, 512-pixel texture, 1 px/texel, flat, reg loop
+void Span1x1_S8    (void);	// 0x434810  floor/ceiling span, 256-pixel texture, 1 px/texel, flat, reg loop
+void Span1x1_S9    (void);	// 0x434870  floor/ceiling span, 128-pixel texture, 1 px/texel, flat, reg loop
+void Span1x1_S10    (void);	// 0x4348D0  floor/ceiling span, 64-pixel texture, 1 px/texel, flat, reg loop
+void Span1x1_S11    (void);	// 0x434930  floor/ceiling span, 32-pixel texture, 1 px/texel, flat, reg loop
+void Span1x1_S12    (void);	// 0x434990  floor/ceiling span, 16-pixel texture, 1 px/texel, flat, reg loop
+void Span1x1_S13    (void);	// 0x4349F0  floor/ceiling span, 8-pixel texture, 1 px/texel, flat, reg loop
+void Span1x1_S14    (void);	// 0x434A50  floor/ceiling span, 4-pixel texture, 1 px/texel, flat, reg loop
+void Span1x1_S15    (void);	// 0x434AB0  floor/ceiling span, 2-pixel texture, 1 px/texel, flat, reg loop
+void Span2x1_Var    (void);	// 0x434B10  floor/ceiling span, size from g_dwVShift, 2 px/texel, flat
+void Span2x1Lit_Var    (void);	// 0x434BB0  floor/ceiling span, size from g_dwVShift, 2 px/texel, shaded
+void Span2x1Lit_S6    (void);	// 0x434C60  floor/ceiling span, 1024-pixel texture, 2 px/texel, shaded, reg loop
+void Span2x1Lit_S7    (void);	// 0x434CF0  floor/ceiling span, 512-pixel texture, 2 px/texel, shaded, reg loop
+void Span2x1Lit_S8    (void);	// 0x434D80  floor/ceiling span, 256-pixel texture, 2 px/texel, shaded, reg loop
+void Span2x1Lit_S15    (void);	// 0x434E10  floor/ceiling span, 2-pixel texture, 2 px/texel, shaded, reg loop
+void Span2x1_S6    (void);	// 0x434EA0  floor/ceiling span, 1024-pixel texture, 2 px/texel, flat, reg loop
+void Span2x1_S7    (void);	// 0x434F30  floor/ceiling span, 512-pixel texture, 2 px/texel, flat, reg loop
+void Span2x1_S8    (void);	// 0x434FC0  floor/ceiling span, 256-pixel texture, 2 px/texel, flat, reg loop
+void Span2x1_S9    (void);	// 0x435050  floor/ceiling span, 128-pixel texture, 2 px/texel, flat, reg loop
+void Span2x1_S10    (void);	// 0x4350E0  floor/ceiling span, 64-pixel texture, 2 px/texel, flat, reg loop
+void Span2x1_S11    (void);	// 0x435170  floor/ceiling span, 32-pixel texture, 2 px/texel, flat, reg loop
+void Span2x1_S12    (void);	// 0x435200  floor/ceiling span, 16-pixel texture, 2 px/texel, flat, reg loop
+void Span2x1_S13    (void);	// 0x435290  floor/ceiling span, 8-pixel texture, 2 px/texel, flat, reg loop
+void Span2x1_S14    (void);	// 0x435320  floor/ceiling span, 4-pixel texture, 2 px/texel, flat, reg loop
+void Span2x1_S15    (void);	// 0x4353B0  floor/ceiling span, 2-pixel texture, 2 px/texel, flat, reg loop
+void Span4x1_Var    (void);	// 0x435440  floor/ceiling span, size from g_dwVShift, 4 px/texel, flat
+void Span4x1Lit_Var    (void);	// 0x4354F0  floor/ceiling span, size from g_dwVShift, 4 px/texel, shaded
+void Span4x1Lit_S6    (void);	// 0x4355B0  floor/ceiling span, 1024-pixel texture, 4 px/texel, shaded, reg loop
+void Span4x1Lit_S7    (void);	// 0x435650  floor/ceiling span, 512-pixel texture, 4 px/texel, shaded, reg loop
+void Span4x1Lit_S15    (void);	// 0x4356F0  floor/ceiling span, 2-pixel texture, 4 px/texel, shaded, reg loop
+void Span4x1_S6    (void);	// 0x435790  floor/ceiling span, 1024-pixel texture, 4 px/texel, flat, reg loop
+void Span4x1_S7    (void);	// 0x435820  floor/ceiling span, 512-pixel texture, 4 px/texel, flat, reg loop
+void Span4x1_S8    (void);	// 0x4358B0  floor/ceiling span, 256-pixel texture, 4 px/texel, flat, reg loop
+void Span4x1_S9    (void);	// 0x435940  floor/ceiling span, 128-pixel texture, 4 px/texel, flat, reg loop
+void Span4x1_S10    (void);	// 0x4359D0  floor/ceiling span, 64-pixel texture, 4 px/texel, flat, reg loop
+void Span4x1_S11    (void);	// 0x435A60  floor/ceiling span, 32-pixel texture, 4 px/texel, flat, reg loop
+void Span4x1_S12    (void);	// 0x435AF0  floor/ceiling span, 16-pixel texture, 4 px/texel, flat, reg loop
+void Span4x1_S13    (void);	// 0x435B80  floor/ceiling span, 8-pixel texture, 4 px/texel, flat, reg loop
+void Span4x1_S14    (void);	// 0x435C10  floor/ceiling span, 4-pixel texture, 4 px/texel, flat, reg loop
+void Span4x1_S15    (void);	// 0x435CA0  floor/ceiling span, 2-pixel texture, 4 px/texel, flat, reg loop
 
 // group C: the "zoomed" drawers, hover.exe 0x435D30..0x437EF0
 //
@@ -159,7 +173,7 @@ void Hover_sub_435CA0    (void);	// 0x435CA0  floor/ceiling span, 2-pixel textur
 //   Span4x2  4 pixels wide (dword store) x 2 rows
 //   Span4x4  4 pixels wide (dword store) x 4 rows
 // "Lit" variants push the texel through the shade/remap table at
-// g_dwUnk_4A4A3C; "_Var" variants take the v shift from g_dwUnk_4A4A48 at
+// g_dwShadeTable; "_Var" variants take the v shift from g_dwVShift at
 // run time, the "_Sn" variants have it baked in (texture width 2^(16-n)).
 // Note that the "Lit" families are incomplete in the original: only the
 // sizes listed below exist (2x2Lit has 6/7/9/15, 4x2Lit 6/7/8/9/15,

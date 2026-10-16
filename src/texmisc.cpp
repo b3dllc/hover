@@ -19,19 +19,19 @@ IMPLEMENT_SERIAL(CMerlinWorld, CObject, 1)
 
 // hover.exe:0x4A4620
 // GLOBAL: HOVER 0x4a4620
-CObject* g_apUnk_4A4620[0x20];	// "DRONE_%02d" texture cache
-								// (Hover_sub_422370)
+CObject* g_apDroneFrames[0x20];	// "DRONE_%02d" texture cache
+								// (Hover_CacheDroneFrames)
 
 // hover.exe:0x460060
 // GLOBAL: HOVER 0x460060
-char g_szUnk_460060[0x400];		// error message scratch buffer
-								// (Hover_sub_4262B0); the size is not
+char g_szFatalError[0x400];		// error message scratch buffer
+								// (Hover_FatalException); the size is not
 								// verified against the binary
 
 // hover.exe:0x4C4910
 // GLOBAL: HOVER 0x4c4910
-const char* g_apszUnk_4C4910[5] =	// texture family base names counted by
-{									// CBumperDoc::Sub_417C10
+const char* g_apszSpawnFamilies[5] =	// texture family base names counted by
+{									// CBumperDoc::CountSpawnPoints
 	"HUMAN_",
 	"ROBOT_",
 	"FLAG_HUMAN_",
@@ -51,17 +51,19 @@ const char* g_apszUnk_4C4910[5] =	// texture family base names counted by
 CMerlinWorld::CMerlinWorld()
 {
 	int i;
+	int n;
 	CObject* pObj;
 
-	m_arrUnk14.SetSize(0);
-	for (i = 0; i < g_obArrUnk_4A1D08.GetSize(); i++)
+	m_arrStatics.SetSize(0);
+	n = g_obArrUnk_4A1D08.GetSize();
+	for (i = 0; i < n; i++)
 	{
 		pObj = g_obArrUnk_4A1D08[i];
 		if (pObj != NULL)
 			delete pObj;
 	}
 	g_obArrUnk_4A1D08.SetSize(0);
-	m_arrUnk28.SetSize(0);
+	m_arrSprites.SetSize(0);
 }
 
 // hover.exe:0x418C00 (the vtable slot 1 deleting destructor at 0x419190
@@ -73,30 +75,30 @@ CMerlinWorld::~CMerlinWorld()
 	int n;
 	CObject* pObj;
 
-	n = m_arrUnk14.GetSize();
+	n = m_arrStatics.GetSize();
 	for (i = 0; i < n; i++)
 	{
-		pObj = m_arrUnk14[i];
+		pObj = m_arrStatics[i];
 		if (pObj != NULL)
 			delete pObj;
 	}
-	m_arrUnk14.SetSize(0);
-	n = m_arrUnk28.GetSize();
+	m_arrStatics.SetSize(0);
+	n = m_arrSprites.GetSize();
 	for (i = 0; i < n; i++)
 	{
-		pObj = m_arrUnk28[i];
+		pObj = m_arrSprites[i];
 		if (pObj != NULL)
 			delete pObj;
 	}
-	m_arrUnk28.SetSize(0);
-	n = m_arrUnk3C.GetSize();
+	m_arrSprites.SetSize(0);
+	n = m_arrLocations.GetSize();
 	for (i = 0; i < n; i++)
 	{
-		pObj = m_arrUnk3C[i];
+		pObj = m_arrLocations[i];
 		if (pObj != NULL)
 			delete pObj;
 	}
-	m_arrUnk3C.SetSize(0);
+	m_arrLocations.SetSize(0);
 	n = g_obArrUnk_4A1D08.GetSize();
 	for (i = 0; i < n; i++)
 	{
@@ -107,15 +109,15 @@ CMerlinWorld::~CMerlinWorld()
 	g_obArrUnk_4A1D08.SetSize(0);
 	// Detach, not DeleteObject: the destructor only lets go of the palette
 	// handle here, it does not destroy the GDI object (hover.exe:0x418D07).
-	g_paletteUnk_4A1D50.Detach();
-	n = m_arrUnk50.GetSize();
+	g_palGame.Detach();
+	n = m_arrNodes.GetSize();
 	for (i = 0; i < n; i++)
 	{
-		pObj = m_arrUnk50[i];
+		pObj = m_arrNodes[i];
 		if (pObj != NULL)
 			delete pObj;
 	}
-	m_arrUnk50.SetSize(0);
+	m_arrNodes.SetSize(0);
 }
 
 // hover.exe:0x418DC0 (vtable slot 2) load the maze from the archive.
@@ -138,20 +140,20 @@ void CMerlinWorld::Serialize(CArchive& ar)
 	pAr->ReadWord(&m_wUnk0C);
 	pAr->ReadWord(&m_wUnk10);
 
-	m_arrUnk14.Serialize(ar);
-	m_arrUnk28.Serialize(ar);
-	m_arrUnk3C.Serialize(ar);
-	m_arrUnk50.Serialize(ar);
+	m_arrStatics.Serialize(ar);
+	m_arrSprites.Serialize(ar);
+	m_arrLocations.Serialize(ar);
+	m_arrNodes.Serialize(ar);
 }
 
 // Sums the pixel-data byte counts of every texture frame at or above the
-// g_dwUnk_461CFC mip level over all loaded textures. The result is
+// g_dwMipBias mip level over all loaded textures. The result is
 // computed entirely from globals; the original is a method only because
 // the level loader calls it on the manager.
 
 // hover.exe:0x418EA0
 // FUNCTION: HOVER 0x418ea0
-DWORD CMerlinWorld::Sub_418EA0()
+DWORD CMerlinWorld::GetTextureBytes()
 {
 	DWORD dwTotal;
 	int i;
@@ -162,10 +164,10 @@ DWORD CMerlinWorld::Sub_418EA0()
 	for (i = 0; i < g_obArrUnk_4A1D08.GetSize(); i++)
 	{
 		pTexture = (CMerlinTexture*)g_obArrUnk_4A1D08[i];
-		for (j = 0; j < (int)pTexture->m_dwUnk2C; j++)
+		for (j = 0; j < (int)pTexture->m_dwFrameCount; j++)
 		{
-			if (j >= (int)g_dwUnk_461CFC)
-				dwTotal += pTexture->m_pUnk28[j].m_dwUnk14;
+			if (j >= (int)g_dwMipBias)
+				dwTotal += pTexture->m_pFrames[j].m_cbPixels;
 		}
 	}
 	return dwTotal;
@@ -176,7 +178,7 @@ DWORD CMerlinWorld::Sub_418EA0()
 
 // hover.exe:0x418F00
 // FUNCTION: HOVER 0x418f00
-void CMerlinWorld::Sub_418F00()
+void CMerlinWorld::FlushSystemPalette()
 {
 	// the original frame is exactly 0x404 bytes: a LOGPALETTE header plus
 	// 256 entries
@@ -212,7 +214,7 @@ void CMerlinWorld::Sub_418F00()
 	ReleaseDC(NULL, hDC);
 }
 
-// Rebuilds g_paletteUnk_4A1D50 around the system palette: the static
+// Rebuilds g_palGame around the system palette: the static
 // entries at both ends keep their colors (flags cleared), the dynamic
 // middle entries take the game palette colors marked PC_NOCOLLAPSE, and
 // any duplicate colors in entries 10..0xF6 are nudged apart so each gets
@@ -221,7 +223,7 @@ void CMerlinWorld::Sub_418F00()
 
 // hover.exe:0x418FA0
 // FUNCTION: HOVER 0x418fa0
-void CMerlinWorld::Sub_418FA0()
+void CMerlinWorld::BuildIdentityPalette()
 {
 	PALETTEENTRY aEntries[0x100];
 	PALETTEENTRY aGame[0x100];
@@ -235,8 +237,8 @@ void CMerlinWorld::Sub_418FA0()
 	BYTE bGreen;
 	BYTE bBlue;
 
-	Sub_418F00();
-	g_paletteUnk_4A1D50.GetPaletteEntries(0, 0x100, aGame);
+	FlushSystemPalette();
+	g_palGame.GetPaletteEntries(0, 0x100, aGame);
 	hDC = GetDC(NULL);
 	nHalf = GetDeviceCaps(hDC, NUMCOLORS);
 	GetSystemPaletteEntries(hDC, 0, 0x100, aSystem);
@@ -292,16 +294,16 @@ void CMerlinWorld::Sub_418FA0()
 		aGame[i].peBlue = aEntries[i].peRed;
 		aGame[i].peFlags = aEntries[i].peFlags;
 	}
-	g_paletteUnk_4A1D50.SetPaletteEntries(0, 0x100, aGame);
+	g_palGame.SetPaletteEntries(0, 0x100, aGame);
 	ReleaseDC(NULL, hDC);
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// CSub414550
+// CShadeTable
 
 // hover.exe:0x414550
 // FUNCTION: HOVER 0x414550
-void CSub414550::Sub_414550(CPalette* pPalette, double dblBase, int nMaxR,
+void CShadeTable::BuildTable(CPalette* pPalette, double dblBase, int nMaxR,
 	int nMaxB, int nMaxG, double dblScaleR, double dblScaleB, double dblScaleG)
 {
 	PALETTEENTRY aEntries[0x100];
@@ -329,7 +331,7 @@ void CSub414550::Sub_414550(CPalette* pPalette, double dblBase, int nMaxR,
 			if (nBlue > nMaxB)
 				nBlue = nMaxB;
 			m_abTable[nLevel * 0x100 + i] =
-				(BYTE)Hover_sub_413730(RGB(nRed, nGreen, nBlue),
+				(BYTE)Hover_NearestPaletteIndex(RGB(nRed, nGreen, nBlue),
 				(const BYTE*)aEntries);
 		}
 		if (g_pfnUnk_4C4DAC != NULL)
@@ -341,41 +343,41 @@ void CSub414550::Sub_414550(CPalette* pPalette, double dblBase, int nMaxR,
 // CBumperDoc
 
 // Counts the consecutive "%s%02d" texture variants of each of the five
-// g_apszUnk_4C4910 families ("HUMAN_00", "HUMAN_01", ... until the first
-// missing name) into m_adwUnk83D0.
+// g_apszSpawnFamilies families ("HUMAN_00", "HUMAN_01", ... until the first
+// missing name) into m_adwSpawnPoints.
 
 // hover.exe:0x417C10
 // FUNCTION: HOVER 0x417c10
-void CBumperDoc::Sub_417C10()
+void CBumperDoc::CountSpawnPoints()
 {
 	char szName[0x80];
 	int i;
 
 	for (i = 0; i < 5; i++)
 	{
-		m_adwUnk83D0[i] = 0;
+		m_adwSpawnPoints[i] = 0;
 		for (;;)
 		{
-			sprintf(szName, "%s%02d", g_apszUnk_4C4910[i],
-				m_adwUnk83D0[i]);
+			sprintf(szName, "%s%02d", g_apszSpawnFamilies[i],
+				m_adwSpawnPoints[i]);
 			// A temporary, not a named CString: the original passes the
 			// constructor's return value straight on (`push eax`), as
-			// CBumperDoc::Sub_417D40 already does for the same call.
-			if (Hover_sub_40FE40(CString(szName)) == NULL)
+			// CBumperDoc::GetRandomSpawnPoint already does for the same call.
+			if (Hover_FindLocation(CString(szName)) == NULL)
 				break;
-			m_adwUnk83D0[i]++;
+			m_adwSpawnPoints[i]++;
 		}
 	}
 }
 
 // Picks a random texture of the nUnk family ("HUMAN_%02d" for 0,
 // "ROBOT_%02d" for 1) whose position cell is free according to the
-// m_dwUnk8388 grid; retries until Sub_40F9B0 reports a free spot. Returns
+// m_pCollider grid; retries until IsSpotBlocked reports a free spot. Returns
 // NULL when the family has no loaded textures.
 
 // hover.exe:0x417D40
 // FUNCTION: HOVER 0x417d40
-CObject* CBumperDoc::Sub_417D40(int nUnk)
+CObject* CBumperDoc::GetRandomSpawnPoint(int nUnk)
 {
 	char szName[0x80];
 	int nRange;
@@ -386,19 +388,19 @@ CObject* CBumperDoc::Sub_417D40(int nUnk)
 	nRange = 0x50;
 	for (;;)
 	{
-		sprintf(szName, "%s%02d", g_apszUnk_4C4910[nUnk],
-			rand() % (int)m_adwUnk83D0[nUnk]);
+		sprintf(szName, "%s%02d", g_apszSpawnFamilies[nUnk],
+			rand() % (int)m_adwSpawnPoints[nUnk]);
 		// A temporary, not a named CString: the original passes the
 		// constructor's return value straight on (`push eax`) and
 		// destroys it before the null test (hover.exe:0x417DAF).
-		pObj = Hover_sub_40FE40(CString(szName));
+		pObj = Hover_FindLocation(CString(szName));
 		if (pObj == NULL)
 			return NULL;
 		// the point's x/y words (g_mapUnk_4A4768 holds CMerlinLocations)
 		pLoc = (CMerlinLocation*)pObj;
-		pt.x = (short)pLoc->m_wUnk14;
-		pt.y = (short)pLoc->m_wUnk16;
-		if (((CCollider*)m_dwUnk8388)->Sub_40F9B0(pt, nRange) == 0)
+		pt.x = (short)pLoc->m_wX;
+		pt.y = (short)pLoc->m_wY;
+		if ((m_pCollider)->IsSpotBlocked(pt, nRange) == 0)
 			return pObj;
 	}
 }
@@ -407,49 +409,49 @@ CObject* CBumperDoc::Sub_417D40(int nUnk)
 // CGameObj
 
 // Clears the dynamic state fields and restamps m_dwUnk34; called by
-// CPlayer::Sub_41B2D0 when the player is placed at a start position.
+// CPlayer::Spawn when the player is placed at a start position.
 
 // hover.exe:0x41A580
 // FUNCTION: HOVER 0x41a580
-void CGameObj::Sub_41A580()
+void CGameObj::ResetState()
 {
-	m_dwUnk38 = 0;
+	m_bHideOnMap = 0;
 	m_dwUnk24 = 0;
-	m_dwUnk30 = 0;
-	m_dwUnk5C = 0;
-	m_dwUnk60 = 0;
-	m_dwUnk78 = 0;
+	m_pRegionNodes = 0;
+	m_bKilled = 0;
+	m_bDead = 0;
+	m_pMerlin = 0;
 	m_dwUnk80 = 0;
 	m_dwUnk7C = 0;
-	m_dwUnk70 = 0;
-	m_dwUnk74 = 0;
-	m_dwUnk68 = 0;
-	m_dwUnk6C = 0;
+	m_pNextStart = 0;
+	m_pNextEnd = 0;
+	m_bOnStartList = 0;
+	m_bOnEndList = 0;
 	m_dwUnk64 = 0;
-	m_dwUnk34 = GetTickCount();
+	m_dwLastSoundTick = GetTickCount();
 }
 
 /////////////////////////////////////////////////////////////////////////////
 // Free functions
 
-// Caches the "DRONE_00".."DRONE_31" textures in g_apUnk_4A4620; called at
+// Caches the "DRONE_00".."DRONE_31" textures in g_apDroneFrames; called at
 // the start of the default-maze builder.
 
 // hover.exe:0x422370
 // FUNCTION: HOVER 0x422370
-void Hover_sub_422370()
+void Hover_CacheDroneFrames()
 {
 	char szName[0xC];
 	int i;
 
 	// 0x20 frames, not 0x1F: the original increments the counter before
 	// it forms the array address, so the last pass caches "DRONE_31" into
-	// g_apUnk_4A4620[0x1F] (hover.exe:0x422387/0x422392/0x4223AB).
+	// g_apDroneFrames[0x1F] (hover.exe:0x422387/0x422392/0x4223AB).
 	for (i = 0; i < 0x20; i++)
 	{
 		wsprintf(szName, "DRONE_%02d", i);
-		g_apUnk_4A4620[i] = NULL;
-		g_mapUnk_4A1D30.Lookup(szName, g_apUnk_4A4620[i]);
+		g_apDroneFrames[i] = NULL;
+		g_mapUnk_4A1D30.Lookup(szName, g_apDroneFrames[i]);
 	}
 }
 
@@ -459,7 +461,7 @@ void Hover_sub_422370()
 
 // hover.exe:0x4262B0
 // FUNCTION: HOVER 0x4262b0
-void Hover_sub_4262B0(CException* pException)
+void Hover_FatalException(CException* pException)
 {
 	LPSTR pszOsError = NULL;
 	DWORD dwError;
@@ -507,23 +509,23 @@ void Hover_sub_4262B0(CException* pException)
 		pszMessage = g_strExcResource;
 	if (pException->IsKindOf(RUNTIME_CLASS(CUserException)))
 		pszMessage = g_strExcUser;
-	g_szUnk_460060[0] = '\0';
+	g_szFatalError[0] = '\0';
 	dwLength = 0;
 	if (dwError != 0)
 		dwLength = FormatMessage(
 			FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
 			NULL, dwError, 0, (LPSTR)&pszOsError, 0, NULL);
 	if (dwLength != 0 && dwLength < 0x100)
-		strcat(g_szUnk_460060, pszOsError);
+		strcat(g_szFatalError, pszOsError);
 	if (pszMessage != NULL)
 	{
 		if (dwLength != 0)
-			strcat(g_szUnk_460060, "\n");
-		strcat(g_szUnk_460060, pszMessage);
+			strcat(g_szFatalError, "\n");
+		strcat(g_szFatalError, pszMessage);
 	}
 	if (pszOsError != NULL)
 		LocalFree(pszOsError);
-	MessageBox(NULL, g_szUnk_460060, NULL, MB_ICONSTOP | MB_SYSTEMMODAL);
+	MessageBox(NULL, g_szFatalError, NULL, MB_ICONSTOP | MB_SYSTEMMODAL);
 	abort();
 }
 

@@ -7,7 +7,7 @@
 //   vtables at 0x4BC380 / 0x4BC910 / 0x4BCBE0 (slots 0-4 are the CObject
 //   set, slots 5-11 are the game virtuals declared below; the original
 //   vtables run further — CGameObj to slot 0x11, CPlayer/CHumanPlayer add
-//   slots 0x12-0x13, where slot 0x13 (0x4089E0) returns &m_dwUnk0180 —
+//   slots 0x12-0x13, where slot 0x13 (0x4089E0) returns &m_probe —
 //   reached through explicit vtable-slot calls where needed)
 //
 // Note on member offsets: the comments give each member's offset within the
@@ -20,47 +20,47 @@
 						// CMerlinTexture
 
 /////////////////////////////////////////////////////////////////////////////
-// CSub40D320: small value struct embedded in CGameObj at offset 0x04 (and
+// CSegment: small value struct embedded in CGameObj at offset 0x04 (and
 // used elsewhere). Stores two endpoints (+0x00..+0x0C) plus values
-// recomputed from them by Sub_42C820 (+0x10..+0x1C).
+// recomputed from them by Recalc (+0x10..+0x1C).
 // ctor hover.exe:0x40D320, sizeof = 0x20.
 
-class CSub40D320
+class CSegment
 {
 public:
-	CSub40D320();			// hover.exe:0x40D320
+	CSegment();			// hover.exe:0x40D320
 
-	// hover.exe:0x42C820 recompute m_dwUnk10..m_dwUnk1C from endpoints
-	void Sub_42C820();
+	// hover.exe:0x42C820 recompute m_dwDeltaX..m_dwAngle from endpoints
+	void Recalc();
 
 	// hover.exe:0x422BF0 set the endpoints from two point-pair pointers
 	// and recompute the derived values
-	void Sub_422BF0(DWORD* pdwPt1, DWORD* pdwPt2);
+	void SetEndpoints(DWORD* pdwPt1, DWORD* pdwPt2);
 
 	// hover.exe:0x40E8E0 set the endpoints from the +0x14..+0x20 dwords
 	// of pObj (a CMerlinLine in the collider paths) and recompute;
 	// returns this
-	CSub40D320* Sub_40E8E0(CObject* pObj);
+	CSegment* SetFromLine(CObject* pObj);
 
 	// hover.exe:0x40D2F0 side-of-line test: nonzero when the point
-	// plPt[0..1] is on the positive side of the segment
-	int Sub_40D2F0(const long* plPt);
+	// pPt is on the positive side of the segment
+	int SideOf(const POINT* pPt);
 
-	// hover.exe:0x40C9B0 distance of the point pdwPt[0..1] from the
+	// hover.exe:0x40C9B0 distance of the point pPt from the
 	// segment. *pdwA is nonzero when the foot of the perpendicular falls
 	// inside the segment, *pdwB is the side the point is on and *pdwC is
 	// nonzero when the point lies beyond the first endpoint.
-	int Sub_40C9B0(const DWORD* pdwPt, DWORD* pdwA, DWORD* pdwB,
+	int DistanceTo(const POINT* pPt, DWORD* pdwA, DWORD* pdwB,
 		DWORD* pdwC);
 
-	DWORD m_dwUnk00;		// +0x00 = 0
-	DWORD m_dwUnk04;		// +0x04 = 0
-	DWORD m_dwUnk08;		// +0x08 = 0
-	DWORD m_dwUnk0C;		// +0x0C = 0
-	DWORD m_dwUnk10;		// +0x10 = m_dwUnk08 - m_dwUnk00 (computed)
-	DWORD m_dwUnk14;		// +0x14 = m_dwUnk0C - m_dwUnk04 (computed)
-	DWORD m_dwUnk18;		// +0x18 = dx*dx + dy*dy (computed)
-	DWORD m_dwUnk1C;		// +0x1C = angle (computed, via hover.exe:0x4386D0)
+	DWORD m_dwX1;		// +0x00 = 0
+	DWORD m_dwY1;		// +0x04 = 0
+	DWORD m_dwX2;		// +0x08 = 0
+	DWORD m_dwY2;		// +0x0C = 0
+	DWORD m_dwDeltaX;		// +0x10 = m_dwX2 - m_dwX1 (computed)
+	DWORD m_dwDeltaY;		// +0x14 = m_dwY2 - m_dwY1 (computed)
+	DWORD m_dwDistSq;		// +0x18 = dx*dx + dy*dy (computed)
+	DWORD m_dwAngle;		// +0x1C = angle (computed, via hover.exe:0x4386D0)
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -86,7 +86,7 @@ public:
 
 	// hover.exe:0x4010C0 recompute min/max, deltas and dist-sq from
 	// the current endpoints and update m_wFlags.
-	void Sub_4010C0();
+	void Recalc();
 
 	// hover.exe:0x401260 intersect this segment with pLine, writing the
 	// crossing point into pdwOut[0..1]; returns 0 when the segments do
@@ -94,7 +94,7 @@ public:
 	// 0xFFFF when it crosses it from the back. Also reached through the
 	// maze faces (CMerlinStatic) and sprites (CMerlinDynamic), which
 	// derive from this class.
-	WORD Sub_401260(CMerlinLine* pLine, DWORD* pdwOut);
+	WORD IntersectSegment(CMerlinLine* pLine, DWORD* pdwOut);
 
 // Member variables (hover.exe offsets in comments). The endpoints are
 // stored as dwords but only their low words are serialized (see
@@ -122,9 +122,9 @@ public:
 // six texture slots and the +0xA4/+0xA6 words are the signed heights of
 // its low and high edge. CRuntimeClass "CMerlinStatic" at 0x4C5220 (size
 // 0xC4, schema 1, base CMerlinLine); vtable at hover.exe:0x4BC078.
-// The objects live in CMerlinWorld::m_arrUnk14 and, by name, in
-// g_mapUnk_4A4578; the renderer reaches them through RENDEROBJ::m_pUnk10
-// and CWall::m_dwUnk78.
+// The objects live in CMerlinWorld::m_arrStatics and, by name, in
+// g_mapUnk_4A4578; the renderer reaches them through RENDEROBJ::m_pSource
+// and CWall::m_pMerlin.
 
 class CMerlinStatic : public CMerlinLine
 {
@@ -143,45 +143,45 @@ public:
 	virtual void Serialize(CArchive& ar);
 
 // Member variables (hover.exe offsets in comments)
-	CString m_strUnk44;			// +0x44 texture name of m_pUnk8C
-	CString m_strUnk50;			// +0x50 texture name of m_pUnk90
-	CString m_strUnk5C;			// +0x5C front texture name ("..DECAL_"
+	CString m_strFrontTopTex;			// +0x44 texture name of m_pFrontTopTex
+	CString m_strBackTopTex;			// +0x50 texture name of m_pBackTopTex
+	CString m_strFrontTex;			// +0x5C front texture name ("..DECAL_"
 								//   on the pad faces)
-	CString m_strUnk68;			// +0x68 back texture name
-	CString m_strUnk74;			// +0x74 texture name of m_pUnk9C
-	CString m_strUnk80;			// +0x80 texture name of m_pUnkA0
-	CMerlinTexture* m_pUnk8C;	// +0x8C = 0 resolved texture
-	CMerlinTexture* m_pUnk90;	// +0x90 = 0 resolved texture
-	CMerlinTexture* m_pUnk94;	// +0x94 = 0 front face texture
-	CMerlinTexture* m_pUnk98;	// +0x98 = 0 back face texture
-	CMerlinTexture* m_pUnk9C;	// +0x9C = 0 resolved texture
-	CMerlinTexture* m_pUnkA0;	// +0xA0 = 0 resolved texture
-	WORD m_wUnkA4;				// +0xA4 = 0 low edge height (signed)
-	WORD m_wUnkA6;				// +0xA6 = 0x80 high edge height (signed)
+	CString m_strBackTex;			// +0x68 back texture name
+	CString m_strFrontBottomTex;			// +0x74 texture name of m_pFrontBottomTex
+	CString m_strBackBottomTex;			// +0x80 texture name of m_pBackBottomTex
+	CMerlinTexture* m_pFrontTopTex;	// +0x8C = 0 resolved texture
+	CMerlinTexture* m_pBackTopTex;	// +0x90 = 0 resolved texture
+	CMerlinTexture* m_pFrontTex;	// +0x94 = 0 front face texture
+	CMerlinTexture* m_pBackTex;	// +0x98 = 0 back face texture
+	CMerlinTexture* m_pFrontBottomTex;	// +0x9C = 0 resolved texture
+	CMerlinTexture* m_pBackBottomTex;	// +0xA0 = 0 resolved texture
+	WORD m_wBottom;				// +0xA4 = 0 low edge height (signed)
+	WORD m_wTop;				// +0xA6 = 0x80 high edge height (signed)
 	WORD m_wUnkA8;				// +0xA8 = 0
 	WORD m_wUnkAA;				// +0xAA = 0
 	WORD m_wUnkAC;				// +0xAC = 0
 	WORD m_wUnkAE;				// +0xAE (never touched)
-	DWORD m_dwUnkB0;			// +0xB0 = 0 front face has pixel data
-	DWORD m_dwUnkB4;			// +0xB4 = 0 back face has pixel data
-	WORD m_wUnkB8;				// +0xB8 = 0 front texture u origin
-	WORD m_wUnkBA;				// +0xBA = 0 back texture u origin
-	DWORD m_dwUnkBC;			// +0xBC = 1 nonzero enables the pad
+	DWORD m_bFrontTransparent;			// +0xB0 = 0 front face has pixel data
+	DWORD m_bBackTransparent;			// +0xB4 = 0 back face has pixel data
+	WORD m_wFrontUOrg;				// +0xB8 = 0 front texture u origin
+	WORD m_wBackUOrg;				// +0xBA = 0 back texture u origin
+	DWORD m_bSolid;			// +0xBC = 1 nonzero enables the pad
 								//   registration in the level loader
 	DWORD m_dwUnkC0;			// +0xC0 = 0
 };								// sizeof = 0xC4
 
 /////////////////////////////////////////////////////////////////////////////
 // CMerlinDynamic: the billboard sprite object -- the CMerlinLine base is
-// the camera-facing segment, rebuilt each frame by CSub406090::Sub_406090
-// from the world position (m_wUnk5A/m_wUnk5C) and the m_wUnk58 scale so
+// the camera-facing segment, rebuilt each frame by CSpanRasterizer::RenderWorld
+// from the world position (m_wX/m_wY) and the m_wHalfWidth scale so
 // the sprite always faces the viewer. CRuntimeClass "CMerlinDynamic" at
 // 0x4C5608 (size 0x70, schema 1, base CMerlinLine); vtable at
-// hover.exe:0x4BD348. The objects live in CMerlinWorld::m_arrUnk28 and,
-// by name, in g_mapUnk_4A4728; the pods, players and the temporary wall
-// create theirs out of a pool of g_dwUnk_4C5624 objects whose blocks are
-// kept in g_listUnk_4A4748 and whose free list is threaded through
-// m_dwUnk6C.
+// hover.exe:0x4BD348. The objects live in CMerlinWorld::m_arrSprites and,
+// by name, in g_mapDynamicSprites; the pods, players and the temporary wall
+// create theirs out of a pool of g_dwSpritePoolBlock objects whose blocks are
+// kept in g_listMerlinDynamicBlocks and whose free list is threaded through
+// m_dwTopDZ.
 
 class CMerlinDynamic : public CMerlinLine
 {
@@ -192,7 +192,7 @@ public:
 
 	// hover.exe:0x42CC40 (vtable slot 2) serialize the texture name, the
 	// height/scale/position words and the m_dwUnk60 flag byte; on load,
-	// register the sprite in g_mapUnk_4A4728 and resolve the texture name
+	// register the sprite in g_mapDynamicSprites and resolve the texture name
 	virtual void Serialize(CArchive& ar);
 
 	static void* operator new(size_t nSize);	// hover.exe:0x42CBC0
@@ -205,26 +205,26 @@ public:
 	// at hover.exe:0x40F920.
 	static void operator delete(void* p)
 	{
-		((CMerlinDynamic*)p)->m_dwUnk6C = g_dwUnk_4C5620;
-		g_dwUnk_4C5620 = (DWORD)p;
+		((CMerlinDynamic*)p)->m_pNextFree = g_pMerlinDynamicFree;
+		g_pMerlinDynamicFree = (CMerlinDynamic*)p;
 	}
 
 // Member variables (hover.exe offsets in comments)
-	CString m_strUnk44;			// +0x44 texture name
-	CMerlinTexture* m_pUnk50;	// +0x50 = 0 current animation frame
-								//   (advanced by Sub_405CE0 through
-								//   CMerlinTexture::m_pUnk38)
-	WORD m_wUnk54;				// +0x54 = 0 base height
-	WORD m_wUnk56;				// +0x56 = 0x80 top height
-	WORD m_wUnk58;				// +0x58 = 0x80 half width (sprite scale)
-	WORD m_wUnk5A;				// +0x5A = 0 world x
-	WORD m_wUnk5C;				// +0x5C = 0 world y
+	CString m_strTexName;			// +0x44 texture name
+	CMerlinTexture* m_pTexture;	// +0x50 = 0 current animation frame
+								//   (advanced by SubmitSegment through
+								//   CMerlinTexture::m_pNextFrame)
+	WORD m_wBottom;				// +0x54 = 0 base height
+	WORD m_wTop;				// +0x56 = 0x80 top height
+	WORD m_wHalfWidth;				// +0x58 = 0x80 half width (sprite scale)
+	WORD m_wX;				// +0x5A = 0 world x
+	WORD m_wY;				// +0x5C = 0 world y
 	WORD m_wUnk5E;				// +0x5E
 	DWORD m_dwUnk60;			// +0x60 = 1
-	DWORD m_dwUnk64;			// +0x64 = 1 nonzero: rebuild the facing
+	DWORD m_bBillboard;			// +0x64 = 1 nonzero: rebuild the facing
 								//   segment this frame
-	DWORD m_dwUnk68;			// +0x68 = 0 nonzero: draw mirrored
-	DWORD m_dwUnk6C;			// +0x6C pool free-list link
+	DWORD m_bMirror;			// +0x68 = 0 nonzero: draw mirrored
+	CMerlinDynamic* m_pNextFree;			// +0x6C pool free-list link
 };								// sizeof = 0x70
 
 /////////////////////////////////////////////////////////////////////////////
@@ -232,7 +232,7 @@ public:
 // the "BEACON_nn" waypoints the robot AI steers by). CRuntimeClass
 // "CMerlinLocation" at 0x4C5638 (size 0x1C, schema 1, base CMerlinObject);
 // vtable at hover.exe:0x4BD3C0. The objects live in
-// CMerlinWorld::m_arrUnk3C and, by name, in g_mapUnk_4A4768.
+// CMerlinWorld::m_arrLocations and, by name, in g_mapUnk_4A4768.
 
 class CMerlinLocation : public CMerlinObject
 {
@@ -245,16 +245,20 @@ public:
 	// at 0x415070 (notes/perfect-match.md rule 221).
 	CMerlinLocation()		// hover.exe:0x415070
 	{
-		m_wUnk14 = 0;
-		m_wUnk16 = 0;
-		m_wUnk18 = 0;
-		m_wUnk1A = 0;
+		m_wX = 0;
+		m_wY = 0;
+		m_wAngle = 0;
+		m_wHeight = 0;
 	}
 
 	// hover.exe:0x41B940 (vtable slot 2) serialize the four words; on
 	// load, register the point in g_mapUnk_4A4768
 	virtual void Serialize(CArchive& ar);
 
+	// Kept although nothing calls it any more (rule 338: deleting a dead
+	// inline from a shared header costs 0.33 byte-weighted here).  The
+	// loader builds its spawn points with texture.cpp's LOCPT instead,
+	// which homes no temporary; this accessor homes its own `pt`.
 	// The level loader spawns players and robots from these points and
 	// hands the first two words over as one 8-byte value: hover.exe
 	// 0x415D20, 0x415E7D and 0x415FC0 each widen +0x14 and +0x16 into
@@ -265,25 +269,25 @@ public:
 	{
 		POINT pt;
 
-		pt.x = (short)m_wUnk14;
-		pt.y = (short)m_wUnk16;
+		pt.x = (short)m_wX;
+		pt.y = (short)m_wY;
 		return pt;
 	}
 
 // Member variables (hover.exe offsets in comments)
-	WORD m_wUnk14;			// +0x14 = 0 x
-	WORD m_wUnk16;			// +0x16 = 0 y
-	WORD m_wUnk18;			// +0x18 = 0 z / height
-	WORD m_wUnk1A;			// +0x1A = 0 angle
+	WORD m_wX;			// +0x14 = 0 x
+	WORD m_wY;			// +0x16 = 0 y
+	WORD m_wAngle;			// +0x18 = 0 heading (passed to CPlayer::PlacePlayer)
+	WORD m_wHeight;			// +0x1A = 0 height (base height of pods)
 };							// sizeof = 0x1C
 
 /////////////////////////////////////////////////////////////////////////////
 // CMerlinBSP: one node of the maze's BSP tree. The CMerlinLine base is the
-// splitting segment, m_wUnk44 indexes the CMerlinStatic face the node
-// carries and m_wUnk48/m_wUnk4A are the two child node indices (-1 = leaf).
+// splitting segment, m_wFace indexes the CMerlinStatic face the node
+// carries and m_wFront/m_wBack are the two child node indices (-1 = leaf).
 // CRuntimeClass "CMerlinBSP" at 0x4C5660 (size 0x68, schema 1, base
 // CMerlinLine); vtable at hover.exe:0x4BD438. The nodes live in
-// CMerlinWorld::m_arrUnk50, node 0 being the root.
+// CMerlinWorld::m_arrNodes, node 0 being the root.
 
 class CMerlinBSP : public CMerlinLine
 {
@@ -296,10 +300,10 @@ public:
 	// at 0x41BB80 (notes/perfect-match.md rule 221).
 	CMerlinBSP()			// hover.exe:0x41BB80
 	{
-		m_wUnk44 = 0xFFFF;
+		m_wFace = 0xFFFF;
 		m_wUnk46 = 0xFFFF;
-		m_wUnk48 = 0xFFFF;
-		m_wUnk4A = 0xFFFF;
+		m_wFront = 0xFFFF;
+		m_wBack = 0xFFFF;
 		m_dblUnk50 = 0.0;
 		m_dblUnk58 = 1.0;
 		m_wUnk60 = 0;
@@ -310,10 +314,10 @@ public:
 	virtual void Serialize(CArchive& ar);
 
 // Member variables (hover.exe offsets in comments)
-	WORD m_wUnk44;			// +0x44 = -1 index into CMerlinWorld::m_arrUnk14
+	WORD m_wFace;			// +0x44 = -1 index into CMerlinWorld::m_arrStatics
 	WORD m_wUnk46;			// +0x46 = -1
-	WORD m_wUnk48;			// +0x48 = -1 child node index (front)
-	WORD m_wUnk4A;			// +0x4A = -1 child node index (back)
+	WORD m_wFront;			// +0x48 = -1 child node index (front)
+	WORD m_wBack;			// +0x4A = -1 child node index (back)
 							// +0x4C..0x4F: alignment padding for the
 							// doubles below
 	double m_dblUnk50;		// +0x50 = 0.0
@@ -325,6 +329,14 @@ public:
 // CGameObj
 
 class CPlayer;
+class CInviciblePod;
+class CSpeedPod;
+class CSlowPod;
+class CTempWallPod;
+class CSmokeBombPod;
+class CJumpPod;
+class CMerlinTexture;
+struct tagREGIONNODE;
 
 class CGameObj : public CObject
 {
@@ -338,75 +350,96 @@ public:
 	virtual ~CGameObj();
 
 // Virtual functions. Slots 5-11 are the game virtuals decompiled in
-// gameobj.cpp; slot 12 is Sub_408820 (base CGameObj returns 1; CPlayer
+// gameobj.cpp; slot 12 is UpdateRegions (base CGameObj returns 1; CPlayer
 // overrides it at hover.exe:0x408820). Slots 13-17 hold the remaining
 // CGameObj methods, keeping the renderer helpers' offsets at 0x3c and 0x40.
-	virtual int Sub_414A50(DWORD dwUnk);	// slot 5, hover.exe:0x414A50
+	virtual int SetMerlin(CMerlinLine* pMerlin);	// slot 5, hover.exe:0x414A50
 	virtual int Sub_42AD10(DWORD dwA, DWORD dwB); // slot 6, hover.exe:0x42AD10
-	virtual void Sub_42AD30();				// slot 7, hover.exe:0x42AD30
-	virtual void Sub_42AD40(CPlayer* pOther, DWORD dwB); // slot 8, hover.exe:0x42AD40
-	virtual void Sub_42AD50(DWORD dwUnk);	// slot 9, hover.exe:0x42AD50
-	virtual int Sub_42AD70(DWORD dwA, DWORD dwB, DWORD dwC); // slot 10, hover.exe:0x42AD70
-	virtual int Sub_42AD60(DWORD dwUnk);	// slot 11, hover.exe:0x42AD60
-	virtual int Sub_408820(DWORD dwA);		// slot 12, hover.exe:0x408820
-	virtual int Sub_411570(DWORD dwA, DWORD dwB, DWORD dwC, DWORD* pdwOut); // slot 13, hover.exe:0x411570
-	virtual int Sub_42AD90(CGameObj* pObj);	// slot 14, hover.exe:0x42AD90
-	virtual void Sub_4087D0();				// slot 15, hover.exe:0x4087D0
-	virtual void Sub_4087F0();				// slot 16, hover.exe:0x4087F0
-	virtual void Sub_413020();				// slot 17, hover.exe:0x413020
+	virtual void Think();				// slot 7, hover.exe:0x42AD30
+	virtual void OnTouch(CPlayer* pOther, DWORD dwB); // slot 8, hover.exe:0x42AD40
+	virtual void UsePod(DWORD dwUnk);	// slot 9, hover.exe:0x42AD50
+	virtual int IsNear(POINT pt, long lRadius); // slot 10, hover.exe:0x42AD70
+	virtual int Touches(DWORD dwUnk);	// slot 11, hover.exe:0x42AD60
+	virtual int UpdateRegions(DWORD dwA);		// slot 12, hover.exe:0x408820
+	virtual int IntersectLine(DWORD dwA, DWORD dwB, DWORD dwC, DWORD* pdwOut); // slot 13, hover.exe:0x411570
+	virtual int OnProbeHit(CGameObj* pObj);	// slot 14, hover.exe:0x42AD90
+	virtual void BeginFrame();				// slot 15, hover.exe:0x4087D0
+	virtual void EndFrame();				// slot 16, hover.exe:0x4087F0
+	virtual void KillObject();				// slot 17, hover.exe:0x413020
 
 // Non-virtual helpers shared by the game object classes.
-	void Sub_408530();	// hover.exe:0x408530 link into the g_dwUnk_4C52D8 list
-	// hover.exe:0x403880 copy the m_wUnk46/m_wUnk4A position words
+	void QueueBeginFrame();	// hover.exe:0x408530 link into the g_pDirtyObjList list
+	// hover.exe:0x403880 copy the m_wX/m_wY position words
 	// sign-extended into pdwOut[0..1]
-	DWORD* Sub_403880(DWORD* pdwOut);
-	// hover.exe:0x4038A0 copy the m_wUnk44/m_wUnk48 words into pdwOut[0..1]
-	DWORD* Sub_4038A0(DWORD* pdwOut);
-	// hover.exe:0x406C40 copy m_dwUnk54/m_dwUnk58 into pdwOut[0..1]
-	DWORD* Sub_406C40(DWORD* pdwOut);
-	// hover.exe:0x413000 copy m_dwUnk4C/m_dwUnk50 into pdwOut[0..1]
-	DWORD* Sub_413000(DWORD* pdwOut);
-	// hover.exe:0x40F880 set the m_wUnk46/m_wUnk4A position words and
-	// clear m_wUnk44/m_wUnk48
-	void Sub_40F880(DWORD dwX, DWORD dwY);
-	// hover.exe:0x40A9B0 push the m_dwUnk30 node chain onto the
-	// g_dwUnk_4C55D0 free list
-	void Sub_40A9B0();
+	DWORD* GetCellPos(DWORD* pdwOut);
+	// hover.exe:0x4038A0 copy m_fxX/m_fxY into pdwOut[0..1]
+	DWORD* GetFixedPos(DWORD* pdwOut);
+	// hover.exe:0x406C40 copy m_dwPrevX/m_dwPrevY into pdwOut[0..1]
+	DWORD* GetPrevPos(DWORD* pdwOut);
+	// hover.exe:0x413000 copy m_dwFrameX/m_dwFrameY into pdwOut[0..1]
+	DWORD* GetFramePos(DWORD* pdwOut);
+	// hover.exe:0x40F880 set the m_wX/m_wY position words and clear
+	// their fractions
+	void SetCellPos(DWORD dwX, DWORD dwY);
+	// hover.exe:0x40A9B0 push the m_pRegionNodes node chain onto the
+	// g_pRegionNodeFree free list
+	void ReleaseRegionNodes();
 	// hover.exe:0x40D6E0 throttle-limited sound trigger via CBumperDoc slots
-	void Sub_40D6E0(DWORD dwA, DWORD dwB, DWORD dwC, DWORD dwD);
+	void PlayObjSound(DWORD dwA, DWORD dwB, DWORD dwC, DWORD dwD);
 	// hover.exe:0x41A580 clear the dynamic state fields (+0x24..+0x80) and
-	// stamp m_dwUnk34 with GetTickCount (called by CPlayer::Sub_41B2D0)
-	void Sub_41A580();
+	// stamp m_dwLastSoundTick with GetTickCount (called by CPlayer::Spawn)
+	void ResetState();
 
 // Member variables (hover.exe offsets in comments)
-	CSub40D320 m_obj04;		// +0x04
+	CSegment m_seg;		// +0x04
 	DWORD m_dwUnk24;		// +0x24 = 0
-	DWORD m_dwUnk28;		// +0x28
-	DWORD m_dwUnk2C;		// +0x2C
-	DWORD m_dwUnk30;		// +0x30 = 0
-	DWORD m_dwUnk34;		// +0x34 = GetTickCount()
-	DWORD m_dwUnk38;		// +0x38 = 0
-	DWORD m_dwUnk3C;		// +0x3C
-	DWORD m_dwUnk40;		// +0x40
-	WORD m_wUnk44;			// +0x44 = 0
-	WORD m_wUnk46;			// +0x46 = 0
-	WORD m_wUnk48;			// +0x48 = 0
-	WORD m_wUnk4A;			// +0x4A = 0
-	DWORD m_dwUnk4C;		// +0x4C = 0
-	DWORD m_dwUnk50;		// +0x50 = 0
-	DWORD m_dwUnk54;		// +0x54 = 0
-	DWORD m_dwUnk58;		// +0x58 = 0
-	DWORD m_dwUnk5C;		// +0x5C = 0
-	DWORD m_dwUnk60;		// +0x60 = 0
+	DWORD m_bInUse;		// +0x28
+	DWORD m_bSolidHit;		// +0x2C
+	struct tagREGIONNODE* m_pRegionNodes;		// +0x30 = 0
+	DWORD m_dwLastSoundTick;		// +0x34 = GetTickCount()
+	DWORD m_bHideOnMap;		// +0x38 = 0
+	DWORD m_bOnMap;		// +0x3C
+	DWORD m_dwMapColor;		// +0x40
+	// Position, 16.16 fixed point: whole as m_fxX/m_fxY, or by halves
+	// (m_wX/m_wY are the integer cell coordinates).
+	union					// +0x44 = 0 x
+	{
+		DWORD m_fxX;
+		struct { WORD m_wXFrac, m_wX; };
+	};
+	union					// +0x48 = 0 y
+	{
+		DWORD m_fxY;
+		struct { WORD m_wYFrac, m_wY; };
+	};
+	DWORD m_dwFrameX;		// +0x4C = 0
+	DWORD m_dwFrameY;		// +0x50 = 0
+	DWORD m_dwPrevX;		// +0x54 = 0
+	DWORD m_dwPrevY;		// +0x58 = 0
+	DWORD m_bKilled;		// +0x5C = 0
+	DWORD m_bDead;		// +0x60 = 0
 	DWORD m_dwUnk64;		// +0x64 = 0
-	DWORD m_dwUnk68;		// +0x68 = 0
-	DWORD m_dwUnk6C;		// +0x6C = 0
-	DWORD m_dwUnk70;		// +0x70 = 0
-	DWORD m_dwUnk74;		// +0x74 = 0
-	DWORD m_dwUnk78;		// +0x78 = 0
+	DWORD m_bOnStartList;		// +0x68 = 0
+	DWORD m_bOnEndList;		// +0x6C = 0
+	CGameObj* m_pNextStart;		// +0x70 = 0
+	CGameObj* m_pNextEnd;		// +0x74 = 0
+	CMerlinLine* m_pMerlin;		// +0x78 = 0
 	DWORD m_dwUnk7C;		// +0x7C = 0
 	DWORD m_dwUnk80;		// +0x80 = 0
 };							// sizeof = 0x84
+
+/////////////////////////////////////////////////////////////////////////////
+// PLAYERPROBE: a player's collision probe (CPlayer +0x180), rebuilt every
+// frame by CPlayer::UpdateProbe: two points 0x32 units ahead of and behind
+// the craft along its heading, and the radius around each of them that
+// counts as contact. Handed out by the GetProbe virtual.
+
+typedef struct tagPLAYERPROBE
+{
+	POINT ptFront;				// +0x00 point ahead of the craft
+	POINT ptBack;				// +0x08 point behind the craft
+	long lRadius;				// +0x10 contact radius (at least 0x32)
+} PLAYERPROBE;					// sizeof = 0x14
 
 /////////////////////////////////////////////////////////////////////////////
 // CPlayer
@@ -423,132 +456,228 @@ public:
 
 // Overrides of CGameObj virtuals. The override must keep the base name;
 // each comment records the address of the original CPlayer implementation.
-	virtual void Sub_42AD30();				// hover.exe:0x409110
-	virtual void Sub_42AD40(CPlayer* pOther, DWORD dwB); // hover.exe:0x40C220
-	virtual int Sub_42AD70(DWORD dwA, DWORD dwB, DWORD dwC); // hover.exe:0x42BFC0
-	virtual int Sub_42AD60(DWORD dwUnk);	// hover.exe:0x42BFA0
-	virtual int Sub_408820(DWORD dwA);		// hover.exe:0x408820
-	virtual void Sub_4087D0();				// hover.exe:0x408960
-	virtual void Sub_4087F0();				// hover.exe:0x408990
-	virtual void Sub_413020();				// hover.exe:0x42C050
+	virtual void Think();				// hover.exe:0x409110
+	virtual void OnTouch(CPlayer* pOther, DWORD dwB); // hover.exe:0x40C220
+	virtual int IsNear(POINT pt, long lRadius); // hover.exe:0x42BFC0
+	virtual int Touches(DWORD dwUnk);	// hover.exe:0x42BFA0
+	virtual int UpdateRegions(DWORD dwA);		// hover.exe:0x408820
+	virtual void BeginFrame();				// hover.exe:0x408960
+	virtual void EndFrame();				// hover.exe:0x408990
+	virtual void KillObject();				// hover.exe:0x42C050
 	// New CPlayer virtual, vtable slot 18 (offset 0x48): empty in every
 	// player class of the original (hover.exe:0x42BE40 is a bare `ret 4`).
-	// Declared before Sub_4089E0 so it lands in slot 18 and Sub_4089E0
+	// Declared before GetProbe so it lands in slot 18 and GetProbe
 	// keeps slot 19 (offset 0x4C), as in the original vtables.
 	virtual void Sub_42BE40(DWORD dwUnk);	// hover.exe:0x42BE40
-	// hover.exe:0x4089E0 returns &m_dwUnk0180 (vtable slot 0x4C)
-	virtual DWORD* Sub_4089E0();
+	// hover.exe:0x4089E0 returns &m_probe (vtable slot 0x4C)
+	virtual PLAYERPROBE* GetProbe();
 
 	// hover.exe:0x414A80 reinitializes the word arrays below
 	// (called by CHumanPlayer::CHumanPlayer)
-	void Sub_414A80();
+	void ResetMotion();
 
 	// hover.exe:0x414BD0 empties the object lists (deleting the elements);
 	// called with 1 by the destructor
-	void Sub_414BD0(int bAll);
+	void ClearPods(int bAll);
 
 	// hover.exe:0x413ED0 point the player at a parameter block (H params
 	// for the human player, R params for the robots) and reload the three
 	// tuning values cached at +0x1D0
-	void Sub_413ED0(void* pParams);
+	void SetParams(CPlayerParams* pParams);
 
 	// hover.exe:0x408550 recompute the +0x180/+0x188 proximity points and
 	// the +0x190 range limit from the current position and angle
-	void Sub_408550(DWORD dwUnk);
-	// hover.exe:0x40A9F0 throttle/turn input integration
-	void Sub_40A9F0();
-	// hover.exe:0x40AB70 angular velocity integration
-	void Sub_40AB70();
-	// hover.exe:0x40ACE0 bounce/brush state countdown
-	void Sub_40ACE0();
-	// hover.exe:0x40ADE0 wall-bounce handling
-	void Sub_40ADE0();
+	void UpdateProbe(DWORD dwUnk);
+	// hover.exe:0x40A9F0 turn and thrust input integration
+	void ApplyControls();
+	// hover.exe:0x40AB70 move the hover height toward its target
+	void UpdateHeight();
+	// hover.exe:0x40ACE0 the hold pad's countdown (m_dwHoldTimer)
+	void UpdateHoldPad();
+	// hover.exe:0x40ADE0 the sled pad's push (m_dwSledTimer, the angle
+	// at +0x160)
+	void UpdateSled();
 	// hover.exe:0x40B0B0 velocity integration and position update
-	void Sub_40B0B0();
+	void MovePlayer();
 	// hover.exe:0x42B8E0 collision response against another player
-	int Sub_42B8E0(DWORD dwA, DWORD dwB);
+	int CollidePlayer(DWORD dwA, DWORD dwB);
 	// hover.exe:0x42BE50 proximity test against pOther's points (vtable
-	// slot 0x4C in the original returns &pOther->m_dwUnk0180)
-	int Sub_42BE50(CPlayer* pOther, DWORD* pdwA, DWORD* pdwB);
+	// slot 0x4C in the original returns &pOther->m_probe)
+	int TouchesPlayer(CPlayer* pOther, DWORD* pdwA, DWORD* pdwB);
 	// hover.exe:0x41B2D0 set the start position/angle (called by
-	// CBumperDoc::Sub_415450 with the start object's +0x14..+0x1A words)
-	void Sub_41B2D0(POINT pt, DWORD dwC, DWORD dwD);
+	// CBumperDoc::OnOpenDocument with the start object's +0x14..+0x1A words)
+	void Spawn(POINT pt, DWORD dwC, DWORD dwD);
 	// hover.exe:0x41B0E0 set the start position/velocity state (called by
-	// CPlayer::Sub_41B2D0 and by the level loader on robot objects)
-	void Sub_41B0E0(POINT pt, DWORD dwC, DWORD dwD);
+	// CPlayer::Spawn and by the level loader on robot objects)
+	void PlacePlayer(POINT pt, DWORD dwC, DWORD dwD);
 	// hover.exe:0x41A6B0 bounce the player off pWall; returns nonzero
 	// when the wall was actually hit
-	int Sub_41A6B0(CGameObj* pWall, DWORD dwB);
+	int BounceOffWall(CGameObj* pWall, DWORD dwB);
 	// hover.exe:0x41AB10 reflect the velocity about dwAngle and feed the
 	// tangential part back into the heading and the turn rate
-	void Sub_41AB10(DWORD dwFlip, DWORD dwAngle);
+	void Reflect(DWORD dwFlip, DWORD dwAngle);
 	// hover.exe:0x421B50 the endpoint case of the wall bounce: bounce off
 	// the segment endpoint selected by dwFirst, returns nonzero when the
 	// player was actually moving into it
-	int Sub_421B50(DWORD dwFlip, DWORD dwX, DWORD dwY, CGameObj* pWall,
+	int BounceOffEndpoint(DWORD dwFlip, DWORD dwX, DWORD dwY, CGameObj* pWall,
 		DWORD dwFirst, int nDist);
 
 // Member variables (hover.exe offsets in comments)
-	DWORD m_dwUnk0084;		// +0x84 (set by CHumanPlayer)
+	CPlayerParams* m_pParams;	// +0x84 tuning block (theApp.m_pHumanParams
+							//   or m_pRobotParams, set by SetParams)
 	DWORD m_dwUnk0088;		// +0x88
 	DWORD m_dwUnk008C;		// +0x8C
-	WORD m_awUnk0090[12];	// +0x90 = {0}
-	char m_pad00A8[0xC];	// +0xA8
+	// The 16.16 fixed-point state below is read and written whole
+	// (m_fx...) or, where the original stores 16 bits at a time, by halves
+	// (m_w...Frac is the low word, m_w... the integer word).
+	union					// +0x90 = 0 (never read)
+	{
+		DWORD m_fxUnk0090;
+		struct { WORD m_wUnk0090, m_wUnk0092; };
+	};
+	union					// +0x94 = 0 (never read)
+	{
+		DWORD m_fxUnk0094;
+		struct { WORD m_wUnk0094, m_wUnk0096; };
+	};
+	union					// +0x98 = 0 height change applied this frame
+	{
+		DWORD m_fxHeightStep;
+		struct { WORD m_wHeightStepFrac, m_wHeightStep; };
+	};
+	union					// +0x9C = 0 height change per frame toward the target
+	{
+		DWORD m_fxHeightRate;
+		struct { WORD m_wHeightRateFrac, m_wHeightRate; };
+	};
+	union					// +0xA0 = 0 height the craft settles to (0x40;
+							//   more on a jump or on top of a wall)
+	{
+		DWORD m_fxTargetHeight;
+		struct { WORD m_wTargetHeightFrac, m_wTargetHeight; };
+	};
+	union					// +0xA4 = 0 current height (moves toward the target)
+	{
+		DWORD m_fxHeight;
+		struct { WORD m_wHeightFrac, m_wHeight; };
+	};
+	DWORD m_bAirborne;		// +0xA8 jumping (set by a jump pod, cleared on
+							//   landing)
+	DWORD m_dwSpawnHeight1;	// +0xAC spawn height (written, never read)
+	DWORD m_dwSpawnHeight2;	// +0xB0
 	// All four are CObList(10): CPlayer::CPlayer calls 0x4491E4 at
 	// 0x41ACB8/0x41ACCC/0x41ACE0/0x41ACF4, and 0x4491E4 stores the
 	// CObList vtable 0x4C2118 (rule 251 - libmatch misnames it
 	// CPtrList::CPtrList).
-	CObList m_obList00B4;	// +0xB4
-	CObList m_obList00D0;	// +0xD0
-	CObList m_obList00EC;	// +0xEC
-	CObList m_obList0108;	// +0x108
-	DWORD m_dwUnk0124;		// +0x124 (zeroed by CHumanPlayer)
-	DWORD m_dwUnk0128;		// +0x128 (zeroed by CHumanPlayer)
-	DWORD m_dwUnk012C;		// +0x12C (zeroed by CHumanPlayer)
-	DWORD m_dwUnk0130;		// +0x130 (zeroed by CHumanPlayer)
-	DWORD m_dwUnk0134;		// +0x134 (zeroed by CHumanPlayer)
-	DWORD m_dwUnk0138;		// +0x138 (zeroed by CHumanPlayer)
-	DWORD m_dwUnk013C;		// +0x13C
-	DWORD m_dwUnk0140;		// +0x140 (zeroed by CHumanPlayer)
-	DWORD m_dwUnk0144;		// +0x144 (zeroed by CHumanPlayer)
-	DWORD m_dwUnk0148;		// +0x148
-	DWORD m_dwUnk014C;		// +0x14C
+	CObList m_listFlags;	// +0xB4
+	CObList m_listTempWallPods;	// +0xD0
+	CObList m_listSmokeBombPods;	// +0xEC
+	CObList m_listJumpPods;	// +0x108
+	CInviciblePod* m_pInvinciblePod;		// +0x124 (zeroed by CHumanPlayer)
+	CSpeedPod* m_pSpeedPod;		// +0x128 (zeroed by CHumanPlayer)
+	CSlowPod* m_pSlowPod;		// +0x12C (zeroed by CHumanPlayer)
+	CTempWallPod* m_pTempWallPod;		// +0x130 (zeroed by CHumanPlayer)
+	CSmokeBombPod* m_pSmokeBombPod;		// +0x134 (zeroed by CHumanPlayer)
+	CJumpPod* m_pJumpPod;		// +0x138 (zeroed by CHumanPlayer)
+	DWORD m_bOnTop;		// +0x13C
+	DWORD m_bInvincible;		// +0x140 (zeroed by CHumanPlayer)
+	DWORD m_bGodMode;		// +0x144 (zeroed by CHumanPlayer)
+	DWORD m_dwHoldTimer;		// +0x148
+	DWORD m_dwSledTimer;		// +0x14C
 	DWORD m_dwUnk0150;		// +0x150
-	DWORD m_dwUnk0154;		// +0x154
-	DWORD m_dwUnk0158;		// +0x158
-	DWORD m_dwUnk015C;		// +0x15C
-	char m_pad0160[0x4];	// +0x160
-	DWORD m_dwUnk0164;		// +0x164 projected triangle x1
-	DWORD m_dwUnk0168;		// +0x168 projected triangle y1
-	DWORD m_dwUnk016C;		// +0x16C projected triangle x2
-	DWORD m_dwUnk0170;		// +0x170 projected triangle y2
-	DWORD m_dwUnk0174;		// +0x174 projected triangle x3
-	DWORD m_dwUnk0178;		// +0x178 projected triangle y3
+	DWORD m_bOnHoldPad;		// +0x154
+	DWORD m_bOnFlagRemover;		// +0x158
+	DWORD m_dwFlagRemoverState;		// +0x15C
+	DWORD m_dwSledAngle;	// +0x160 push direction of the sled pad (UpdateSled)
+	POINT m_aptMapTri[3];	// +0x164 the craft's triangle on the map
 	DWORD m_dwUnk017C;		// +0x17C visible flag
-	DWORD m_dwUnk0180;		// +0x180 proximity point 1 x (Sub_42AD70)
-	DWORD m_dwUnk0184;		// +0x184 proximity point 1 y
-	DWORD m_dwUnk0188;		// +0x188 proximity point 2 x
-	DWORD m_dwUnk018C;		// +0x18C proximity point 2 y
-	DWORD m_dwUnk0190;		// +0x190 proximity range limit
-	WORD m_awUnk0194[6];	// +0x194 = {0}
-	DWORD m_dwUnk01A0;		// +0x1A0 (zeroed by Sub_414A80, not by the ctor)
-	DWORD m_dwUnk01A4;		// +0x1A4
-	DWORD m_dwUnk01A8;		// +0x1A8 (zeroed by Sub_414A80, not by the ctor)
-	WORD m_awUnk01AC[12];	// +0x1AC = {0}
-	DWORD m_dwUnk01C4;		// +0x1C4 (zeroed by Sub_414A80)
+	PLAYERPROBE m_probe;	// +0x180 collision probe (set by UpdateProbe)
+	union					// +0x194 = 0 heading change per frame
+	{
+		DWORD m_fxTurnRate;
+		struct { WORD m_wTurnRateFrac, m_wTurnRate; };
+	};
+	union					// +0x198 = 0 one-frame turn (collisions), cleared each frame
+	{
+		DWORD m_fxTurnImpulse;
+		struct { WORD m_wTurnImpulseFrac, m_wTurnImpulse; };
+	};
+	union					// +0x19C = 0 heading; m_wHeading is the 9-bit angle
+	{
+		DWORD m_fxHeading;
+		struct { WORD m_wHeadingFrac, m_wHeading; };
+	};
+	DWORD m_dwFrameHeading;		// +0x1A0 (zeroed by ResetMotion, not by the ctor)
+	DWORD m_dwAltitude;		// +0x1A4
+	DWORD m_dwFrameAltitude;		// +0x1A8 (zeroed by ResetMotion, not by the ctor)
+	union					// +0x1AC = 0 velocity
+	{
+		DWORD m_fxVelX;
+		struct { WORD m_wVelXFrac, m_wVelX; };
+	};
+	union					// +0x1B0 = 0
+	{
+		DWORD m_fxVelY;
+		struct { WORD m_wVelYFrac, m_wVelY; };
+	};
+	union					// +0x1B4 = 0 acceleration (thrust along the heading)
+	{
+		DWORD m_fxAccelX;
+		struct { WORD m_wAccelXFrac, m_wAccelX; };
+	};
+	union					// +0x1B8 = 0
+	{
+		DWORD m_fxAccelY;
+		struct { WORD m_wAccelYFrac, m_wAccelY; };
+	};
+	union					// +0x1BC = 0 (never read)
+	{
+		DWORD m_fxUnk01BC;
+		struct { WORD m_wUnk01BC, m_wUnk01BE; };
+	};
+	union					// +0x1C0 = 0 (never read)
+	{
+		DWORD m_fxUnk01C0;
+		struct { WORD m_wUnk01C0, m_wUnk01C2; };
+	};
+	DWORD m_dwUnk01C4;		// +0x1C4 (zeroed by ResetMotion)
 	DWORD m_dwUnk01C8;		// +0x1C8
-	DWORD m_dwUnk01CC;		// +0x1CC (zeroed by Sub_42AD40/Sub_42B8E0)
-	WORD m_awUnk01D0[6];	// +0x1D0 = {0}
-	DWORD m_dwUnk01DC;		// +0x1DC
-	DWORD m_dwUnk01E0;		// +0x1E0
-	DWORD m_dwUnk01E4;		// +0x1E4 sprite frame for the current heading
-	DWORD m_dwUnk01E8;		// +0x1E8 sprite frame published to the renderer
-	DWORD m_dwUnk01EC;		// +0x1EC nonzero: draw the frame mirrored
-	WORD m_wUnk01F0;		// +0x1F0 = 0
-	WORD m_wUnk01F2;		// +0x1F2 = 0
-	WORD m_wUnk01F4;		// +0x1F4 = 0
-	WORD m_wUnk01F6;		// +0x1F6 = 0
-	DWORD m_dwUnk01F8;		// +0x1F8 = 0 (= 1 in CHumanPlayer)
+	DWORD m_bBounced;		// +0x1CC (zeroed by OnTouch/CollidePlayer)
+	union					// +0x1D0 = 0 acceleration per unit of thrust
+							//   (m_pParams->m_adw[0])
+	{
+		DWORD m_fxThrustAccel;
+		struct { WORD m_wThrustAccelFrac, m_wThrustAccel; };
+	};
+	union					// +0x1D4 = 0 current speed limit (speed/slow pods
+							//   change it)
+	{
+		DWORD m_fxMaxSpeed;
+		struct { WORD m_wMaxSpeedFrac, m_wMaxSpeed; };
+	};
+	union					// +0x1D8 = 0 normal speed limit (m_pParams->m_adw[2])
+	{
+		DWORD m_fxBaseMaxSpeed;
+		struct { WORD m_wBaseMaxSpeedFrac, m_wBaseMaxSpeed; };
+	};
+	DWORD m_bSteerAssist;		// +0x1DC
+	DWORD m_bFriction;		// +0x1E0
+	CMerlinTexture* m_pHeadingFrame;		// +0x1E4 sprite frame for the current heading
+	CMerlinTexture* m_pFrame;		// +0x1E8 sprite frame published to the renderer
+	DWORD m_bMirror;		// +0x1EC nonzero: draw the frame mirrored
+	union					// +0x1F0 = 0 steering input (left/right keys, or the
+							//   robot's facing error)
+	{
+		DWORD m_fxTurnInput;
+		struct { WORD m_wTurnInputFrac, m_wTurnInput; };
+	};
+	union					// +0x1F4 = 0 thrust input (up/down keys, or the
+							//   robot's speed error)
+	{
+		DWORD m_fxThrustInput;
+		struct { WORD m_wThrustInputFrac, m_wThrustInput; };
+	};
+	DWORD m_bHuman;		// +0x1F8 = 0 (= 1 in CHumanPlayer)
 };							// sizeof = 0x1FC
 
 /////////////////////////////////////////////////////////////////////////////
@@ -565,22 +694,22 @@ public:
 	virtual ~CHumanPlayer();
 
 // Overrides of CGameObj virtuals (see CPlayer note above).
-	virtual void Sub_42AD30();				// hover.exe:0x409180
-	virtual void Sub_42AD40(CPlayer* pOther, DWORD dwB); // hover.exe:0x40C400
-	virtual void Sub_4087D0();				// hover.exe:0x4089D0
-	virtual void Sub_4087F0();				// hover.exe:0x4089F0
-	virtual void Sub_413020();				// hover.exe:0x42C240
+	virtual void Think();				// hover.exe:0x409180
+	virtual void OnTouch(CPlayer* pOther, DWORD dwB); // hover.exe:0x40C400
+	virtual void BeginFrame();				// hover.exe:0x4089D0
+	virtual void EndFrame();				// hover.exe:0x4089F0
+	virtual void KillObject();				// hover.exe:0x42C240
 };							// sizeof = 0x1FC
 
 /////////////////////////////////////////////////////////////////////////////
 // CMerlinWorld: the level world manager pointed to by
-// CBumperDoc::m_dwUnk0188 (CRuntimeClass at hover.exe:0x4C51E0, size 0x64,
+// CBumperDoc::m_pWorld (CRuntimeClass at hover.exe:0x4C51E0, size 0x64,
 // schema 1, base CObject; vtable at hover.exe:0x4BBEC8). Its vtable slot 2
 // Serialize override (hover.exe:0x418DC0) loads the maze: a four-WORD
 // header followed by the four CObArrays of maze objects embedded at
 // +0x14/+0x28/+0x3C/+0x50 -- the static faces, the sprites, the named
 // points and the BSP nodes. The renderer walks the same three arrays
-// through this pointer (CSub406090::Sub_406090/Sub_405FA0).
+// through this pointer (CSpanRasterizer::RenderWorld/WalkBSP).
 
 class CMerlinWorld : public CObject
 {
@@ -599,33 +728,33 @@ public:
 	virtual void Serialize(CArchive& ar);
 
 	// hover.exe:0x418EA0 total pixel-data bytes of all texture frames at
-	// or above the g_dwUnk_461CFC mip level
-	DWORD Sub_418EA0();
+	// or above the g_dwMipBias mip level
+	DWORD GetTextureBytes();
 	// hover.exe:0x418F00 realize an all-black PC_NOCOLLAPSE palette on the
 	// display to force a system palette rebuild
-	void Sub_418F00();
-	// hover.exe:0x418FA0 rebuild g_paletteUnk_4A1D50 from the system
+	void FlushSystemPalette();
+	// hover.exe:0x418FA0 rebuild g_palGame from the system
 	// palette: static entries keep their colors, the dynamic middle
 	// entries take the game palette marked PC_NOCOLLAPSE and are made
 	// unique
-	void Sub_418FA0();
+	void BuildIdentityPalette();
 
 	// hover.exe:0x413DB0 remove dwUnk from the arrays and delete it
-	int Sub_413DB0(DWORD dwUnk);
-	// hover.exe:0x4128A0 add dwUnk to m_arrUnk28 unless it is already
+	int RemoveObject(CMerlinLine* pObj);
+	// hover.exe:0x4128A0 add dwUnk to m_arrSprites unless it is already
 	// there; returns nonzero when it was added
-	int Sub_4128A0(DWORD dwUnk);
-	// hover.exe:0x414300 remove dwUnk from m_arrUnk28 (if present) and
+	int AddSprite(CMerlinDynamic* pSprite);
+	// hover.exe:0x414300 remove dwUnk from m_arrSprites (if present) and
 	// delete it; returns nonzero when it was on the array
-	int Sub_414300(DWORD dwUnk);
+	int RemoveSprite(CMerlinDynamic* pSprite);
 
 	// Typed accessors for the renderer's walks over the three arrays.
 	CMerlinStatic* GetStatic(int i)
-		{ return (CMerlinStatic*)m_arrUnk14[i]; }
+		{ return (CMerlinStatic*)m_arrStatics[i]; }
 	CMerlinDynamic* GetDynamic(int i)
-		{ return (CMerlinDynamic*)m_arrUnk28[i]; }
+		{ return (CMerlinDynamic*)m_arrSprites[i]; }
 	CMerlinBSP* GetNode(int i)
-		{ return (CMerlinBSP*)m_arrUnk50[i]; }
+		{ return (CMerlinBSP*)m_arrNodes[i]; }
 
 // Member variables (hover.exe offsets in comments)
 	// The maze header loaded by Serialize stores four WORDs at +0x04,
@@ -639,62 +768,62 @@ public:
 	WORD m_wPad0E;			// +0x0E
 	WORD m_wUnk10;			// +0x10
 	WORD m_wPad12;			// +0x12
-	CObArray m_arrUnk14;	// +0x14 CMerlinStatic faces (m_pData at +0x18)
-	CObArray m_arrUnk28;	// +0x28 CMerlinDynamic sprites (m_pData at
+	CObArray m_arrStatics;	// +0x14 CMerlinStatic faces (m_pData at +0x18)
+	CObArray m_arrSprites;	// +0x28 CMerlinDynamic sprites (m_pData at
 							//   +0x2C, m_nSize at +0x30)
-	CObArray m_arrUnk3C;	// +0x3C CMerlinLocation points
-	CObArray m_arrUnk50;	// +0x50 CMerlinBSP nodes (m_pData at +0x54,
+	CObArray m_arrLocations;	// +0x3C CMerlinLocation points
+	CObArray m_arrNodes;	// +0x50 CMerlinBSP nodes (m_pData at +0x54,
 							//   node 0 is the root)
 };							// sizeof = 0x64 in hover.exe
 
 /////////////////////////////////////////////////////////////////////////////
-// CSub40B800: sound-slot objects referenced from CBumperDoc::m_adwUnk83EC
+// CSoundSlot: sound-slot objects referenced from CBumperDoc::m_adwSounds
 // (indices 0x1A-0x1D are the player sound slots). CObject-derived (plain
 // CObject vtable at hover.exe:0x4BD8E0; deleting dtor 0x423120); the
 // constructor registers the slot in g_arrUnk_4A47F0 and preloads the
 // wave file.
 
-class CSub40B800 : public CObject
+class CSoundSlot : public CObject
 {
 public:
-	CSub40B800(const char* pszName, DWORD dwUnk);	// hover.exe:0x415380
+	CSoundSlot(const char* pszName, DWORD dwUnk);	// hover.exe:0x415380
 	// hover.exe:0x422CB0 (virtual through CObject; the deleting dtor the
 	// compiler puts in vtable slot 1 is 0x423120)
-	~CSub40B800();
+	~CSoundSlot();
 
 	// hover.exe:0x417860 load the wave file (raw buffer when WaveMix is
 	// unavailable, MIXWAVE handle otherwise); returns 0 on failure
-	int Sub_417860(const char* pszName);
+	int LoadWave(const char* pszName);
 	// hover.exe:0x40B800 play the slot's sound (WaveMix when the engine is
 	// up, otherwise queued to the sound worker thread)
-	int Sub_40B800(DWORD dwA, DWORD dwB, DWORD dwC);
+	int PlayWave(DWORD dwA, DWORD dwB, DWORD dwC);
 	// hover.exe:0x4118A0 stop the sound (WaveMixFlushChannel / worker queue)
-	int Sub_4118A0(DWORD dwA, DWORD dwB);
+	int StopWave(DWORD dwA, DWORD dwB);
 
 // Member variables (hover.exe offsets in comments)
-	void* m_pUnk04;			// +0x04 sound data (played via SND_MEMORY by the
-							// sound worker thread Hover_sub_42D6A0)
-	void* m_pUnk08;			// +0x08 open MIXWAVE handle (WaveMix path)
-	CString m_strUnk0C;		// +0x0C wave file name (".wav" is appended)
-	DWORD m_dwUnk18;		// +0x18 nonzero: open/play through WaveMix
+	void* m_pWaveData;			// +0x04 sound data (played via SND_MEMORY by the
+							// sound worker thread Hover_SoundThreadProc)
+	MIXWAVE* m_pMixWave;			// +0x08 open MIXWAVE handle (WaveMix path)
+	CString m_strWaveName;		// +0x0C wave file name (".wav" is appended)
+	DWORD m_bOpenOnPlay;		// +0x18 nonzero: open/play through WaveMix
 };
 
 /////////////////////////////////////////////////////////////////////////////
 // CSub40B510 is the skeletal name this reconstruction previously used for
-// the class at CBumperDoc::m_dwUnk8388; the original's CRuntimeClass names
-// it CCollider (0x4C55A0) — see texload.h. Sub_40B510 is implemented in
-// gameobj.cpp (below) as CCollider::Sub_40B510.
+// the class at CBumperDoc::m_pCollider; the original's CRuntimeClass names
+// it CCollider (0x4C55A0) — see texload.h. ReinsertObject is implemented in
+// gameobj.cpp (below) as CCollider::ReinsertObject.
 
 /////////////////////////////////////////////////////////////////////////////
 // Globals defined in gameobj.cpp
 
-extern DWORD g_dwUnk_4C52D8;	// hover.exe:0x4C52D8 CGameObj instance list head
-extern DWORD g_dwUnk_4C52DC;	// hover.exe:0x4C52DC CGameObj secondary list head
+extern CGameObj* g_pDirtyObjList;	// hover.exe:0x4C52D8 CGameObj instance list head
+extern CGameObj* g_pDrawObjList;	// hover.exe:0x4C52DC CGameObj secondary list head
 extern DWORD g_dwUnk_4C54A0;	// hover.exe:0x4C54A0 = -1 (last sound state)
-extern CMapPtrToPtr g_mapUnk_4A4820;	// hover.exe:0x4A4820 MIXWAVE handle ->
-									// CSub40B800 slot map (Sub_40B800)
+extern CMapPtrToPtr g_mapOpenWaveToSlot;	// hover.exe:0x4A4820 MIXWAVE handle ->
+									// CSoundSlot slot map (PlayWave)
 extern CObArray g_arrUnk_4A47F0;	// hover.exe:0x4A47F0 sound slot
-									// registry (CSub40B800::CSub40B800)
+									// registry (CSoundSlot::CSoundSlot)
 extern DWORD g_dwUnk_4C5700;		// hover.exe:0x4C5700 sound slot count
 
 #endif // __GAMEOBJ_H__

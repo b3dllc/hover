@@ -12,10 +12,11 @@
 // base of every embedded control object) is 0x30, so the member offsets
 // in the comments below are directly comparable.
 //
-// The four debug dialogs (CSub42C890, CSub430780, CSub4319A0 and
-// CSub432A50) run on templates 130, 148, 149 and 152, which were stripped
-// from the shipped hover.exe: DoModal() returns -1 on them at runtime and
-// nothing they do is ever visible. They are decompiled anyway.
+// The four debug dialogs (CPodTimesDialog, CHumanParamsDialog,
+// CRobotParamsDialog and CRobotAIParamsDialog) run on templates 130, 148, 149
+// and 152, which were stripped from the shipped hover.exe: DoModal() returns
+// -1 on them at runtime and nothing they do is ever visible. They are
+// decompiled anyway.
 
 #ifndef __OPTIONSDLG_H__
 #define __OPTIONSDLG_H__
@@ -25,23 +26,23 @@
 
 #include "resource.h"
 
-class CSub42D910;
+class CPlayerControlsDialog;
 
 /////////////////////////////////////////////////////////////////////////////
-// CSub413F10: the "Customize Game" dialog (ID_OPTIONS_CUSTOMIZE).
+// CCustomizeDialog: the "Customize Game" dialog (ID_OPTIONS_CUSTOMIZE).
 // vtable at hover.exe:0x4BD6E0; the embedded CSliderCtrl at +0x44 has its
 // own vtable at hover.exe:0x4BD670. The three int members are seeded from
 // the settings in theApp; only m_nRearView is read back (through DDX), the
 // radio groups are exchanged by hand.
 
-class CSub413F10 : public CDialog
+class CCustomizeDialog : public CDialog
 {
 // Construction
 public:
-	CSub413F10(CWnd* pParent = NULL);	// hover.exe:0x413F10
+	CCustomizeDialog(CWnd* pParent = NULL);	// hover.exe:0x413F10
 
 // Dialog Data
-	//{{AFX_DATA(CSub413F10)
+	//{{AFX_DATA(CCustomizeDialog)
 	enum { IDD = IDD_CUSTOMIZE };
 	CSliderCtrl m_sliderSpeed;	// +0x44 IDC_CUST_SPEEDDETAIL
 	int m_nRearView;			// +0x74 IDC_CUST_REARVIEW
@@ -53,32 +54,33 @@ protected:
 	virtual BOOL OnInitDialog();	// hover.exe:0x413FD0
 	virtual void OnOK();			// hover.exe:0x413FE0
 
-	//{{AFX_MSG(CSub413F10)
+	//{{AFX_MSG(CCustomizeDialog)
 	afx_msg LRESULT OnHelpInfo(WPARAM wParam, LPARAM lParam);	// hover.exe:0x42D140
 	afx_msg LRESULT OnHelpContextMenu(WPARAM wParam, LPARAM lParam); // hover.exe:0x42D160
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()	// map at hover.exe:0x4BD598
 
 public:
-	int m_nSkill;			// +0x78 copy of theApp.m_dwUnk01C8 (write-only)
-	int m_nMazeType;		// +0x7C copy of theApp.m_dwUnk01CC (write-only)
+	int m_nSkill;			// +0x78 copy of theApp.m_dwSkill (write-only)
+	int m_nMazeType;		// +0x7C copy of theApp.m_dwMazeOrder (write-only)
 	DWORD m_dwUnk80;		// +0x80 never touched by any of the class's code
 };							// sizeof = 0x84 in hover.exe
 
 /////////////////////////////////////////////////////////////////////////////
-// CSub42C890: the debug dialog opened by ID_CMD_34012 (template 130).
-// CHoverApp::OnCmd34012 exchanges the eight camera/view geometry values of
-// the application object through the members below. The five integer
-// members are int rather than DWORD because the original calls the signed
-// DDX_Text/DDV_MinMaxInt overloads; the names are kept as they are used
-// from hover.cpp.
+// CPodTimesDialog: the debug dialog opened by ID_DBG_PODTIMES (template
+// 130). CHoverApp::OnDbgPodTimes exchanges the five pod effect durations
+// of the application object (in frames: speed 360, invincible 512, slow
+// 360, temporary wall 180, smoke bomb 180) and three floating-point
+// tuning values that nothing else reads. The five integer members are int
+// rather than DWORD because the original calls the signed
+// DDX_Text/DDV_MinMaxInt overloads.
 
-class CSub42C890 : public CDialog
+class CPodTimesDialog : public CDialog
 {
 public:
-	CSub42C890(CWnd* pParent = NULL);	// hover.exe:0x42C890
+	CPodTimesDialog(CWnd* pParent = NULL);	// hover.exe:0x42C890
 
-	enum { IDD = IDD_DBG_130 };
+	enum { IDD = IDD_DBG_PODTIMES };
 
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// hover.exe:0x42C920
@@ -86,29 +88,29 @@ protected:
 	DECLARE_MESSAGE_MAP()	// empty map at hover.exe:0x4BD208
 
 public:
-	int m_dwUnk44;		// +0x44 <-> theApp.m_dwUnk015C (IDC 1008)
-	int m_dwUnk48;		// +0x48 <-> theApp.m_dwUnk0160 (IDC 1007)
-	int m_dwUnk4C;		// +0x4C <-> theApp.m_dwUnk0168 (IDC 1010)
-	int m_dwUnk50;		// +0x50 <-> theApp.m_dwUnk0158 (IDC 1006)
-	int m_dwUnk54;		// +0x54 <-> theApp.m_dwUnk0164 (IDC 1011)
+	int m_nInvincibleTime;		// +0x44 <-> theApp.m_dwInvinciblePodTime (IDC 1008)
+	int m_nSlowTime;		// +0x48 <-> theApp.m_dwSlowPodTime (IDC 1007)
+	int m_nSmokeTime;		// +0x4C <-> theApp.m_dwSmokePodTime (IDC 1010)
+	int m_nSpeedTime;		// +0x50 <-> theApp.m_dwSpeedPodTime (IDC 1006)
+	int m_nWallTime;		// +0x54 <-> theApp.m_dwWallPodTime (IDC 1011)
 	double m_dblUnk58;	// +0x58 <-> theApp.m_dblUnk01A0 (IDC 1017)
 	double m_dblUnk60;	// +0x60 <-> theApp.m_dblUnk01B0 (IDC 1019)
 	double m_dblUnk68;	// +0x68 <-> theApp.m_dblUnk01A8 (IDC 1018)
 };						// sizeof = 0x70 in hover.exe
 
 /////////////////////////////////////////////////////////////////////////////
-// CSub42D910: the "Player Controls" dialog (ID_OPTIONS_CONTROLS). The five
-// embedded controls have the CButton (hover.exe:0x4BDDA0) and CComboBox
-// (hover.exe:0x4BDC98) vtables.
+// CPlayerControlsDialog: the "Player Controls" dialog (ID_OPTIONS_CONTROLS).
+// The five embedded controls have the CButton (hover.exe:0x4BDDA0) and
+// CComboBox (hover.exe:0x4BDC98) vtables.
 
-class CSub42D910 : public CDialog
+class CPlayerControlsDialog : public CDialog
 {
 // Construction
 public:
-	CSub42D910(CWnd* pParent = NULL);	// hover.exe:0x42D910
+	CPlayerControlsDialog(CWnd* pParent = NULL);	// hover.exe:0x42D910
 
 // Dialog Data
-	//{{AFX_DATA(CSub42D910)
+	//{{AFX_DATA(CPlayerControlsDialog)
 	enum { IDD = IDD_PLAYERCONTROLS };
 	CButton m_btnJoystick;		// +0x44  IDC_CTRL_JOYSTICK
 	CButton m_btnCalibrate;		// +0x74  IDC_CTRL_CALIBRATE
@@ -121,20 +123,20 @@ public:
 public:
 	// hover.exe:0x42DB60 sorts a copy of the 11 chosen virtual key codes
 	// and returns whether they are all distinct
-	BOOL Sub_42DB60(DWORD* avk, int nCount);
+	BOOL AreKeysUnique(DWORD* avk, int nCount);
 	// hover.exe:0x42DBE0 selects the combo box item whose item data is dwVK
-	void Sub_42DBE0(CWnd* pCombo, DWORD dwVK);
+	void SelectKey(CWnd* pCombo, DWORD dwVK);
 	// hover.exe:0x42DD70 fills a key combo box with "A".."Z", "0".."9" and
 	// (unless bLettersOnly) the named keys of g_aKeyNames, each carrying
 	// its virtual key code as item data, then selects dwVK
-	void Sub_42DD70(CWnd* pCombo, DWORD dwVK, BOOL bLettersOnly);
+	void FillKeyCombo(CWnd* pCombo, DWORD dwVK, BOOL bLettersOnly);
 
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// hover.exe:0x42DAE0
 	virtual BOOL OnInitDialog();	// hover.exe:0x42DEF0
 	virtual void OnOK();			// hover.exe:0x42E0F0
 
-	//{{AFX_MSG(CSub42D910)
+	//{{AFX_MSG(CPlayerControlsDialog)
 	afx_msg void OnSetKeys();		// hover.exe:0x42DFF0 IDC_CTRL_SETKEYS
 	afx_msg void OnDefault();		// hover.exe:0x42E2D0 IDC_CTRL_DEFAULT
 	afx_msg void OnCalibrate();		// hover.exe:0x42E3F0 IDC_CTRL_CALIBRATE
@@ -146,24 +148,24 @@ protected:
 };							// sizeof = 0x134 in hover.exe
 
 /////////////////////////////////////////////////////////////////////////////
-// CSub42FE20: the "Keyboard Settings" dialog (template 103) put up by
-// CSub42D910::OnSetKeys. vtable at hover.exe:0x4BF2E8.
+// CKeyboardDialog: the "Keyboard Settings" dialog (template 103) put up by
+// CPlayerControlsDialog::OnSetKeys. vtable at hover.exe:0x4BF2E8.
 //
 // NOTE: m_pParentDlg (+0x44) is never assigned by anything - neither the
-// constructor nor CSub42D910::OnSetKeys touch it - yet every helper call
-// below goes through it. That is harmless only because Sub_42DB60,
-// Sub_42DBE0 and Sub_42DD70 never dereference `this`.
+// constructor nor CPlayerControlsDialog::OnSetKeys touch it - yet every
+// helper call below goes through it. That is harmless only because
+// AreKeysUnique, SelectKey and FillKeyCombo never dereference `this`.
 
-class CSub42FE20 : public CDialog
+class CKeyboardDialog : public CDialog
 {
 // Construction
 public:
-	CSub42FE20(CWnd* pParent = NULL);	// hover.exe:0x42FE20
+	CKeyboardDialog(CWnd* pParent = NULL);	// hover.exe:0x42FE20
 
 // Dialog Data
-	//{{AFX_DATA(CSub42FE20)
+	//{{AFX_DATA(CKeyboardDialog)
 	enum { IDD = IDD_KEYBOARD };
-	CSub42D910* m_pParentDlg;	// +0x44 (never initialized, see above)
+	CPlayerControlsDialog* m_pParentDlg;	// +0x44 (never initialized, see above)
 	DWORD m_dwJumpKey;			// +0x48 the three object keys of the parent
 	DWORD m_dwCloakKey;			// +0x4C dialog, so that the duplicate check
 	DWORD m_dwWallKey;			// +0x50 in OnOK covers all eleven bindings
@@ -183,7 +185,7 @@ protected:
 	virtual BOOL OnInitDialog();	// hover.exe:0x4304B0
 	virtual void OnOK();			// hover.exe:0x430190
 
-	//{{AFX_MSG(CSub42FE20)
+	//{{AFX_MSG(CKeyboardDialog)
 	afx_msg void OnDefault();		// hover.exe:0x430580 IDC_KEY_DEFAULT
 	afx_msg LRESULT OnHelpInfo(WPARAM wParam, LPARAM lParam);	// hover.exe:0x430610
 	afx_msg LRESULT OnHelpContextMenu(WPARAM wParam, LPARAM lParam); // hover.exe:0x430630
@@ -192,25 +194,25 @@ protected:
 };							// sizeof = 0x1D4 in hover.exe
 
 /////////////////////////////////////////////////////////////////////////////
-// CSub42E790: the "Sound Options" dialog (ID_OPTIONS_SOUNDS).
+// CSoundOptionsDialog: the "Sound Options" dialog (ID_OPTIONS_SOUNDS).
 
-class CSub42E790 : public CDialog
+class CSoundOptionsDialog : public CDialog
 {
 // Construction
 public:
-	CSub42E790(CWnd* pParent = NULL);	// hover.exe:0x42E790
+	CSoundOptionsDialog(CWnd* pParent = NULL);	// hover.exe:0x42E790
 
 // Dialog Data
-	//{{AFX_DATA(CSub42E790)
+	//{{AFX_DATA(CSoundOptionsDialog)
 	enum { IDD = IDD_SOUNDOPTIONS };
 	CButton m_btnEngine;		// +0x44  IDC_SOUND_ENGINE
 	CButton m_btnGameSounds;	// +0x74  IDC_SOUND_GAMESOUNDS
 	CButton m_btnMixing;		// +0xA4  IDC_SOUND_MIXING
 	CButton m_btnMusic;			// +0xD4  IDC_SOUND_MUSIC
-	int m_nEngine;				// +0x104 <-> theApp.m_dwUnk0404
-	int m_nMusic;				// +0x108 <-> theApp.m_dwUnk040C
-	int m_nMixing;				// +0x10C <-> g_dwUnk_4C56D8
-	int m_nGameSounds;			// +0x110 <-> theApp.m_dwUnk0408
+	int m_nEngine;				// +0x104 <-> theApp.m_bEngineSound
+	int m_nMusic;				// +0x108 <-> theApp.m_bMusic
+	int m_nMixing;				// +0x10C <-> g_bUseWaveMix
+	int m_nGameSounds;			// +0x110 <-> theApp.m_bGameSounds
 	//}}AFX_DATA
 
 // Implementation
@@ -219,7 +221,7 @@ protected:
 	virtual BOOL OnInitDialog();	// hover.exe:0x42EA00
 	virtual void OnOK();			// hover.exe:0x42EB40
 
-	//{{AFX_MSG(CSub42E790)
+	//{{AFX_MSG(CSoundOptionsDialog)
 	afx_msg LRESULT OnHelpInfo(WPARAM wParam, LPARAM lParam);	// hover.exe:0x42EAA0
 	afx_msg LRESULT OnHelpContextMenu(WPARAM wParam, LPARAM lParam); // hover.exe:0x42EAC0
 	afx_msg void OnMixing();		// hover.exe:0x42EAE0 IDC_SOUND_MIXING
@@ -228,38 +230,38 @@ protected:
 };							// sizeof = 0x114 in hover.exe
 
 /////////////////////////////////////////////////////////////////////////////
-// CSub42F640: the "Start At" dialog (ID_GAME_STARTAT). On OK it leaves the
-// chosen level in g_dwUnk_46048C. The vtables of the two embedded controls
+// CStartAtDialog: the "Start At" dialog (ID_GAME_STARTAT). On OK it leaves the
+// chosen level in g_dwStartAtLevel. The vtables of the two embedded controls
 // are at hover.exe:0x4BEE40 (CEdit) and 0x4BEDD0 (CSpinButtonCtrl).
 
-class CSub42F640 : public CDialog
+class CStartAtDialog : public CDialog
 {
 // Construction
 public:
-	CSub42F640(CWnd* pParent = NULL);	// hover.exe:0x42F640
+	CStartAtDialog(CWnd* pParent = NULL);	// hover.exe:0x42F640
 
 // Dialog Data
-	//{{AFX_DATA(CSub42F640)
+	//{{AFX_DATA(CStartAtDialog)
 	enum { IDD = IDD_STARTAT };
 	CButton m_btnCustomize;		// +0x44  IDC_STARTAT_CUSTOMIZE
 	CButton m_btnOK;			// +0x74  IDOK
 	CEdit m_editLevel;			// +0xA4  IDC_STARTAT_LEVEL
 	CSpinButtonCtrl m_spinLevel;// +0xD4  IDC_STARTAT_SPIN
-	UINT m_nLevel;				// +0x104 <-> g_dwUnk_46048C (1..16)
+	UINT m_nLevel;				// +0x104 <-> g_dwStartAtLevel (1..16)
 	//}}AFX_DATA
 
 // Implementation
 public:
 	// hover.exe:0x42FA80 formats dwScore with thousands separators into
 	// the static control nID
-	void Sub_42FA80(UINT nID, DWORD dwScore);
+	void SetScoreText(UINT nID, DWORD dwScore);
 
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// hover.exe:0x42F7D0
 	virtual BOOL OnInitDialog();	// hover.exe:0x42F890
 	virtual void OnOK();			// hover.exe:0x42FCC0
 
-	//{{AFX_MSG(CSub42F640)
+	//{{AFX_MSG(CStartAtDialog)
 	afx_msg LRESULT OnHelpInfo(WPARAM wParam, LPARAM lParam);	// hover.exe:0x42F850
 	afx_msg LRESULT OnHelpContextMenu(WPARAM wParam, LPARAM lParam); // hover.exe:0x42F870
 	afx_msg void OnCustomize();		// hover.exe:0x42F990 IDC_STARTAT_CUSTOMIZE
@@ -269,28 +271,28 @@ protected:
 };							// sizeof = 0x108 in hover.exe
 
 /////////////////////////////////////////////////////////////////////////////
-// CSub430780: the human-player parameter debug dialog opened by
-// ID_CMD_34008 (template 148). The 30 doubles are the ten used entries of
+// CHumanParamsDialog: the human-player parameter debug dialog opened by
+// ID_DBG_HUMANPARAMS (template 148). The 30 doubles are the ten used entries of
 // each of g_HBegParams, g_HExpParams and g_HIntParams, converted
 // from 16.16 fixed point and rounded to four decimals.
 
-class CSub430780 : public CDialog
+class CHumanParamsDialog : public CDialog
 {
 public:
-	CSub430780(CWnd* pParent = NULL);	// hover.exe:0x430780
+	CHumanParamsDialog(CWnd* pParent = NULL);	// hover.exe:0x430780
 
-	enum { IDD = IDD_DBG_148 };
+	enum { IDD = IDD_DBG_HUMANPARAMS };
 
 	// hover.exe:0x4315E0 writes the 30 doubles back into the three
 	// parameter blocks as 16.16 fixed point
-	void Sub_4315E0();
+	void ApplyParams();
 
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// hover.exe:0x430930
 	virtual BOOL OnInitDialog();	// hover.exe:0x430B80
 	virtual void OnOK();			// hover.exe:0x431880
 
-	//{{AFX_MSG(CSub430780)
+	//{{AFX_MSG(CHumanParamsDialog)
 	afx_msg void OnDeleteSettings();	// hover.exe:0x4318A0 (button 4)
 	afx_msg void OnSaveSettings();		// hover.exe:0x431900 (button 3)
 	//}}AFX_MSG
@@ -301,27 +303,27 @@ public:
 };								// sizeof = 0x138 in hover.exe
 
 /////////////////////////////////////////////////////////////////////////////
-// CSub4319A0: the robot-player parameter debug dialog opened by
-// ID_CMD_34009 (template 149). 33 doubles = 11 entries of each of
+// CRobotParamsDialog: the robot-player parameter debug dialog opened by
+// ID_DBG_ROBOTPARAMS (template 149). 33 doubles = 11 entries of each of
 // g_RBegParams, g_RExpParams and g_RIntParams; entries 7 and 8 of
 // every block are neither exchanged nor initialized here, so they keep
 // their constructor defaults (0.66 and 1.33).
 
-class CSub4319A0 : public CDialog
+class CRobotParamsDialog : public CDialog
 {
 public:
-	CSub4319A0(CWnd* pParent = NULL);	// hover.exe:0x4319A0
+	CRobotParamsDialog(CWnd* pParent = NULL);	// hover.exe:0x4319A0
 
-	enum { IDD = IDD_DBG_149 };
+	enum { IDD = IDD_DBG_ROBOTPARAMS };
 
-	void Sub_432660();		// hover.exe:0x432660 (see Sub_4315E0)
+	void ApplyParams();		// hover.exe:0x432660 (see ApplyParams)
 
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// hover.exe:0x431B20
 	virtual BOOL OnInitDialog();	// hover.exe:0x431D10
 	virtual void OnOK();			// hover.exe:0x432930
 
-	//{{AFX_MSG(CSub4319A0)
+	//{{AFX_MSG(CRobotParamsDialog)
 	afx_msg void OnDeleteSettings();	// hover.exe:0x432950 (button 4)
 	afx_msg void OnSaveSettings();		// hover.exe:0x4329B0 (button 3)
 	//}}AFX_MSG
@@ -332,25 +334,25 @@ public:
 };								// sizeof = 0x150 in hover.exe
 
 /////////////////////////////////////////////////////////////////////////////
-// CSub432A50: the robot-AI parameter debug dialog opened by ID_CMD_34031
-// (template 152). Each of the three blocks (Beg, Int, Exp) is one integer,
-// two 16.16 fixed-point values and seven more integers.
+// CRobotAIParamsDialog: the robot-AI parameter debug dialog opened by
+// ID_DBG_ROBOTAIPARAMS (template 152). Each of the three blocks (Beg, Int,
+// Exp) is one integer, two 16.16 fixed-point values and seven more integers.
 
-class CSub432A50 : public CDialog
+class CRobotAIParamsDialog : public CDialog
 {
 public:
-	CSub432A50(CWnd* pParent = NULL);	// hover.exe:0x432A50
+	CRobotAIParamsDialog(CWnd* pParent = NULL);	// hover.exe:0x432A50
 
-	enum { IDD = IDD_DBG_152 };
+	enum { IDD = IDD_DBG_ROBOTAIPARAMS };
 
-	void Sub_432DB0();		// hover.exe:0x432DB0 (see Sub_4315E0)
+	void ApplyParams();		// hover.exe:0x432DB0 (see ApplyParams)
 
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// hover.exe:0x432B70
 	virtual BOOL OnInitDialog();	// hover.exe:0x432F50
 	virtual void OnOK();			// hover.exe:0x432F30
 
-	//{{AFX_MSG(CSub432A50)
+	//{{AFX_MSG(CRobotAIParamsDialog)
 	afx_msg void OnDeleteSettings();	// hover.exe:0x433270 (button 4)
 	afx_msg void OnSaveSettings();		// hover.exe:0x4332D0 (button 3)
 	//}}AFX_MSG
@@ -393,22 +395,25 @@ public:
 };							// sizeof = 0xD8 in hover.exe
 
 /////////////////////////////////////////////////////////////////////////////
-// CSub424720: the modeless "Please Wait" dialog (template 143) that
-// CHoverApp::Sub_41C8E0 puts up while a level loads. vtable at
+// CLoadingDialog: the modeless "Please Wait" dialog (template 143) that
+// CHoverApp::StartLevel puts up while a level loads. vtable at
 // hover.exe:0x4BF090; the single CStatic at +0x44 (vtable 0x4BEB28) wraps
 // the SS_BLACKFRAME control the progress bar is painted into by the load
-// progress callback Hover_sub_40EB50.
+// progress callback Hover_LoadProgress.
 
-class CSub424720 : public CDialog
+class CLoadingDialog : public CDialog
 {
 public:
-	CSub424720(CWnd* pParent = NULL);	// hover.exe:0x424720
+	CLoadingDialog(CWnd* pParent = NULL);	// hover.exe:0x424720
 
 	enum { IDD = IDD_LOADING };
 
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// hover.exe:0x4247D0
 	virtual BOOL OnInitDialog();	// hover.exe:0x4247F0
+	// hover.exe's vtable also has a DestroyWindow override at 0x42FE00
+	// (a bare jmp to CWnd::DestroyWindow, so behaviourally inherited);
+	// declaring it here costs register allocation elsewhere (rule 20)
 
 	DECLARE_MESSAGE_MAP()	// empty map at hover.exe:0x4BF038
 
@@ -416,20 +421,20 @@ public:
 	CStatic m_staticFrame;	// +0x44 IDC_LOADING_FRAME
 };							// sizeof = 0x74 in hover.exe
 
-// hover.exe:0x4C57D4 the loading dialog while it is up (Hover_sub_40EB50
+// hover.exe:0x4C57D4 the loading dialog while it is up (Hover_LoadProgress
 // paints the progress bar into it and does nothing when it is NULL)
-extern CSub424720* g_pLoadDlg_4C57D4;
+extern CLoadingDialog* g_pLoadingDlg;
 
 // The two halves of the load progress counter, latched by every call of
-// Hover_sub_40EB50 (the "n of m" it was passed). g_dwUnk_4C57C4 is clamped
-// to g_dwUnk_4C57C8, which is forced to at least 1 so the percentage
+// Hover_LoadProgress (the "n of m" it was passed). g_dwLoadDone is clamped
+// to g_dwLoadTotal, which is forced to at least 1 so the percentage
 // division cannot divide by zero.
-extern DWORD g_dwUnk_4C57C4;	// hover.exe:0x4C57C4 items done
-extern DWORD g_dwUnk_4C57C8;	// hover.exe:0x4C57C8 items total
+extern DWORD g_dwLoadDone;	// hover.exe:0x4C57C4 items done
+extern DWORD g_dwLoadTotal;	// hover.exe:0x4C57C8 items total
 
 // hover.exe:0x40EB50 texture load progress callback (LPPROGRESSFN): draws
-// the "n of m" progress bar into g_pLoadDlg_4C57D4's frame control
-void __cdecl Hover_sub_40EB50(DWORD dwDone, DWORD dwTotal);
+// the "n of m" progress bar into g_pLoadingDlg's frame control
+void __cdecl Hover_LoadProgress(DWORD dwDone, DWORD dwTotal);
 
 /////////////////////////////////////////////////////////////////////////////
 

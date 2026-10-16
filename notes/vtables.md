@@ -19,7 +19,7 @@ counterparts of the same slots, else from the constructor the table is
 installed in - in that order. (The hand-written name corrections this file
 used to carry are folded into the tables below; two facts from them that the
 tables cannot show are that REGIONNODE is a plain 0x10-byte struct with no
-vtable at all, and that CSub406C90 is the unrelated 0x20-byte span-buffer
+vtable at all, and that CFlatRunHeap is the unrelated 0x20-byte span-buffer
 header with ctor 0x41B870.)
 
 Note also that a **MISSING** row whose original function is a five-byte
@@ -71,7 +71,7 @@ notes/perfect-match.md rule 50.
 |---|---|---|---|
 | 1 | 0x429550 | CPen::~ (deleting) | **MISSING** |
 
-## CGdiObject — vtable 0x4bb6b8 (5 slots; ctor 0x40cce0 void CBumperView::Sub_40CCE0)
+## CGdiObject — vtable 0x4bb6b8 (5 slots; ctor 0x40cce0 void CBumperView::DrawMessageBox)
 | slot | original | ours (same slot) | status |
 |---|---|---|---|
 | 1 | 0x40d430 | CGdiObject::~ (deleting) | **MISSING** |
@@ -87,7 +87,7 @@ notes/perfect-match.md rule 50.
 | 37 | 0x40e310 | void CBumperView::OnActivateView | FUNCTION |
 | 39 | 0x40c480 | void CBumperView::OnDraw | FUNCTION |
 
-## CFont — vtable 0x4bb8e8 (5 slots; ctor 0x40cce0 void CBumperView::Sub_40CCE0)
+## CFont — vtable 0x4bb8e8 (5 slots; ctor 0x40cce0 void CBumperView::DrawMessageBox)
 | slot | original | ours (same slot) | status |
 |---|---|---|---|
 | 1 | 0x429630 | CFont::~ (deleting) | **MISSING** |
@@ -97,7 +97,7 @@ notes/perfect-match.md rule 50.
 |---|---|---|---|
 | 1 | 0x40dd20 | CMenu::~ (deleting) | **MISSING** |
 
-## CSub406090 — vtable 0x4bbce0 (5 slots; ctor 0x4191b0 CSub406090::CSub406090)
+## CSpanRasterizer — vtable 0x4bbce0 (5 slots; ctor 0x4191b0 CSpanRasterizer::CSpanRasterizer)
 | slot | original | ours (same slot) | status |
 |---|---|---|---|
 | 1 | 0x4296a0 | ? | **MISSING** |
@@ -109,7 +109,7 @@ notes/perfect-match.md rule 50.
 | 1 | 0x418a60 | CMerlinTexture::~ (deleting) | FUNCTION |
 | 2 | 0x412980 | void CMerlinTexture::Serialize | FUNCTION |
 
-## CPalette — vtable 0x4bbd60 (5 slots; ctor 0x410ce0 BOOL Hover_sub_410CE0)
+## CPalette — vtable 0x4bbd60 (5 slots; ctor 0x410ce0 BOOL Hover_RemapDibToPalette)
 | slot | original | ours (same slot) | status |
 |---|---|---|---|
 | 1 | 0x429870 | CPalette::~ (deleting) | **MISSING** |
@@ -140,368 +140,368 @@ notes/perfect-match.md rule 50.
 |---|---|---|---|
 | 0 | 0x401480 | CSmokeBombPod::GetRuntimeClass | **MISSING** |
 | 1 | 0x421290 | CSmokeBombPod::~ (deleting) | FUNCTION |
-| 5 | 0x414a50 | int CGameObj::Sub_414A50 | FUNCTION |
+| 5 | 0x414a50 | int CGameObj::SetMerlin | FUNCTION |
 | 6 | 0x42ad10 | int CGameObj::Sub_42AD10 | FUNCTION |
-| 7 | 0x42a660 | void CSmokeBombPod::Sub_42AD30 | FUNCTION |
-| 8 | 0x42a760 | void CSmokeBombPod::Sub_42AD40 | FUNCTION |
-| 9 | 0x42a900 | void CSmokeBombPod::Sub_42AD50 | FUNCTION |
-| 10 | 0x413e70 | int CPodObj::Sub_42AD70 | FUNCTION |
-| 11 | 0x40cb40 | int CPodObj::Sub_42AD60 | FUNCTION |
-| 12 | 0x413180 | int CPodObj::Sub_408820 | FUNCTION |
-| 13 | 0x411570 | int CGameObj::Sub_411570 | FUNCTION |
-| 14 | 0x42ad90 | int CGameObj::Sub_42AD90 | FUNCTION |
-| 15 | 0x421270 | void CSmokeBombPod::Sub_4087D0 | FUNCTION |
-| 16 | 0x421280 | void CSmokeBombPod::Sub_4087F0 | FUNCTION |
-| 17 | 0x42aa60 | void CSmokeBombPod::Sub_413020 | FUNCTION |
+| 7 | 0x42a660 | void CSmokeBombPod::Think | FUNCTION |
+| 8 | 0x42a760 | void CSmokeBombPod::OnTouch | FUNCTION |
+| 9 | 0x42a900 | void CSmokeBombPod::UsePod | FUNCTION |
+| 10 | 0x413e70 | int CPodObj::IsNear | FUNCTION |
+| 11 | 0x40cb40 | int CPodObj::Touches | FUNCTION |
+| 12 | 0x413180 | int CPodObj::UpdateRegions | FUNCTION |
+| 13 | 0x411570 | int CGameObj::IntersectLine | FUNCTION |
+| 14 | 0x42ad90 | int CGameObj::OnProbeHit | FUNCTION |
+| 15 | 0x421270 | void CSmokeBombPod::BeginFrame | FUNCTION |
+| 16 | 0x421280 | void CSmokeBombPod::EndFrame | FUNCTION |
+| 17 | 0x42aa60 | void CSmokeBombPod::KillObject | FUNCTION |
 
 ## CJumpPod — vtable 0x4bc2c0 (18 slots; ctor 0x421310 CJumpPod::CJumpPod)
 | slot | original | ours (same slot) | status |
 |---|---|---|---|
 | 0 | 0x401490 | CJumpPod::GetRuntimeClass | **MISSING** |
 | 1 | 0x4213c0 | CJumpPod::~ (deleting) | FUNCTION |
-| 5 | 0x414a50 | int CGameObj::Sub_414A50 | FUNCTION |
+| 5 | 0x414a50 | int CGameObj::SetMerlin | FUNCTION |
 | 6 | 0x42ad10 | int CGameObj::Sub_42AD10 | FUNCTION |
-| 7 | 0x42aa80 | void CJumpPod::Sub_42AD30 | FUNCTION |
-| 8 | 0x42aac0 | void CJumpPod::Sub_42AD40 | FUNCTION |
-| 9 | 0x42ac60 | void CJumpPod::Sub_42AD50 | FUNCTION |
-| 10 | 0x413e70 | int CPodObj::Sub_42AD70 | FUNCTION |
-| 11 | 0x40cb40 | int CPodObj::Sub_42AD60 | FUNCTION |
-| 12 | 0x413180 | int CPodObj::Sub_408820 | FUNCTION |
-| 13 | 0x411570 | int CGameObj::Sub_411570 | FUNCTION |
-| 14 | 0x42ad90 | int CGameObj::Sub_42AD90 | FUNCTION |
-| 15 | 0x421300 | void CJumpPod::Sub_4087D0 | FUNCTION |
-| 16 | 0x4213b0 | void CJumpPod::Sub_4087F0 | FUNCTION |
-| 17 | 0x42ace0 | void CJumpPod::Sub_413020 | FUNCTION |
+| 7 | 0x42aa80 | void CJumpPod::Think | FUNCTION |
+| 8 | 0x42aac0 | void CJumpPod::OnTouch | FUNCTION |
+| 9 | 0x42ac60 | void CJumpPod::UsePod | FUNCTION |
+| 10 | 0x413e70 | int CPodObj::IsNear | FUNCTION |
+| 11 | 0x40cb40 | int CPodObj::Touches | FUNCTION |
+| 12 | 0x413180 | int CPodObj::UpdateRegions | FUNCTION |
+| 13 | 0x411570 | int CGameObj::IntersectLine | FUNCTION |
+| 14 | 0x42ad90 | int CGameObj::OnProbeHit | FUNCTION |
+| 15 | 0x421300 | void CJumpPod::BeginFrame | FUNCTION |
+| 16 | 0x4213b0 | void CJumpPod::EndFrame | FUNCTION |
+| 17 | 0x42ace0 | void CJumpPod::KillObject | FUNCTION |
 
 ## CGameObj — vtable 0x4bc380 (18 slots; ctor 0x40d150 CGameObj::CGameObj)
 | slot | original | ours (same slot) | status |
 |---|---|---|---|
 | 0 | 0x42ad00 | CGameObj::GetRuntimeClass | **MISSING** |
 | 1 | 0x42adb0 | CGameObj::~ (deleting) | **MISSING** |
-| 5 | 0x414a50 | int CGameObj::Sub_414A50 | FUNCTION |
+| 5 | 0x414a50 | int CGameObj::SetMerlin | FUNCTION |
 | 6 | 0x42ad10 | int CGameObj::Sub_42AD10 | FUNCTION |
-| 7 | 0x42ad30 | void CGameObj::Sub_42AD30 | FUNCTION |
-| 8 | 0x42ad40 | void CGameObj::Sub_42AD40 | FUNCTION |
-| 9 | 0x42ad50 | void CGameObj::Sub_42AD50 | FUNCTION |
-| 10 | 0x42ad70 | int CGameObj::Sub_42AD70 | FUNCTION |
-| 11 | 0x42ad60 | int CGameObj::Sub_42AD60 | FUNCTION |
-| 12 | 0x42ad80 | int CGameObj::Sub_408820 | FUNCTION |
-| 13 | 0x411570 | int CGameObj::Sub_411570 | FUNCTION |
-| 14 | 0x42ad90 | int CGameObj::Sub_42AD90 | FUNCTION |
-| 15 | 0x4087d0 | void CGameObj::Sub_4087D0 | FUNCTION |
-| 16 | 0x4087f0 | void CGameObj::Sub_4087F0 | FUNCTION |
-| 17 | 0x413020 | void CGameObj::Sub_413020 | FUNCTION |
+| 7 | 0x42ad30 | void CGameObj::Think | FUNCTION |
+| 8 | 0x42ad40 | void CGameObj::OnTouch | FUNCTION |
+| 9 | 0x42ad50 | void CGameObj::UsePod | FUNCTION |
+| 10 | 0x42ad70 | int CGameObj::IsNear | FUNCTION |
+| 11 | 0x42ad60 | int CGameObj::Touches | FUNCTION |
+| 12 | 0x42ad80 | int CGameObj::UpdateRegions | FUNCTION |
+| 13 | 0x411570 | int CGameObj::IntersectLine | FUNCTION |
+| 14 | 0x42ad90 | int CGameObj::OnProbeHit | FUNCTION |
+| 15 | 0x4087d0 | void CGameObj::BeginFrame | FUNCTION |
+| 16 | 0x4087f0 | void CGameObj::EndFrame | FUNCTION |
+| 17 | 0x413020 | void CGameObj::KillObject | FUNCTION |
 
 ## CInviciblePod — vtable 0x4bc440 (18 slots; ctor 0x4146c0 CInviciblePod::~CInviciblePod)
 | slot | original | ours (same slot) | status |
 |---|---|---|---|
 | 0 | 0x4014a0 | CInviciblePod::GetRuntimeClass | **MISSING** |
 | 1 | 0x4146c0 | CInviciblePod::~ (deleting) | FUNCTION |
-| 5 | 0x414a50 | int CGameObj::Sub_414A50 | FUNCTION |
+| 5 | 0x414a50 | int CGameObj::SetMerlin | FUNCTION |
 | 6 | 0x42ad10 | int CGameObj::Sub_42AD10 | FUNCTION |
-| 7 | 0x40de80 | void CInviciblePod::Sub_42AD30 | FUNCTION |
-| 8 | 0x4181e0 | void CInviciblePod::Sub_42AD40 | FUNCTION |
-| 9 | 0x42ad50 | void CGameObj::Sub_42AD50 | FUNCTION |
-| 10 | 0x413e70 | int CPodObj::Sub_42AD70 | FUNCTION |
-| 11 | 0x40cb40 | int CPodObj::Sub_42AD60 | FUNCTION |
-| 12 | 0x413180 | int CPodObj::Sub_408820 | FUNCTION |
-| 13 | 0x411570 | int CGameObj::Sub_411570 | FUNCTION |
-| 14 | 0x42ad90 | int CGameObj::Sub_42AD90 | FUNCTION |
-| 15 | 0x413e50 | void CInviciblePod::Sub_4087D0 | FUNCTION |
-| 16 | 0x413e60 | void CInviciblePod::Sub_4087F0 | FUNCTION |
-| 17 | 0x419df0 | void CInviciblePod::Sub_413020 | FUNCTION |
+| 7 | 0x40de80 | void CInviciblePod::Think | FUNCTION |
+| 8 | 0x4181e0 | void CInviciblePod::OnTouch | FUNCTION |
+| 9 | 0x42ad50 | void CGameObj::UsePod | FUNCTION |
+| 10 | 0x413e70 | int CPodObj::IsNear | FUNCTION |
+| 11 | 0x40cb40 | int CPodObj::Touches | FUNCTION |
+| 12 | 0x413180 | int CPodObj::UpdateRegions | FUNCTION |
+| 13 | 0x411570 | int CGameObj::IntersectLine | FUNCTION |
+| 14 | 0x42ad90 | int CGameObj::OnProbeHit | FUNCTION |
+| 15 | 0x413e50 | void CInviciblePod::BeginFrame | FUNCTION |
+| 16 | 0x413e60 | void CInviciblePod::EndFrame | FUNCTION |
+| 17 | 0x419df0 | void CInviciblePod::KillObject | FUNCTION |
 
 ## CPodObj — vtable 0x4bc500 (18 slots; ctor 0x411580 CPodObj::~CPodObj)
 | slot | original | ours (same slot) | status |
 |---|---|---|---|
 | 0 | 0x42aec0 | CPodObj::GetRuntimeClass | **MISSING** |
 | 1 | 0x42b000 | CPodObj::~ (deleting) | **MISSING** |
-| 5 | 0x414a50 | int CGameObj::Sub_414A50 | FUNCTION |
+| 5 | 0x414a50 | int CGameObj::SetMerlin | FUNCTION |
 | 6 | 0x42ad10 | int CGameObj::Sub_42AD10 | FUNCTION |
-| 7 | 0x40d2e0 | void CPodObj::Sub_42AD30 | FUNCTION |
-| 8 | 0x4115d0 | void CPodObj::Sub_42AD40 | FUNCTION |
-| 9 | 0x42ad50 | void CGameObj::Sub_42AD50 | FUNCTION |
-| 10 | 0x413e70 | int CPodObj::Sub_42AD70 | FUNCTION |
-| 11 | 0x40cb40 | int CPodObj::Sub_42AD60 | FUNCTION |
-| 12 | 0x413180 | int CPodObj::Sub_408820 | FUNCTION |
-| 13 | 0x411570 | int CGameObj::Sub_411570 | FUNCTION |
-| 14 | 0x42ad90 | int CGameObj::Sub_42AD90 | FUNCTION |
-| 15 | 0x40e340 | void CPodObj::Sub_4087D0 | FUNCTION |
-| 16 | 0x40e380 | void CPodObj::Sub_4087F0 | FUNCTION |
-| 17 | 0x42afb0 | void CPodObj::Sub_413020 | FUNCTION |
+| 7 | 0x40d2e0 | void CPodObj::Think | FUNCTION |
+| 8 | 0x4115d0 | void CPodObj::OnTouch | FUNCTION |
+| 9 | 0x42ad50 | void CGameObj::UsePod | FUNCTION |
+| 10 | 0x413e70 | int CPodObj::IsNear | FUNCTION |
+| 11 | 0x40cb40 | int CPodObj::Touches | FUNCTION |
+| 12 | 0x413180 | int CPodObj::UpdateRegions | FUNCTION |
+| 13 | 0x411570 | int CGameObj::IntersectLine | FUNCTION |
+| 14 | 0x42ad90 | int CGameObj::OnProbeHit | FUNCTION |
+| 15 | 0x40e340 | void CPodObj::BeginFrame | FUNCTION |
+| 16 | 0x40e380 | void CPodObj::EndFrame | FUNCTION |
+| 17 | 0x42afb0 | void CPodObj::KillObject | FUNCTION |
 
 ## CTempWallPod — vtable 0x4bc5c0 (18 slots; ctor 0x421520 CTempWallPod::CTempWallPod)
 | slot | original | ours (same slot) | status |
 |---|---|---|---|
 | 0 | 0x4014b0 | CTempWallPod::GetRuntimeClass | **MISSING** |
 | 1 | 0x4215d0 | CTempWallPod::~ (deleting) | FUNCTION |
-| 5 | 0x414a50 | int CGameObj::Sub_414A50 | FUNCTION |
+| 5 | 0x414a50 | int CGameObj::SetMerlin | FUNCTION |
 | 6 | 0x42ad10 | int CGameObj::Sub_42AD10 | FUNCTION |
-| 7 | 0x42b070 | void CTempWallPod::Sub_42AD30 | FUNCTION |
-| 8 | 0x42b160 | void CTempWallPod::Sub_42AD40 | FUNCTION |
-| 9 | 0x42b3b0 | void CTempWallPod::Sub_42AD50 | FUNCTION |
-| 10 | 0x413e70 | int CPodObj::Sub_42AD70 | FUNCTION |
-| 11 | 0x41a3a0 | int CTempWallPod::Sub_42AD60 | FUNCTION |
-| 12 | 0x421640 | int CTempWallPod::Sub_408820 | FUNCTION |
-| 13 | 0x411570 | int CGameObj::Sub_411570 | FUNCTION |
-| 14 | 0x42ad90 | int CGameObj::Sub_42AD90 | FUNCTION |
-| 15 | 0x421430 | void CTempWallPod::Sub_4087D0 | FUNCTION |
-| 16 | 0x4214e0 | void CTempWallPod::Sub_4087F0 | FUNCTION |
-| 17 | 0x42b690 | void CTempWallPod::Sub_413020 | FUNCTION |
+| 7 | 0x42b070 | void CTempWallPod::Think | FUNCTION |
+| 8 | 0x42b160 | void CTempWallPod::OnTouch | FUNCTION |
+| 9 | 0x42b3b0 | void CTempWallPod::UsePod | FUNCTION |
+| 10 | 0x413e70 | int CPodObj::IsNear | FUNCTION |
+| 11 | 0x41a3a0 | int CTempWallPod::Touches | FUNCTION |
+| 12 | 0x421640 | int CTempWallPod::UpdateRegions | FUNCTION |
+| 13 | 0x411570 | int CGameObj::IntersectLine | FUNCTION |
+| 14 | 0x42ad90 | int CGameObj::OnProbeHit | FUNCTION |
+| 15 | 0x421430 | void CTempWallPod::BeginFrame | FUNCTION |
+| 16 | 0x4214e0 | void CTempWallPod::EndFrame | FUNCTION |
+| 17 | 0x42b690 | void CTempWallPod::KillObject | FUNCTION |
 
 ## CSpeedPod — vtable 0x4bc690 (18 slots; ctor 0x41a510 CSpeedPod::~CSpeedPod)
 | slot | original | ours (same slot) | status |
 |---|---|---|---|
 | 0 | 0x4014c0 | CSpeedPod::GetRuntimeClass | **MISSING** |
 | 1 | 0x41a510 | CSpeedPod::~ (deleting) | FUNCTION |
-| 5 | 0x414a50 | int CGameObj::Sub_414A50 | FUNCTION |
+| 5 | 0x414a50 | int CGameObj::SetMerlin | FUNCTION |
 | 6 | 0x42ad10 | int CGameObj::Sub_42AD10 | FUNCTION |
-| 7 | 0x414370 | void CSpeedPod::Sub_42AD30 | FUNCTION |
-| 8 | 0x421070 | void CSpeedPod::Sub_42AD40 | FUNCTION |
-| 9 | 0x42ad50 | void CGameObj::Sub_42AD50 | FUNCTION |
-| 10 | 0x413e70 | int CPodObj::Sub_42AD70 | FUNCTION |
-| 11 | 0x40cb40 | int CPodObj::Sub_42AD60 | FUNCTION |
-| 12 | 0x413180 | int CPodObj::Sub_408820 | FUNCTION |
-| 13 | 0x411570 | int CGameObj::Sub_411570 | FUNCTION |
-| 14 | 0x42ad90 | int CGameObj::Sub_42AD90 | FUNCTION |
-| 15 | 0x414a40 | void CSpeedPod::Sub_4087D0 | FUNCTION |
-| 16 | 0x414a70 | void CSpeedPod::Sub_4087F0 | FUNCTION |
-| 17 | 0x421700 | void CSpeedPod::Sub_413020 | FUNCTION |
+| 7 | 0x414370 | void CSpeedPod::Think | FUNCTION |
+| 8 | 0x421070 | void CSpeedPod::OnTouch | FUNCTION |
+| 9 | 0x42ad50 | void CGameObj::UsePod | FUNCTION |
+| 10 | 0x413e70 | int CPodObj::IsNear | FUNCTION |
+| 11 | 0x40cb40 | int CPodObj::Touches | FUNCTION |
+| 12 | 0x413180 | int CPodObj::UpdateRegions | FUNCTION |
+| 13 | 0x411570 | int CGameObj::IntersectLine | FUNCTION |
+| 14 | 0x42ad90 | int CGameObj::OnProbeHit | FUNCTION |
+| 15 | 0x414a40 | void CSpeedPod::BeginFrame | FUNCTION |
+| 16 | 0x414a70 | void CSpeedPod::EndFrame | FUNCTION |
+| 17 | 0x421700 | void CSpeedPod::KillObject | FUNCTION |
 
 ## CSledPad — vtable 0x4bc750 (18 slots; ctor 0x4217b0 CSledPad::~CSledPad)
 | slot | original | ours (same slot) | status |
 |---|---|---|---|
 | 0 | 0x4011e0 | CSledPad::GetRuntimeClass | **MISSING** |
 | 1 | 0x4217b0 | CSledPad::~ (deleting) | FUNCTION |
-| 5 | 0x414a50 | int CGameObj::Sub_414A50 | FUNCTION |
+| 5 | 0x414a50 | int CGameObj::SetMerlin | FUNCTION |
 | 6 | 0x42ad10 | int CGameObj::Sub_42AD10 | FUNCTION |
-| 7 | 0x42b6c0 | void CSledPad::Sub_42AD30 | FUNCTION |
-| 8 | 0x41a5c0 | void CSledPad::Sub_42AD40 | FUNCTION |
-| 9 | 0x42ad50 | void CGameObj::Sub_42AD50 | FUNCTION |
-| 10 | 0x42b810 | int CFloorObj::Sub_42AD70 | FUNCTION |
-| 11 | 0x40c620 | int CFloorObj::Sub_42AD60 | FUNCTION |
-| 12 | 0x41a960 | int CFloorObj::Sub_408820 | FUNCTION |
-| 13 | 0x413220 | int CFloorObj::Sub_411570 | FUNCTION |
-| 14 | 0x42ad90 | int CGameObj::Sub_42AD90 | FUNCTION |
-| 15 | 0x42b6d0 | void CSledPad::Sub_4087D0 | FUNCTION |
-| 16 | 0x42b6e0 | void CSledPad::Sub_4087F0 | FUNCTION |
-| 17 | 0x42b6f0 | void CSledPad::Sub_413020 | FUNCTION |
+| 7 | 0x42b6c0 | void CSledPad::Think | FUNCTION |
+| 8 | 0x41a5c0 | void CSledPad::OnTouch | FUNCTION |
+| 9 | 0x42ad50 | void CGameObj::UsePod | FUNCTION |
+| 10 | 0x42b810 | int CFloorObj::IsNear | FUNCTION |
+| 11 | 0x40c620 | int CFloorObj::Touches | FUNCTION |
+| 12 | 0x41a960 | int CFloorObj::UpdateRegions | FUNCTION |
+| 13 | 0x413220 | int CFloorObj::IntersectLine | FUNCTION |
+| 14 | 0x42ad90 | int CGameObj::OnProbeHit | FUNCTION |
+| 15 | 0x42b6d0 | void CSledPad::BeginFrame | FUNCTION |
+| 16 | 0x42b6e0 | void CSledPad::EndFrame | FUNCTION |
+| 17 | 0x42b6f0 | void CSledPad::KillObject | FUNCTION |
 
 ## CFloorObj — vtable 0x4bc7f0 (18 slots; ctor 0x41a610 CFloorObj::CFloorObj)
 | slot | original | ours (same slot) | status |
 |---|---|---|---|
 | 0 | 0x4011f0 | CFloorObj::GetRuntimeClass | **MISSING** |
 | 1 | 0x4219d0 | CFloorObj::~ (deleting) | **MISSING** |
-| 5 | 0x414a50 | int CGameObj::Sub_414A50 | FUNCTION |
+| 5 | 0x414a50 | int CGameObj::SetMerlin | FUNCTION |
 | 6 | 0x42ad10 | int CGameObj::Sub_42AD10 | FUNCTION |
-| 7 | 0x42b800 | void CFloorObj::Sub_42AD30 | FUNCTION |
-| 8 | 0x40d730 | void CFloorObj::Sub_42AD40 | FUNCTION |
-| 9 | 0x42ad50 | void CGameObj::Sub_42AD50 | FUNCTION |
-| 10 | 0x42b810 | int CFloorObj::Sub_42AD70 | FUNCTION |
-| 11 | 0x40c620 | int CFloorObj::Sub_42AD60 | FUNCTION |
-| 12 | 0x41a960 | int CFloorObj::Sub_408820 | FUNCTION |
-| 13 | 0x413220 | int CFloorObj::Sub_411570 | FUNCTION |
-| 14 | 0x42ad90 | int CGameObj::Sub_42AD90 | FUNCTION |
-| 15 | 0x42b860 | void CFloorObj::Sub_4087D0 | FUNCTION |
-| 16 | 0x42b870 | void CFloorObj::Sub_4087F0 | FUNCTION |
-| 17 | 0x42b880 | void CFloorObj::Sub_413020 | FUNCTION |
+| 7 | 0x42b800 | void CFloorObj::Think | FUNCTION |
+| 8 | 0x40d730 | void CFloorObj::OnTouch | FUNCTION |
+| 9 | 0x42ad50 | void CGameObj::UsePod | FUNCTION |
+| 10 | 0x42b810 | int CFloorObj::IsNear | FUNCTION |
+| 11 | 0x40c620 | int CFloorObj::Touches | FUNCTION |
+| 12 | 0x41a960 | int CFloorObj::UpdateRegions | FUNCTION |
+| 13 | 0x413220 | int CFloorObj::IntersectLine | FUNCTION |
+| 14 | 0x42ad90 | int CGameObj::OnProbeHit | FUNCTION |
+| 15 | 0x42b860 | void CFloorObj::BeginFrame | FUNCTION |
+| 16 | 0x42b870 | void CFloorObj::EndFrame | FUNCTION |
+| 17 | 0x42b880 | void CFloorObj::KillObject | FUNCTION |
 
 ## CPlayer — vtable 0x4bc910 (20 slots; ctor 0x41ac30 CPlayer::CPlayer)
 | slot | original | ours (same slot) | status |
 |---|---|---|---|
 | 0 | 0x42b8d0 | CPlayer::GetRuntimeClass | **MISSING** |
 | 1 | 0x42c080 | CPlayer::~ (deleting) | FUNCTION |
-| 5 | 0x414a50 | int CGameObj::Sub_414A50 | FUNCTION |
+| 5 | 0x414a50 | int CGameObj::SetMerlin | FUNCTION |
 | 6 | 0x42ad10 | int CGameObj::Sub_42AD10 | FUNCTION |
-| 7 | 0x409110 | void CPlayer::Sub_42AD30 | FUNCTION |
-| 8 | 0x40c220 | void CPlayer::Sub_42AD40 | FUNCTION |
-| 9 | 0x42ad50 | void CGameObj::Sub_42AD50 | FUNCTION |
-| 10 | 0x42bfc0 | int CPlayer::Sub_42AD70 | FUNCTION |
-| 11 | 0x42bfa0 | int CPlayer::Sub_42AD60 | FUNCTION |
-| 12 | 0x408820 | int CPlayer::Sub_408820 | FUNCTION |
-| 13 | 0x411570 | int CGameObj::Sub_411570 | FUNCTION |
-| 14 | 0x42ad90 | int CGameObj::Sub_42AD90 | FUNCTION |
-| 15 | 0x408960 | void CPlayer::Sub_4087D0 | FUNCTION |
-| 16 | 0x408990 | void CPlayer::Sub_4087F0 | FUNCTION |
-| 17 | 0x42c050 | void CPlayer::Sub_413020 | FUNCTION |
+| 7 | 0x409110 | void CPlayer::Think | FUNCTION |
+| 8 | 0x40c220 | void CPlayer::OnTouch | FUNCTION |
+| 9 | 0x42ad50 | void CGameObj::UsePod | FUNCTION |
+| 10 | 0x42bfc0 | int CPlayer::IsNear | FUNCTION |
+| 11 | 0x42bfa0 | int CPlayer::Touches | FUNCTION |
+| 12 | 0x408820 | int CPlayer::UpdateRegions | FUNCTION |
+| 13 | 0x411570 | int CGameObj::IntersectLine | FUNCTION |
+| 14 | 0x42ad90 | int CGameObj::OnProbeHit | FUNCTION |
+| 15 | 0x408960 | void CPlayer::BeginFrame | FUNCTION |
+| 16 | 0x408990 | void CPlayer::EndFrame | FUNCTION |
+| 17 | 0x42c050 | void CPlayer::KillObject | FUNCTION |
 | 18 | 0x42be40 | void CPlayer::Sub_42BE40 | FUNCTION |
-| 19 | 0x4089e0 | DWORD* CPlayer::Sub_4089E0 | FUNCTION |
+| 19 | 0x4089e0 | DWORD* CPlayer::GetProbe | FUNCTION |
 
 ## CFlag — vtable 0x4bc9f0 (18 slots; ctor 0x421cd0 CFlag::CFlag)
 | slot | original | ours (same slot) | status |
 |---|---|---|---|
 | 0 | 0x4014d0 | CFlag::GetRuntimeClass | **MISSING** |
 | 1 | 0x421db0 | CFlag::~ (deleting) | FUNCTION |
-| 5 | 0x414a50 | int CGameObj::Sub_414A50 | FUNCTION |
+| 5 | 0x414a50 | int CGameObj::SetMerlin | FUNCTION |
 | 6 | 0x42ad10 | int CGameObj::Sub_42AD10 | FUNCTION |
-| 7 | 0x42c160 | void CFlag::Sub_42AD30 | FUNCTION |
-| 8 | 0x41ae40 | void CFlag::Sub_42AD40 | FUNCTION |
-| 9 | 0x42ad50 | void CGameObj::Sub_42AD50 | FUNCTION |
-| 10 | 0x413e70 | int CPodObj::Sub_42AD70 | FUNCTION |
-| 11 | 0x414470 | int CFlag::Sub_42AD60 | FUNCTION |
-| 12 | 0x413180 | int CPodObj::Sub_408820 | FUNCTION |
-| 13 | 0x411570 | int CGameObj::Sub_411570 | FUNCTION |
-| 14 | 0x42ad90 | int CGameObj::Sub_42AD90 | FUNCTION |
-| 15 | 0x414d00 | void CFlag::Sub_4087D0 | FUNCTION |
-| 16 | 0x414d10 | void CFlag::Sub_4087F0 | FUNCTION |
-| 17 | 0x42c170 | void CFlag::Sub_413020 | FUNCTION |
+| 7 | 0x42c160 | void CFlag::Think | FUNCTION |
+| 8 | 0x41ae40 | void CFlag::OnTouch | FUNCTION |
+| 9 | 0x42ad50 | void CGameObj::UsePod | FUNCTION |
+| 10 | 0x413e70 | int CPodObj::IsNear | FUNCTION |
+| 11 | 0x414470 | int CFlag::Touches | FUNCTION |
+| 12 | 0x413180 | int CPodObj::UpdateRegions | FUNCTION |
+| 13 | 0x411570 | int CGameObj::IntersectLine | FUNCTION |
+| 14 | 0x42ad90 | int CGameObj::OnProbeHit | FUNCTION |
+| 15 | 0x414d00 | void CFlag::BeginFrame | FUNCTION |
+| 16 | 0x414d10 | void CFlag::EndFrame | FUNCTION |
+| 17 | 0x42c170 | void CFlag::KillObject | FUNCTION |
 
 ## CContainer — vtable 0x4bca88 (18 slots; ctor 0x41b160 CContainer::CContainer)
 | slot | original | ours (same slot) | status |
 |---|---|---|---|
 | 0 | 0x4038c0 | CContainer::GetRuntimeClass | **MISSING** |
 | 1 | 0x41b230 | CContainer::~ (deleting) | FUNCTION |
-| 5 | 0x414a50 | int CGameObj::Sub_414A50 | FUNCTION |
+| 5 | 0x414a50 | int CGameObj::SetMerlin | FUNCTION |
 | 6 | 0x42ad10 | int CGameObj::Sub_42AD10 | FUNCTION |
-| 7 | 0x40d2e0 | void CPodObj::Sub_42AD30 | FUNCTION |
-| 8 | 0x421e20 | void CContainer::Sub_42AD40 | FUNCTION |
-| 9 | 0x42ad50 | void CGameObj::Sub_42AD50 | FUNCTION |
-| 10 | 0x413e70 | int CPodObj::Sub_42AD70 | FUNCTION |
-| 11 | 0x40cb40 | int CPodObj::Sub_42AD60 | FUNCTION |
-| 12 | 0x413180 | int CPodObj::Sub_408820 | FUNCTION |
-| 13 | 0x411570 | int CGameObj::Sub_411570 | FUNCTION |
-| 14 | 0x42ad90 | int CGameObj::Sub_42AD90 | FUNCTION |
-| 15 | 0x414d20 | void CContainer::Sub_4087D0 | FUNCTION |
-| 16 | 0x414d30 | void CContainer::Sub_4087F0 | FUNCTION |
-| 17 | 0x421ec0 | void CContainer::Sub_413020 | FUNCTION |
+| 7 | 0x40d2e0 | void CPodObj::Think | FUNCTION |
+| 8 | 0x421e20 | void CContainer::OnTouch | FUNCTION |
+| 9 | 0x42ad50 | void CGameObj::UsePod | FUNCTION |
+| 10 | 0x413e70 | int CPodObj::IsNear | FUNCTION |
+| 11 | 0x40cb40 | int CPodObj::Touches | FUNCTION |
+| 12 | 0x413180 | int CPodObj::UpdateRegions | FUNCTION |
+| 13 | 0x411570 | int CGameObj::IntersectLine | FUNCTION |
+| 14 | 0x42ad90 | int CGameObj::OnProbeHit | FUNCTION |
+| 15 | 0x414d20 | void CContainer::BeginFrame | FUNCTION |
+| 16 | 0x414d30 | void CContainer::EndFrame | FUNCTION |
+| 17 | 0x421ec0 | void CContainer::KillObject | FUNCTION |
 
 ## CHoldPad — vtable 0x4bcb48 (18 slots; ctor 0x421ed0 CHoldPad::CHoldPad)
 | slot | original | ours (same slot) | status |
 |---|---|---|---|
 | 0 | 0x401200 | CHoldPad::GetRuntimeClass | **MISSING** |
 | 1 | 0x421f30 | CHoldPad::~ (deleting) | FUNCTION |
-| 5 | 0x414a50 | int CGameObj::Sub_414A50 | FUNCTION |
+| 5 | 0x414a50 | int CGameObj::SetMerlin | FUNCTION |
 | 6 | 0x42ad10 | int CGameObj::Sub_42AD10 | FUNCTION |
-| 7 | 0x42c1a0 | void CHoldPad::Sub_42AD30 | FUNCTION |
-| 8 | 0x42c1b0 | void CHoldPad::Sub_42AD40 | FUNCTION |
-| 9 | 0x42ad50 | void CGameObj::Sub_42AD50 | FUNCTION |
-| 10 | 0x42b810 | int CFloorObj::Sub_42AD70 | FUNCTION |
-| 11 | 0x40c620 | int CFloorObj::Sub_42AD60 | FUNCTION |
-| 12 | 0x41a960 | int CFloorObj::Sub_408820 | FUNCTION |
-| 13 | 0x413220 | int CFloorObj::Sub_411570 | FUNCTION |
-| 14 | 0x42ad90 | int CGameObj::Sub_42AD90 | FUNCTION |
-| 15 | 0x42c200 | void CHoldPad::Sub_4087D0 | FUNCTION |
-| 16 | 0x42c210 | void CHoldPad::Sub_4087F0 | FUNCTION |
-| 17 | 0x42c220 | void CHoldPad::Sub_413020 | FUNCTION |
+| 7 | 0x42c1a0 | void CHoldPad::Think | FUNCTION |
+| 8 | 0x42c1b0 | void CHoldPad::OnTouch | FUNCTION |
+| 9 | 0x42ad50 | void CGameObj::UsePod | FUNCTION |
+| 10 | 0x42b810 | int CFloorObj::IsNear | FUNCTION |
+| 11 | 0x40c620 | int CFloorObj::Touches | FUNCTION |
+| 12 | 0x41a960 | int CFloorObj::UpdateRegions | FUNCTION |
+| 13 | 0x413220 | int CFloorObj::IntersectLine | FUNCTION |
+| 14 | 0x42ad90 | int CGameObj::OnProbeHit | FUNCTION |
+| 15 | 0x42c200 | void CHoldPad::BeginFrame | FUNCTION |
+| 16 | 0x42c210 | void CHoldPad::EndFrame | FUNCTION |
+| 17 | 0x42c220 | void CHoldPad::KillObject | FUNCTION |
 
 ## CHumanPlayer — vtable 0x4bcbe0 (20 slots; ctor 0x421fa0 CHumanPlayer::CHumanPlayer)
 | slot | original | ours (same slot) | status |
 |---|---|---|---|
 | 0 | 0x4014e0 | CHumanPlayer::GetRuntimeClass | **MISSING** |
 | 1 | 0x42c260 | CHumanPlayer::~ (deleting) | **MISSING** |
-| 5 | 0x414a50 | int CGameObj::Sub_414A50 | FUNCTION |
+| 5 | 0x414a50 | int CGameObj::SetMerlin | FUNCTION |
 | 6 | 0x42ad10 | int CGameObj::Sub_42AD10 | FUNCTION |
-| 7 | 0x409180 | void CHumanPlayer::Sub_42AD30 | FUNCTION |
-| 8 | 0x40c400 | void CHumanPlayer::Sub_42AD40 | FUNCTION |
-| 9 | 0x42ad50 | void CGameObj::Sub_42AD50 | FUNCTION |
-| 10 | 0x42bfc0 | int CPlayer::Sub_42AD70 | FUNCTION |
-| 11 | 0x42bfa0 | int CPlayer::Sub_42AD60 | FUNCTION |
-| 12 | 0x408820 | int CPlayer::Sub_408820 | FUNCTION |
-| 13 | 0x411570 | int CGameObj::Sub_411570 | FUNCTION |
-| 14 | 0x42ad90 | int CGameObj::Sub_42AD90 | FUNCTION |
-| 15 | 0x4089d0 | void CHumanPlayer::Sub_4087D0 | FUNCTION |
-| 16 | 0x4089f0 | void CHumanPlayer::Sub_4087F0 | FUNCTION |
-| 17 | 0x42c240 | void CHumanPlayer::Sub_413020 | FUNCTION |
+| 7 | 0x409180 | void CHumanPlayer::Think | FUNCTION |
+| 8 | 0x40c400 | void CHumanPlayer::OnTouch | FUNCTION |
+| 9 | 0x42ad50 | void CGameObj::UsePod | FUNCTION |
+| 10 | 0x42bfc0 | int CPlayer::IsNear | FUNCTION |
+| 11 | 0x42bfa0 | int CPlayer::Touches | FUNCTION |
+| 12 | 0x408820 | int CPlayer::UpdateRegions | FUNCTION |
+| 13 | 0x411570 | int CGameObj::IntersectLine | FUNCTION |
+| 14 | 0x42ad90 | int CGameObj::OnProbeHit | FUNCTION |
+| 15 | 0x4089d0 | void CHumanPlayer::BeginFrame | FUNCTION |
+| 16 | 0x4089f0 | void CHumanPlayer::EndFrame | FUNCTION |
+| 17 | 0x42c240 | void CHumanPlayer::KillObject | FUNCTION |
 | 18 | 0x42be40 | void CPlayer::Sub_42BE40 | FUNCTION |
-| 19 | 0x4089e0 | DWORD* CPlayer::Sub_4089E0 | FUNCTION |
+| 19 | 0x4089e0 | DWORD* CPlayer::GetProbe | FUNCTION |
 
 ## CRobotPlayer — vtable 0x4bcce0 (20 slots; ctor 0x4220a0 CRobotPlayer::CRobotPlayer)
 | slot | original | ours (same slot) | status |
 |---|---|---|---|
 | 0 | 0x4038d0 | CRobotPlayer::GetRuntimeClass | **MISSING** |
 | 1 | 0x422250 | CRobotPlayer::~ (deleting) | FUNCTION |
-| 5 | 0x414a50 | int CGameObj::Sub_414A50 | FUNCTION |
+| 5 | 0x414a50 | int CGameObj::SetMerlin | FUNCTION |
 | 6 | 0x42ad10 | int CGameObj::Sub_42AD10 | FUNCTION |
-| 7 | 0x409300 | void CRobotPlayer::Sub_42AD30 | FUNCTION |
-| 8 | 0x4144d0 | void CRobotPlayer::Sub_42AD40 | FUNCTION |
-| 9 | 0x42ad50 | void CGameObj::Sub_42AD50 | FUNCTION |
-| 10 | 0x42bfc0 | int CPlayer::Sub_42AD70 | FUNCTION |
-| 11 | 0x42bfa0 | int CPlayer::Sub_42AD60 | FUNCTION |
-| 12 | 0x408820 | int CPlayer::Sub_408820 | FUNCTION |
-| 13 | 0x411570 | int CGameObj::Sub_411570 | FUNCTION |
-| 14 | 0x42c3c0 | int CRobotPlayer::Sub_42AD90 | FUNCTION |
-| 15 | 0x40a4c0 | void CRobotPlayer::Sub_4087D0 | FUNCTION |
-| 16 | 0x40a590 | void CRobotPlayer::Sub_4087F0 | FUNCTION |
-| 17 | 0x42c3b0 | void CRobotPlayer::Sub_413020 | FUNCTION |
+| 7 | 0x409300 | void CRobotPlayer::Think | FUNCTION |
+| 8 | 0x4144d0 | void CRobotPlayer::OnTouch | FUNCTION |
+| 9 | 0x42ad50 | void CGameObj::UsePod | FUNCTION |
+| 10 | 0x42bfc0 | int CPlayer::IsNear | FUNCTION |
+| 11 | 0x42bfa0 | int CPlayer::Touches | FUNCTION |
+| 12 | 0x408820 | int CPlayer::UpdateRegions | FUNCTION |
+| 13 | 0x411570 | int CGameObj::IntersectLine | FUNCTION |
+| 14 | 0x42c3c0 | int CRobotPlayer::OnProbeHit | FUNCTION |
+| 15 | 0x40a4c0 | void CRobotPlayer::BeginFrame | FUNCTION |
+| 16 | 0x40a590 | void CRobotPlayer::EndFrame | FUNCTION |
+| 17 | 0x42c3b0 | void CRobotPlayer::KillObject | FUNCTION |
 | 18 | 0x42be40 | void CPlayer::Sub_42BE40 | FUNCTION |
-| 19 | 0x4089e0 | DWORD* CPlayer::Sub_4089E0 | FUNCTION |
+| 19 | 0x4089e0 | DWORD* CPlayer::GetProbe | FUNCTION |
 
 ## CMapEraserPod — vtable 0x4bcdc0 (18 slots; ctor 0x41b350 CMapEraserPod::~CMapEraserPod)
 | slot | original | ours (same slot) | status |
 |---|---|---|---|
 | 0 | 0x4014f0 | CMapEraserPod::GetRuntimeClass | **MISSING** |
 | 1 | 0x41b350 | CMapEraserPod::~ (deleting) | FUNCTION |
-| 5 | 0x414a50 | int CGameObj::Sub_414A50 | FUNCTION |
+| 5 | 0x414a50 | int CGameObj::SetMerlin | FUNCTION |
 | 6 | 0x42ad10 | int CGameObj::Sub_42AD10 | FUNCTION |
-| 7 | 0x42c410 | void CMapEraserPod::Sub_42AD30 | FUNCTION |
-| 8 | 0x422470 | void CMapEraserPod::Sub_42AD40 | FUNCTION |
-| 9 | 0x42ad50 | void CGameObj::Sub_42AD50 | FUNCTION |
-| 10 | 0x413e70 | int CPodObj::Sub_42AD70 | FUNCTION |
-| 11 | 0x40cb40 | int CPodObj::Sub_42AD60 | FUNCTION |
-| 12 | 0x413180 | int CPodObj::Sub_408820 | FUNCTION |
-| 13 | 0x411570 | int CGameObj::Sub_411570 | FUNCTION |
-| 14 | 0x42ad90 | int CGameObj::Sub_42AD90 | FUNCTION |
-| 15 | 0x41b2c0 | void CMapEraserPod::Sub_4087D0 | FUNCTION |
-| 16 | 0x41b340 | void CMapEraserPod::Sub_4087F0 | FUNCTION |
-| 17 | 0x422620 | void CMapEraserPod::Sub_413020 | FUNCTION |
+| 7 | 0x42c410 | void CMapEraserPod::Think | FUNCTION |
+| 8 | 0x422470 | void CMapEraserPod::OnTouch | FUNCTION |
+| 9 | 0x42ad50 | void CGameObj::UsePod | FUNCTION |
+| 10 | 0x413e70 | int CPodObj::IsNear | FUNCTION |
+| 11 | 0x40cb40 | int CPodObj::Touches | FUNCTION |
+| 12 | 0x413180 | int CPodObj::UpdateRegions | FUNCTION |
+| 13 | 0x411570 | int CGameObj::IntersectLine | FUNCTION |
+| 14 | 0x42ad90 | int CGameObj::OnProbeHit | FUNCTION |
+| 15 | 0x41b2c0 | void CMapEraserPod::BeginFrame | FUNCTION |
+| 16 | 0x41b340 | void CMapEraserPod::EndFrame | FUNCTION |
+| 17 | 0x422620 | void CMapEraserPod::KillObject | FUNCTION |
 
 ## CSlowPod — vtable 0x4bce80 (18 slots; ctor 0x41b3e0 CSlowPod::~CSlowPod)
 | slot | original | ours (same slot) | status |
 |---|---|---|---|
 | 0 | 0x401500 | CSlowPod::GetRuntimeClass | **MISSING** |
 | 1 | 0x41b3e0 | CSlowPod::~ (deleting) | FUNCTION |
-| 5 | 0x414a50 | int CGameObj::Sub_414A50 | FUNCTION |
+| 5 | 0x414a50 | int CGameObj::SetMerlin | FUNCTION |
 | 6 | 0x42ad10 | int CGameObj::Sub_42AD10 | FUNCTION |
-| 7 | 0x42c430 | void CSlowPod::Sub_42AD30 | FUNCTION |
-| 8 | 0x4226d0 | void CSlowPod::Sub_42AD40 | FUNCTION |
-| 9 | 0x42ad50 | void CGameObj::Sub_42AD50 | FUNCTION |
-| 10 | 0x413e70 | int CPodObj::Sub_42AD70 | FUNCTION |
-| 11 | 0x40cb40 | int CPodObj::Sub_42AD60 | FUNCTION |
-| 12 | 0x413180 | int CPodObj::Sub_408820 | FUNCTION |
-| 13 | 0x411570 | int CGameObj::Sub_411570 | FUNCTION |
-| 14 | 0x42ad90 | int CGameObj::Sub_42AD90 | FUNCTION |
-| 15 | 0x41b3c0 | void CSlowPod::Sub_4087D0 | FUNCTION |
-| 16 | 0x41b3d0 | void CSlowPod::Sub_4087F0 | FUNCTION |
-| 17 | 0x422910 | void CSlowPod::Sub_413020 | FUNCTION |
+| 7 | 0x42c430 | void CSlowPod::Think | FUNCTION |
+| 8 | 0x4226d0 | void CSlowPod::OnTouch | FUNCTION |
+| 9 | 0x42ad50 | void CGameObj::UsePod | FUNCTION |
+| 10 | 0x413e70 | int CPodObj::IsNear | FUNCTION |
+| 11 | 0x40cb40 | int CPodObj::Touches | FUNCTION |
+| 12 | 0x413180 | int CPodObj::UpdateRegions | FUNCTION |
+| 13 | 0x411570 | int CGameObj::IntersectLine | FUNCTION |
+| 14 | 0x42ad90 | int CGameObj::OnProbeHit | FUNCTION |
+| 15 | 0x41b3c0 | void CSlowPod::BeginFrame | FUNCTION |
+| 16 | 0x41b3d0 | void CSlowPod::EndFrame | FUNCTION |
+| 17 | 0x422910 | void CSlowPod::KillObject | FUNCTION |
 
 ## CFlagRemover — vtable 0x4bcf40 (18 slots; ctor 0x422ac0 CFlagRemover::CFlagRemover)
 | slot | original | ours (same slot) | status |
 |---|---|---|---|
 | 0 | 0x401510 | CFlagRemover::GetRuntimeClass | **MISSING** |
 | 1 | 0x422b20 | CFlagRemover::~ (deleting) | FUNCTION |
-| 5 | 0x414a50 | int CGameObj::Sub_414A50 | FUNCTION |
+| 5 | 0x414a50 | int CGameObj::SetMerlin | FUNCTION |
 | 6 | 0x42ad10 | int CGameObj::Sub_42AD10 | FUNCTION |
-| 7 | 0x42c540 | void CFlagRemover::Sub_42AD30 | FUNCTION |
-| 8 | 0x422920 | void CFlagRemover::Sub_42AD40 | FUNCTION |
-| 9 | 0x42ad50 | void CGameObj::Sub_42AD50 | FUNCTION |
-| 10 | 0x42b810 | int CFloorObj::Sub_42AD70 | FUNCTION |
-| 11 | 0x40c620 | int CFloorObj::Sub_42AD60 | FUNCTION |
-| 12 | 0x41a960 | int CFloorObj::Sub_408820 | FUNCTION |
-| 13 | 0x413220 | int CFloorObj::Sub_411570 | FUNCTION |
-| 14 | 0x42ad90 | int CGameObj::Sub_42AD90 | FUNCTION |
-| 15 | 0x42c550 | void CFlagRemover::Sub_4087D0 | FUNCTION |
-| 16 | 0x42c560 | void CFlagRemover::Sub_4087F0 | FUNCTION |
-| 17 | 0x42c570 | void CFlagRemover::Sub_413020 | FUNCTION |
+| 7 | 0x42c540 | void CFlagRemover::Think | FUNCTION |
+| 8 | 0x422920 | void CFlagRemover::OnTouch | FUNCTION |
+| 9 | 0x42ad50 | void CGameObj::UsePod | FUNCTION |
+| 10 | 0x42b810 | int CFloorObj::IsNear | FUNCTION |
+| 11 | 0x40c620 | int CFloorObj::Touches | FUNCTION |
+| 12 | 0x41a960 | int CFloorObj::UpdateRegions | FUNCTION |
+| 13 | 0x413220 | int CFloorObj::IntersectLine | FUNCTION |
+| 14 | 0x42ad90 | int CGameObj::OnProbeHit | FUNCTION |
+| 15 | 0x42c550 | void CFlagRemover::BeginFrame | FUNCTION |
+| 16 | 0x42c560 | void CFlagRemover::EndFrame | FUNCTION |
+| 17 | 0x42c570 | void CFlagRemover::KillObject | FUNCTION |
 
 ## CWall — vtable 0x4bcfd8 (19 slots; ctor 0x40e650 CWall::~CWall)
 | slot | original | ours (same slot) | status |
 |---|---|---|---|
 | 0 | 0x4011d0 | CWall::GetRuntimeClass | **MISSING** |
 | 1 | 0x417ba0 | CWall::~ (deleting) | **MISSING** |
-| 5 | 0x414a50 | int CGameObj::Sub_414A50 | FUNCTION |
+| 5 | 0x414a50 | int CGameObj::SetMerlin | FUNCTION |
 | 6 | 0x42ad10 | int CGameObj::Sub_42AD10 | FUNCTION |
-| 7 | 0x42c660 | void CWall::Sub_42AD30 | FUNCTION |
-| 8 | 0x41b450 | void CWall::Sub_42AD40 | FUNCTION |
-| 9 | 0x42ad50 | void CGameObj::Sub_42AD50 | FUNCTION |
-| 10 | 0x422b90 | int CWall::Sub_42AD70 | FUNCTION |
-| 11 | 0x40d4b0 | int CWall::Sub_42AD60 | FUNCTION |
-| 12 | 0x40ef30 | int CWall::Sub_408820 | FUNCTION |
-| 13 | 0x40f7f0 | int CWall::Sub_411570 | FUNCTION |
-| 14 | 0x42ad90 | int CGameObj::Sub_42AD90 | FUNCTION |
-| 15 | 0x42c670 | void CWall::Sub_4087D0 | FUNCTION |
-| 16 | 0x42c680 | void CWall::Sub_4087F0 | FUNCTION |
-| 17 | 0x42c690 | void CWall::Sub_413020 | FUNCTION |
-| 18 | 0x414d40 | int CWall::Sub_414D40 | FUNCTION |
+| 7 | 0x42c660 | void CWall::Think | FUNCTION |
+| 8 | 0x41b450 | void CWall::OnTouch | FUNCTION |
+| 9 | 0x42ad50 | void CGameObj::UsePod | FUNCTION |
+| 10 | 0x422b90 | int CWall::IsNear | FUNCTION |
+| 11 | 0x40d4b0 | int CWall::Touches | FUNCTION |
+| 12 | 0x40ef30 | int CWall::UpdateRegions | FUNCTION |
+| 13 | 0x40f7f0 | int CWall::IntersectLine | FUNCTION |
+| 14 | 0x42ad90 | int CGameObj::OnProbeHit | FUNCTION |
+| 15 | 0x42c670 | void CWall::BeginFrame | FUNCTION |
+| 16 | 0x42c680 | void CWall::EndFrame | FUNCTION |
+| 17 | 0x42c690 | void CWall::KillObject | FUNCTION |
+| 18 | 0x414d40 | int CWall::SetFace | FUNCTION |
 
 ## CRegionMatrix — vtable 0x4bd078 (5 slots; ctor 0x41b4f0 CRegionMatrix::~CRegionMatrix)
 | slot | original | ours (same slot) | status |
@@ -515,12 +515,12 @@ notes/perfect-match.md rule 50.
 | 0 | 0x42c6e0 | CCollider::GetRuntimeClass | **MISSING** |
 | 1 | 0x41b6c0 | CCollider::~ (deleting) | **MISSING** |
 
-## CSub42C890 — vtable 0x4bd268 (33 slots; ctor 0x42c890 CSub42C890::CSub42C890)
+## CPodTimesDialog — vtable 0x4bd268 (33 slots; ctor 0x42c890 CPodTimesDialog::CPodTimesDialog)
 | slot | original | ours (same slot) | status |
 |---|---|---|---|
-| 1 | 0x42ca40 | CSub42C890::~ (deleting) | **MISSING** |
-| 7 | 0x42ca30 | CSub42C890::GetMessageMap | **MISSING** |
-| 21 | 0x42c920 | void CSub42C890::DoDataExchange | FUNCTION |
+| 1 | 0x42ca40 | CPodTimesDialog::~ (deleting) | **MISSING** |
+| 7 | 0x42ca30 | CPodTimesDialog::GetMessageMap | **MISSING** |
+| 21 | 0x42c920 | void CPodTimesDialog::DoDataExchange | FUNCTION |
 
 ## CMerlinDynamic — vtable 0x4bd348 (5 slots; ctor 0x4132a0 CMerlinDynamic::CMerlinDynamic)
 | slot | original | ours (same slot) | status |
@@ -543,26 +543,26 @@ notes/perfect-match.md rule 50.
 | 1 | 0x41bb10 | CMerlinBSP::~ (deleting) | **MISSING** |
 | 2 | 0x41bc40 | void CMerlinBSP::Serialize | FUNCTION |
 
-## CSub42CFE0 — vtable 0x4bd4e8 (33 slots; ctor 0x42cfe0 CSub42CFE0::CSub42CFE0)
+## CSetPositionDialog — vtable 0x4bd4e8 (33 slots; ctor 0x42cfe0 CSetPositionDialog::CSetPositionDialog)
 | slot | original | ours (same slot) | status |
 |---|---|---|---|
-| 1 | 0x42d0d0 | CSub42CFE0::~ (deleting) | **MISSING** |
-| 7 | 0x42d0c0 | CSub42CFE0::GetMessageMap | **MISSING** |
-| 21 | 0x42d050 | void CSub42CFE0::DoDataExchange | FUNCTION |
+| 1 | 0x42d0d0 | CSetPositionDialog::~ (deleting) | **MISSING** |
+| 7 | 0x42d0c0 | CSetPositionDialog::GetMessageMap | **MISSING** |
+| 21 | 0x42d050 | void CSetPositionDialog::DoDataExchange | FUNCTION |
 
-## CSub413F10 — vtable 0x4bd670 (28 slots; ctor 0x413f10 CSub413F10::CSub413F10)
+## CCustomizeDialog — vtable 0x4bd670 (28 slots; ctor 0x413f10 CCustomizeDialog::CCustomizeDialog)
 | slot | original | ours (same slot) | status |
 |---|---|---|---|
-| 1 | 0x42d340 | CSub413F10::~ (deleting) | **MISSING** |
+| 1 | 0x42d340 | CCustomizeDialog::~ (deleting) | **MISSING** |
 
-## CSub413F10 — vtable 0x4bd6e0 (33 slots; ctor 0x413f10 CSub413F10::CSub413F10)
+## CCustomizeDialog — vtable 0x4bd6e0 (33 slots; ctor 0x413f10 CCustomizeDialog::CCustomizeDialog)
 | slot | original | ours (same slot) | status |
 |---|---|---|---|
-| 1 | 0x42d360 | CSub413F10::~ (deleting) | **MISSING** |
-| 7 | 0x40e550 | CSub413F10::GetMessageMap | **MISSING** |
-| 21 | 0x40e480 | void CSub413F10::DoDataExchange | FUNCTION |
-| 29 | 0x413fd0 | BOOL CSub413F10::OnInitDialog | FUNCTION |
-| 31 | 0x413fe0 | void CSub413F10::OnOK | FUNCTION |
+| 1 | 0x42d360 | CCustomizeDialog::~ (deleting) | **MISSING** |
+| 7 | 0x40e550 | CCustomizeDialog::GetMessageMap | **MISSING** |
+| 21 | 0x40e480 | void CCustomizeDialog::DoDataExchange | FUNCTION |
+| 29 | 0x413fd0 | BOOL CCustomizeDialog::OnInitDialog | FUNCTION |
+| 31 | 0x413fe0 | void CCustomizeDialog::OnOK | FUNCTION |
 
 ## CMerlinObject — vtable 0x4bd808 (5 slots; ctor 0x401030 CMerlinObject::CMerlinObject)
 | slot | original | ours (same slot) | status |
@@ -571,230 +571,230 @@ notes/perfect-match.md rule 50.
 | 1 | 0x42d620 | CMerlinObject::~ (deleting) | **MISSING** |
 | 2 | 0x411b10 | void CMerlinObject::Serialize | FUNCTION |
 
-## CSub40B800 — vtable 0x4bd8e0 (5 slots; ctor 0x415380 CSub40B800::CSub40B800)
+## CSoundSlot — vtable 0x4bd8e0 (5 slots; ctor 0x415380 CSoundSlot::CSoundSlot)
 | slot | original | ours (same slot) | status |
 |---|---|---|---|
-| 1 | 0x423120 | CSub40B800::~ (deleting) | **MISSING** |
+| 1 | 0x423120 | CSoundSlot::~ (deleting) | **MISSING** |
 
 ## CComboBox — vtable 0x4bdc98 (32 slots; set at 0x45898e)
 | slot | original | ours (same slot) | status |
 |---|---|---|---|
 | 1 | 0x42e580 | CComboBox::~ (deleting) | **MISSING** |
 
-## CSub42D910 — vtable 0x4bdd18 (33 slots; ctor 0x42d910 CSub42D910::CSub42D910)
+## CPlayerControlsDialog — vtable 0x4bdd18 (33 slots; ctor 0x42d910 CPlayerControlsDialog::CPlayerControlsDialog)
 | slot | original | ours (same slot) | status |
 |---|---|---|---|
-| 1 | 0x42e5a0 | CSub42D910::~ (deleting) | **MISSING** |
-| 7 | 0x42db50 | CSub42D910::GetMessageMap | **MISSING** |
-| 21 | 0x42dae0 | void CSub42D910::DoDataExchange | FUNCTION |
-| 29 | 0x42def0 | BOOL CSub42D910::OnInitDialog | FUNCTION |
-| 31 | 0x42e0f0 | void CSub42D910::OnOK | FUNCTION |
+| 1 | 0x42e5a0 | CPlayerControlsDialog::~ (deleting) | **MISSING** |
+| 7 | 0x42db50 | CPlayerControlsDialog::GetMessageMap | **MISSING** |
+| 21 | 0x42dae0 | void CPlayerControlsDialog::DoDataExchange | FUNCTION |
+| 29 | 0x42def0 | BOOL CPlayerControlsDialog::OnInitDialog | FUNCTION |
+| 31 | 0x42e0f0 | void CPlayerControlsDialog::OnOK | FUNCTION |
 
 ## CButton — vtable 0x4bdda0 (29 slots; set at 0x4588de)
 | slot | original | ours (same slot) | status |
 |---|---|---|---|
 | 1 | 0x42e560 | CButton::~ (deleting) | **MISSING** |
 
-## CSub42E790 — vtable 0x4be078 (33 slots; ctor 0x42e790 CSub42E790::CSub42E790)
+## CSoundOptionsDialog — vtable 0x4be078 (33 slots; ctor 0x42e790 CSoundOptionsDialog::CSoundOptionsDialog)
 | slot | original | ours (same slot) | status |
 |---|---|---|---|
-| 1 | 0x42ec00 | CSub42E790::~ (deleting) | **MISSING** |
-| 7 | 0x42e9f0 | CSub42E790::GetMessageMap | **MISSING** |
-| 21 | 0x42e920 | void CSub42E790::DoDataExchange | FUNCTION |
-| 29 | 0x42ea00 | BOOL CSub42E790::OnInitDialog | FUNCTION |
-| 31 | 0x42eb40 | void CSub42E790::OnOK | FUNCTION |
+| 1 | 0x42ec00 | CSoundOptionsDialog::~ (deleting) | **MISSING** |
+| 7 | 0x42e9f0 | CSoundOptionsDialog::GetMessageMap | **MISSING** |
+| 21 | 0x42e920 | void CSoundOptionsDialog::DoDataExchange | FUNCTION |
+| 29 | 0x42ea00 | BOOL CSoundOptionsDialog::OnInitDialog | FUNCTION |
+| 31 | 0x42eb40 | void CSoundOptionsDialog::OnOK | FUNCTION |
 
-## CSub423670 — vtable 0x4be148 (20 slots; ctor 0x4235e0 CSub4235E0::CSub4235E0)
-| slot | original | ours (same slot) | status |
-|---|---|---|---|
-| 0 | 0x42ad00 | CGameObj::GetRuntimeClass | **MISSING** |
-| 1 | 0x42f180 | CSub423670::~ (deleting) | FUNCTION |
-| 5 | 0x414a50 | int CGameObj::Sub_414A50 | FUNCTION |
-| 6 | 0x42ad10 | int CGameObj::Sub_42AD10 | FUNCTION |
-| 7 | 0x42ecd0 | void CSub423670::Sub_42AD30 | FUNCTION |
-| 8 | 0x42ad40 | void CGameObj::Sub_42AD40 | FUNCTION |
-| 9 | 0x42ad50 | void CGameObj::Sub_42AD50 | FUNCTION |
-| 10 | 0x42ad70 | int CGameObj::Sub_42AD70 | FUNCTION |
-| 11 | 0x42ad60 | int CGameObj::Sub_42AD60 | FUNCTION |
-| 12 | 0x42ad80 | int CGameObj::Sub_408820 | FUNCTION |
-| 13 | 0x411570 | int CGameObj::Sub_411570 | FUNCTION |
-| 14 | 0x41beb0 | int CSub423670::Sub_42AD90 | FUNCTION |
-| 15 | 0x4087d0 | void CGameObj::Sub_4087D0 | FUNCTION |
-| 16 | 0x4087f0 | void CGameObj::Sub_4087F0 | FUNCTION |
-| 17 | 0x413020 | void CGameObj::Sub_413020 | FUNCTION |
-| 18 | 0x42ece0 | void CSub423670::Sub_42ECE0 | FUNCTION |
-| 19 | 0x42ecf0 | void CSub423670::Sub_42ECF0 | FUNCTION |
-
-## CSub4235E0 — vtable 0x4be1f0 (20 slots; ctor 0x4235e0 CSub4235E0::CSub4235E0)
+## CRobotState — vtable 0x4be148 (20 slots; ctor 0x4235e0 CRobotSeekState::CRobotSeekState)
 | slot | original | ours (same slot) | status |
 |---|---|---|---|
 | 0 | 0x42ad00 | CGameObj::GetRuntimeClass | **MISSING** |
-| 1 | 0x42f1f0 | CSub4235E0::~ (deleting) | **MISSING** |
-| 5 | 0x414a50 | int CGameObj::Sub_414A50 | FUNCTION |
+| 1 | 0x42f180 | CRobotState::~ (deleting) | FUNCTION |
+| 5 | 0x414a50 | int CGameObj::SetMerlin | FUNCTION |
 | 6 | 0x42ad10 | int CGameObj::Sub_42AD10 | FUNCTION |
-| 7 | 0x414d70 | void CSub4235E0::Sub_42AD30 | FUNCTION |
-| 8 | 0x42ad40 | void CGameObj::Sub_42AD40 | FUNCTION |
-| 9 | 0x42ad50 | void CGameObj::Sub_42AD50 | FUNCTION |
-| 10 | 0x42ad70 | int CGameObj::Sub_42AD70 | FUNCTION |
-| 11 | 0x42ad60 | int CGameObj::Sub_42AD60 | FUNCTION |
-| 12 | 0x42ad80 | int CGameObj::Sub_408820 | FUNCTION |
-| 13 | 0x411570 | int CGameObj::Sub_411570 | FUNCTION |
-| 14 | 0x41bf20 | int CSub4235E0::Sub_42AD90 | FUNCTION |
-| 15 | 0x4087d0 | void CGameObj::Sub_4087D0 | FUNCTION |
-| 16 | 0x4087f0 | void CGameObj::Sub_4087F0 | FUNCTION |
-| 17 | 0x413020 | void CGameObj::Sub_413020 | FUNCTION |
-| 18 | 0x41bf80 | void CSub4235E0::Sub_42ECE0 | FUNCTION |
-| 19 | 0x415040 | void CSub4235E0::Sub_42ECF0 | FUNCTION |
+| 7 | 0x42ecd0 | void CRobotState::Think | FUNCTION |
+| 8 | 0x42ad40 | void CGameObj::OnTouch | FUNCTION |
+| 9 | 0x42ad50 | void CGameObj::UsePod | FUNCTION |
+| 10 | 0x42ad70 | int CGameObj::IsNear | FUNCTION |
+| 11 | 0x42ad60 | int CGameObj::Touches | FUNCTION |
+| 12 | 0x42ad80 | int CGameObj::UpdateRegions | FUNCTION |
+| 13 | 0x411570 | int CGameObj::IntersectLine | FUNCTION |
+| 14 | 0x41beb0 | int CRobotState::OnProbeHit | FUNCTION |
+| 15 | 0x4087d0 | void CGameObj::BeginFrame | FUNCTION |
+| 16 | 0x4087f0 | void CGameObj::EndFrame | FUNCTION |
+| 17 | 0x413020 | void CGameObj::KillObject | FUNCTION |
+| 18 | 0x42ece0 | void CRobotState::OnEnter | FUNCTION |
+| 19 | 0x42ecf0 | void CRobotState::OnLeave | FUNCTION |
 
-## CSub423710 — vtable 0x4be2a8 (20 slots; ctor 0x423710 CSub423710::CSub423710)
+## CRobotSeekState — vtable 0x4be1f0 (20 slots; ctor 0x4235e0 CRobotSeekState::CRobotSeekState)
 | slot | original | ours (same slot) | status |
 |---|---|---|---|
 | 0 | 0x42ad00 | CGameObj::GetRuntimeClass | **MISSING** |
-| 1 | 0x42f260 | CSub423710::~ (deleting) | **MISSING** |
-| 5 | 0x414a50 | int CGameObj::Sub_414A50 | FUNCTION |
+| 1 | 0x42f1f0 | CRobotSeekState::~ (deleting) | **MISSING** |
+| 5 | 0x414a50 | int CGameObj::SetMerlin | FUNCTION |
 | 6 | 0x42ad10 | int CGameObj::Sub_42AD10 | FUNCTION |
-| 7 | 0x42ed90 | void CSub423710::Sub_42AD30 | FUNCTION |
-| 8 | 0x42ad40 | void CGameObj::Sub_42AD40 | FUNCTION |
-| 9 | 0x42ad50 | void CGameObj::Sub_42AD50 | FUNCTION |
-| 10 | 0x42ad70 | int CGameObj::Sub_42AD70 | FUNCTION |
-| 11 | 0x42ad60 | int CGameObj::Sub_42AD60 | FUNCTION |
-| 12 | 0x42ad80 | int CGameObj::Sub_408820 | FUNCTION |
-| 13 | 0x411570 | int CGameObj::Sub_411570 | FUNCTION |
-| 14 | 0x41beb0 | int CSub423670::Sub_42AD90 | FUNCTION |
-| 15 | 0x4087d0 | void CGameObj::Sub_4087D0 | FUNCTION |
-| 16 | 0x4087f0 | void CGameObj::Sub_4087F0 | FUNCTION |
-| 17 | 0x413020 | void CGameObj::Sub_413020 | FUNCTION |
-| 18 | 0x42ee10 | void CSub423710::Sub_42ECE0 | FUNCTION |
-| 19 | 0x42ef00 | void CSub423710::Sub_42ECF0 | FUNCTION |
+| 7 | 0x414d70 | void CRobotSeekState::Think | FUNCTION |
+| 8 | 0x42ad40 | void CGameObj::OnTouch | FUNCTION |
+| 9 | 0x42ad50 | void CGameObj::UsePod | FUNCTION |
+| 10 | 0x42ad70 | int CGameObj::IsNear | FUNCTION |
+| 11 | 0x42ad60 | int CGameObj::Touches | FUNCTION |
+| 12 | 0x42ad80 | int CGameObj::UpdateRegions | FUNCTION |
+| 13 | 0x411570 | int CGameObj::IntersectLine | FUNCTION |
+| 14 | 0x41bf20 | int CRobotSeekState::OnProbeHit | FUNCTION |
+| 15 | 0x4087d0 | void CGameObj::BeginFrame | FUNCTION |
+| 16 | 0x4087f0 | void CGameObj::EndFrame | FUNCTION |
+| 17 | 0x413020 | void CGameObj::KillObject | FUNCTION |
+| 18 | 0x41bf80 | void CRobotSeekState::OnEnter | FUNCTION |
+| 19 | 0x415040 | void CRobotSeekState::OnLeave | FUNCTION |
 
-## CSub4237A0 — vtable 0x4be350 (20 slots; ctor 0x4237a0 CSub4237A0::CSub4237A0)
+## CRobotSpinState — vtable 0x4be2a8 (20 slots; ctor 0x423710 CRobotSpinState::CRobotSpinState)
 | slot | original | ours (same slot) | status |
 |---|---|---|---|
 | 0 | 0x42ad00 | CGameObj::GetRuntimeClass | **MISSING** |
-| 1 | 0x42f2d0 | CSub4237A0::~ (deleting) | **MISSING** |
-| 5 | 0x414a50 | int CGameObj::Sub_414A50 | FUNCTION |
+| 1 | 0x42f260 | CRobotSpinState::~ (deleting) | **MISSING** |
+| 5 | 0x414a50 | int CGameObj::SetMerlin | FUNCTION |
 | 6 | 0x42ad10 | int CGameObj::Sub_42AD10 | FUNCTION |
-| 7 | 0x40a860 | void CSub4237A0::Sub_42AD30 | FUNCTION |
-| 8 | 0x42ad40 | void CGameObj::Sub_42AD40 | FUNCTION |
-| 9 | 0x42ad50 | void CGameObj::Sub_42AD50 | FUNCTION |
-| 10 | 0x42ad70 | int CGameObj::Sub_42AD70 | FUNCTION |
-| 11 | 0x42ad60 | int CGameObj::Sub_42AD60 | FUNCTION |
-| 12 | 0x42ad80 | int CGameObj::Sub_408820 | FUNCTION |
-| 13 | 0x411570 | int CGameObj::Sub_411570 | FUNCTION |
-| 14 | 0x41beb0 | int CSub423670::Sub_42AD90 | FUNCTION |
-| 15 | 0x4087d0 | void CGameObj::Sub_4087D0 | FUNCTION |
-| 16 | 0x4087f0 | void CGameObj::Sub_4087F0 | FUNCTION |
-| 17 | 0x413020 | void CGameObj::Sub_413020 | FUNCTION |
-| 18 | 0x40bc50 | void CSub4237A0::Sub_42ECE0 | FUNCTION |
-| 19 | 0x40bc70 | void CSub4237A0::Sub_42ECF0 | FUNCTION |
+| 7 | 0x42ed90 | void CRobotSpinState::Think | FUNCTION |
+| 8 | 0x42ad40 | void CGameObj::OnTouch | FUNCTION |
+| 9 | 0x42ad50 | void CGameObj::UsePod | FUNCTION |
+| 10 | 0x42ad70 | int CGameObj::IsNear | FUNCTION |
+| 11 | 0x42ad60 | int CGameObj::Touches | FUNCTION |
+| 12 | 0x42ad80 | int CGameObj::UpdateRegions | FUNCTION |
+| 13 | 0x411570 | int CGameObj::IntersectLine | FUNCTION |
+| 14 | 0x41beb0 | int CRobotState::OnProbeHit | FUNCTION |
+| 15 | 0x4087d0 | void CGameObj::BeginFrame | FUNCTION |
+| 16 | 0x4087f0 | void CGameObj::EndFrame | FUNCTION |
+| 17 | 0x413020 | void CGameObj::KillObject | FUNCTION |
+| 18 | 0x42ee10 | void CRobotSpinState::OnEnter | FUNCTION |
+| 19 | 0x42ef00 | void CRobotSpinState::OnLeave | FUNCTION |
 
-## CSub4238D0 — vtable 0x4be3f8 (20 slots; ctor 0x4238d0 CSub4238D0::CSub4238D0)
+## CRobotGotoState — vtable 0x4be350 (20 slots; ctor 0x4237a0 CRobotGotoState::CRobotGotoState)
 | slot | original | ours (same slot) | status |
 |---|---|---|---|
 | 0 | 0x42ad00 | CGameObj::GetRuntimeClass | **MISSING** |
-| 1 | 0x42f340 | CSub4238D0::~ (deleting) | **MISSING** |
-| 5 | 0x414a50 | int CGameObj::Sub_414A50 | FUNCTION |
+| 1 | 0x42f2d0 | CRobotGotoState::~ (deleting) | **MISSING** |
+| 5 | 0x414a50 | int CGameObj::SetMerlin | FUNCTION |
 | 6 | 0x42ad10 | int CGameObj::Sub_42AD10 | FUNCTION |
-| 7 | 0x4150f0 | void CSub4238D0::Sub_42AD30 | FUNCTION |
-| 8 | 0x42ad40 | void CGameObj::Sub_42AD40 | FUNCTION |
-| 9 | 0x42ad50 | void CGameObj::Sub_42AD50 | FUNCTION |
-| 10 | 0x42ad70 | int CGameObj::Sub_42AD70 | FUNCTION |
-| 11 | 0x42ad60 | int CGameObj::Sub_42AD60 | FUNCTION |
-| 12 | 0x42ad80 | int CGameObj::Sub_408820 | FUNCTION |
-| 13 | 0x411570 | int CGameObj::Sub_411570 | FUNCTION |
-| 14 | 0x41beb0 | int CSub423670::Sub_42AD90 | FUNCTION |
-| 15 | 0x4087d0 | void CGameObj::Sub_4087D0 | FUNCTION |
-| 16 | 0x4087f0 | void CGameObj::Sub_4087F0 | FUNCTION |
-| 17 | 0x413020 | void CGameObj::Sub_413020 | FUNCTION |
-| 18 | 0x41c010 | void CSub4238D0::Sub_42ECE0 | FUNCTION |
-| 19 | 0x42ecf0 | void CSub423670::Sub_42ECF0 | FUNCTION |
+| 7 | 0x40a860 | void CRobotGotoState::Think | FUNCTION |
+| 8 | 0x42ad40 | void CGameObj::OnTouch | FUNCTION |
+| 9 | 0x42ad50 | void CGameObj::UsePod | FUNCTION |
+| 10 | 0x42ad70 | int CGameObj::IsNear | FUNCTION |
+| 11 | 0x42ad60 | int CGameObj::Touches | FUNCTION |
+| 12 | 0x42ad80 | int CGameObj::UpdateRegions | FUNCTION |
+| 13 | 0x411570 | int CGameObj::IntersectLine | FUNCTION |
+| 14 | 0x41beb0 | int CRobotState::OnProbeHit | FUNCTION |
+| 15 | 0x4087d0 | void CGameObj::BeginFrame | FUNCTION |
+| 16 | 0x4087f0 | void CGameObj::EndFrame | FUNCTION |
+| 17 | 0x413020 | void CGameObj::KillObject | FUNCTION |
+| 18 | 0x40bc50 | void CRobotGotoState::OnEnter | FUNCTION |
+| 19 | 0x40bc70 | void CRobotGotoState::OnLeave | FUNCTION |
 
-## CSub423960 — vtable 0x4be4a0 (20 slots; ctor 0x423960 CSub423960::CSub423960)
+## CRobotFlagChaseState — vtable 0x4be3f8 (20 slots; ctor 0x4238d0 CRobotFlagChaseState::CRobotFlagChaseState)
 | slot | original | ours (same slot) | status |
 |---|---|---|---|
 | 0 | 0x42ad00 | CGameObj::GetRuntimeClass | **MISSING** |
-| 1 | 0x42f3b0 | CSub423960::~ (deleting) | **MISSING** |
-| 5 | 0x414a50 | int CGameObj::Sub_414A50 | FUNCTION |
+| 1 | 0x42f340 | CRobotFlagChaseState::~ (deleting) | **MISSING** |
+| 5 | 0x414a50 | int CGameObj::SetMerlin | FUNCTION |
 | 6 | 0x42ad10 | int CGameObj::Sub_42AD10 | FUNCTION |
-| 7 | 0x40bc90 | void CSub423960::Sub_42AD30 | FUNCTION |
-| 8 | 0x42ad40 | void CGameObj::Sub_42AD40 | FUNCTION |
-| 9 | 0x42ad50 | void CGameObj::Sub_42AD50 | FUNCTION |
-| 10 | 0x42ad70 | int CGameObj::Sub_42AD70 | FUNCTION |
-| 11 | 0x42ad60 | int CGameObj::Sub_42AD60 | FUNCTION |
-| 12 | 0x42ad80 | int CGameObj::Sub_408820 | FUNCTION |
-| 13 | 0x411570 | int CGameObj::Sub_411570 | FUNCTION |
-| 14 | 0x41beb0 | int CSub423670::Sub_42AD90 | FUNCTION |
-| 15 | 0x4087d0 | void CGameObj::Sub_4087D0 | FUNCTION |
-| 16 | 0x4087f0 | void CGameObj::Sub_4087F0 | FUNCTION |
-| 17 | 0x413020 | void CGameObj::Sub_413020 | FUNCTION |
-| 18 | 0x42ef30 | void CSub423960::Sub_42ECE0 | FUNCTION |
-| 19 | 0x42ecf0 | void CSub423670::Sub_42ECF0 | FUNCTION |
+| 7 | 0x4150f0 | void CRobotFlagChaseState::Think | FUNCTION |
+| 8 | 0x42ad40 | void CGameObj::OnTouch | FUNCTION |
+| 9 | 0x42ad50 | void CGameObj::UsePod | FUNCTION |
+| 10 | 0x42ad70 | int CGameObj::IsNear | FUNCTION |
+| 11 | 0x42ad60 | int CGameObj::Touches | FUNCTION |
+| 12 | 0x42ad80 | int CGameObj::UpdateRegions | FUNCTION |
+| 13 | 0x411570 | int CGameObj::IntersectLine | FUNCTION |
+| 14 | 0x41beb0 | int CRobotState::OnProbeHit | FUNCTION |
+| 15 | 0x4087d0 | void CGameObj::BeginFrame | FUNCTION |
+| 16 | 0x4087f0 | void CGameObj::EndFrame | FUNCTION |
+| 17 | 0x413020 | void CGameObj::KillObject | FUNCTION |
+| 18 | 0x41c010 | void CRobotFlagChaseState::OnEnter | FUNCTION |
+| 19 | 0x42ecf0 | void CRobotState::OnLeave | FUNCTION |
 
-## CSub423A90 — vtable 0x4be558 (5 slots; ctor 0x423a90 CSub423A90::CSub423A90)
-| slot | original | ours (same slot) | status |
-|---|---|---|---|
-| 1 | 0x42f520 | CSub423A90::~ (deleting) | **MISSING** |
-
-## CSub423A90 — vtable 0x4be570 (20 slots; ctor 0x423a90 CSub423A90::CSub423A90)
+## CRobotFlagWaitState — vtable 0x4be4a0 (20 slots; ctor 0x423960 CRobotFlagWaitState::CRobotFlagWaitState)
 | slot | original | ours (same slot) | status |
 |---|---|---|---|
 | 0 | 0x42ad00 | CGameObj::GetRuntimeClass | **MISSING** |
-| 1 | 0x42f420 | CSub423A90::~ (deleting) | **MISSING** |
-| 5 | 0x414a50 | int CGameObj::Sub_414A50 | FUNCTION |
+| 1 | 0x42f3b0 | CRobotFlagWaitState::~ (deleting) | **MISSING** |
+| 5 | 0x414a50 | int CGameObj::SetMerlin | FUNCTION |
 | 6 | 0x42ad10 | int CGameObj::Sub_42AD10 | FUNCTION |
-| 7 | 0x40bcd0 | void CSub423A90::Sub_42AD30 | FUNCTION |
-| 8 | 0x42ad40 | void CGameObj::Sub_42AD40 | FUNCTION |
-| 9 | 0x42ad50 | void CGameObj::Sub_42AD50 | FUNCTION |
-| 10 | 0x42ad70 | int CGameObj::Sub_42AD70 | FUNCTION |
-| 11 | 0x42ad60 | int CGameObj::Sub_42AD60 | FUNCTION |
-| 12 | 0x42ad80 | int CGameObj::Sub_408820 | FUNCTION |
-| 13 | 0x411570 | int CGameObj::Sub_411570 | FUNCTION |
-| 14 | 0x41beb0 | int CSub423670::Sub_42AD90 | FUNCTION |
-| 15 | 0x4087d0 | void CGameObj::Sub_4087D0 | FUNCTION |
-| 16 | 0x4087f0 | void CGameObj::Sub_4087F0 | FUNCTION |
-| 17 | 0x413020 | void CGameObj::Sub_413020 | FUNCTION |
-| 18 | 0x40bf80 | void CSub423A90::Sub_42ECE0 | FUNCTION |
-| 19 | 0x42ecf0 | void CSub423670::Sub_42ECF0 | FUNCTION |
+| 7 | 0x40bc90 | void CRobotFlagWaitState::Think | FUNCTION |
+| 8 | 0x42ad40 | void CGameObj::OnTouch | FUNCTION |
+| 9 | 0x42ad50 | void CGameObj::UsePod | FUNCTION |
+| 10 | 0x42ad70 | int CGameObj::IsNear | FUNCTION |
+| 11 | 0x42ad60 | int CGameObj::Touches | FUNCTION |
+| 12 | 0x42ad80 | int CGameObj::UpdateRegions | FUNCTION |
+| 13 | 0x411570 | int CGameObj::IntersectLine | FUNCTION |
+| 14 | 0x41beb0 | int CRobotState::OnProbeHit | FUNCTION |
+| 15 | 0x4087d0 | void CGameObj::BeginFrame | FUNCTION |
+| 16 | 0x4087f0 | void CGameObj::EndFrame | FUNCTION |
+| 17 | 0x413020 | void CGameObj::KillObject | FUNCTION |
+| 18 | 0x42ef30 | void CRobotFlagWaitState::OnEnter | FUNCTION |
+| 19 | 0x42ecf0 | void CRobotState::OnLeave | FUNCTION |
 
-## CSub423B80 — vtable 0x4be620 (20 slots; ctor 0x423b80 CSub423B80::CSub423B80)
+## CRobotRouteState — vtable 0x4be558 (5 slots; ctor 0x423a90 CRobotRouteState::CRobotRouteState)
+| slot | original | ours (same slot) | status |
+|---|---|---|---|
+| 1 | 0x42f520 | CRobotRouteState::~ (deleting) | **MISSING** |
+
+## CRobotRouteState — vtable 0x4be570 (20 slots; ctor 0x423a90 CRobotRouteState::CRobotRouteState)
 | slot | original | ours (same slot) | status |
 |---|---|---|---|
 | 0 | 0x42ad00 | CGameObj::GetRuntimeClass | **MISSING** |
-| 1 | 0x42f4b0 | CSub423B80::~ (deleting) | **MISSING** |
-| 5 | 0x414a50 | int CGameObj::Sub_414A50 | FUNCTION |
+| 1 | 0x42f420 | CRobotRouteState::~ (deleting) | **MISSING** |
+| 5 | 0x414a50 | int CGameObj::SetMerlin | FUNCTION |
 | 6 | 0x42ad10 | int CGameObj::Sub_42AD10 | FUNCTION |
-| 7 | 0x42ef40 | void CSub423B80::Sub_42AD30 | FUNCTION |
-| 8 | 0x42ad40 | void CGameObj::Sub_42AD40 | FUNCTION |
-| 9 | 0x42ad50 | void CGameObj::Sub_42AD50 | FUNCTION |
-| 10 | 0x42ad70 | int CGameObj::Sub_42AD70 | FUNCTION |
-| 11 | 0x42ad60 | int CGameObj::Sub_42AD60 | FUNCTION |
-| 12 | 0x42ad80 | int CGameObj::Sub_408820 | FUNCTION |
-| 13 | 0x411570 | int CGameObj::Sub_411570 | FUNCTION |
-| 14 | 0x41beb0 | int CSub423670::Sub_42AD90 | FUNCTION |
-| 15 | 0x4087d0 | void CGameObj::Sub_4087D0 | FUNCTION |
-| 16 | 0x4087f0 | void CGameObj::Sub_4087F0 | FUNCTION |
-| 17 | 0x413020 | void CGameObj::Sub_413020 | FUNCTION |
-| 18 | 0x42f000 | void CSub423B80::Sub_42ECE0 | FUNCTION |
-| 19 | 0x42ecf0 | void CSub423670::Sub_42ECF0 | FUNCTION |
+| 7 | 0x40bcd0 | void CRobotRouteState::Think | FUNCTION |
+| 8 | 0x42ad40 | void CGameObj::OnTouch | FUNCTION |
+| 9 | 0x42ad50 | void CGameObj::UsePod | FUNCTION |
+| 10 | 0x42ad70 | int CGameObj::IsNear | FUNCTION |
+| 11 | 0x42ad60 | int CGameObj::Touches | FUNCTION |
+| 12 | 0x42ad80 | int CGameObj::UpdateRegions | FUNCTION |
+| 13 | 0x411570 | int CGameObj::IntersectLine | FUNCTION |
+| 14 | 0x41beb0 | int CRobotState::OnProbeHit | FUNCTION |
+| 15 | 0x4087d0 | void CGameObj::BeginFrame | FUNCTION |
+| 16 | 0x4087f0 | void CGameObj::EndFrame | FUNCTION |
+| 17 | 0x413020 | void CGameObj::KillObject | FUNCTION |
+| 18 | 0x40bf80 | void CRobotRouteState::OnEnter | FUNCTION |
+| 19 | 0x42ecf0 | void CRobotState::OnLeave | FUNCTION |
 
-## CBeacon — vtable 0x4be698 (18 slots; ctor 0x423ea0 void Hover_sub_423EA0)
+## CRobotRamState — vtable 0x4be620 (20 slots; ctor 0x423b80 CRobotRamState::CRobotRamState)
+| slot | original | ours (same slot) | status |
+|---|---|---|---|
+| 0 | 0x42ad00 | CGameObj::GetRuntimeClass | **MISSING** |
+| 1 | 0x42f4b0 | CRobotRamState::~ (deleting) | **MISSING** |
+| 5 | 0x414a50 | int CGameObj::SetMerlin | FUNCTION |
+| 6 | 0x42ad10 | int CGameObj::Sub_42AD10 | FUNCTION |
+| 7 | 0x42ef40 | void CRobotRamState::Think | FUNCTION |
+| 8 | 0x42ad40 | void CGameObj::OnTouch | FUNCTION |
+| 9 | 0x42ad50 | void CGameObj::UsePod | FUNCTION |
+| 10 | 0x42ad70 | int CGameObj::IsNear | FUNCTION |
+| 11 | 0x42ad60 | int CGameObj::Touches | FUNCTION |
+| 12 | 0x42ad80 | int CGameObj::UpdateRegions | FUNCTION |
+| 13 | 0x411570 | int CGameObj::IntersectLine | FUNCTION |
+| 14 | 0x41beb0 | int CRobotState::OnProbeHit | FUNCTION |
+| 15 | 0x4087d0 | void CGameObj::BeginFrame | FUNCTION |
+| 16 | 0x4087f0 | void CGameObj::EndFrame | FUNCTION |
+| 17 | 0x413020 | void CGameObj::KillObject | FUNCTION |
+| 18 | 0x42f000 | void CRobotRamState::OnEnter | FUNCTION |
+| 19 | 0x42ecf0 | void CRobotState::OnLeave | FUNCTION |
+
+## CBeacon — vtable 0x4be698 (18 slots; ctor 0x423ea0 void Hover_BuildBeacons)
 | slot | original | ours (same slot) | status |
 |---|---|---|---|
 | 0 | 0x40bc40 | CBeacon::GetRuntimeClass | **MISSING** |
 | 1 | 0x424180 | CBeacon::~ (deleting) | FUNCTION |
-| 5 | 0x414a50 | int CGameObj::Sub_414A50 | FUNCTION |
+| 5 | 0x414a50 | int CGameObj::SetMerlin | FUNCTION |
 | 6 | 0x42ad10 | int CGameObj::Sub_42AD10 | FUNCTION |
-| 7 | 0x42ad30 | void CGameObj::Sub_42AD30 | FUNCTION |
-| 8 | 0x42ad40 | void CGameObj::Sub_42AD40 | FUNCTION |
-| 9 | 0x42ad50 | void CGameObj::Sub_42AD50 | FUNCTION |
-| 10 | 0x42ad70 | int CGameObj::Sub_42AD70 | FUNCTION |
-| 11 | 0x42ad60 | int CGameObj::Sub_42AD60 | FUNCTION |
-| 12 | 0x42ad80 | int CGameObj::Sub_408820 | FUNCTION |
-| 13 | 0x411570 | int CGameObj::Sub_411570 | FUNCTION |
-| 14 | 0x423e50 | int CBeacon::Sub_42AD90 | FUNCTION |
-| 15 | 0x4087d0 | void CGameObj::Sub_4087D0 | FUNCTION |
-| 16 | 0x4087f0 | void CGameObj::Sub_4087F0 | FUNCTION |
-| 17 | 0x413020 | void CGameObj::Sub_413020 | FUNCTION |
+| 7 | 0x42ad30 | void CGameObj::Think | FUNCTION |
+| 8 | 0x42ad40 | void CGameObj::OnTouch | FUNCTION |
+| 9 | 0x42ad50 | void CGameObj::UsePod | FUNCTION |
+| 10 | 0x42ad70 | int CGameObj::IsNear | FUNCTION |
+| 11 | 0x42ad60 | int CGameObj::Touches | FUNCTION |
+| 12 | 0x42ad80 | int CGameObj::UpdateRegions | FUNCTION |
+| 13 | 0x411570 | int CGameObj::IntersectLine | FUNCTION |
+| 14 | 0x423e50 | int CBeacon::OnProbeHit | FUNCTION |
+| 15 | 0x4087d0 | void CGameObj::BeginFrame | FUNCTION |
+| 16 | 0x4087f0 | void CGameObj::EndFrame | FUNCTION |
+| 17 | 0x413020 | void CGameObj::KillObject | FUNCTION |
 
 ## CSplashDialog — vtable 0x4beaa0 (33 slots; ctor 0x425120 CSplashDialog::CSplashDialog)
 | slot | original | ours (same slot) | status |
@@ -805,90 +805,90 @@ notes/perfect-match.md rule 50.
 | 25 | 0x4245e0 | void CSplashDialog::PostNcDestroy | FUNCTION |
 | 29 | 0x424290 | BOOL CSplashDialog::OnInitDialog | FUNCTION |
 
-## CSub424720 — vtable 0x4beb28 (28 slots; ctor 0x424720 CSub424720::CSub424720)
+## CLoadingDialog — vtable 0x4beb28 (28 slots; ctor 0x424720 CLoadingDialog::CLoadingDialog)
 | slot | original | ours (same slot) | status |
 |---|---|---|---|
-| 1 | 0x42f620 | CSub424720::~ (deleting) | **MISSING** |
+| 1 | 0x42f620 | CLoadingDialog::~ (deleting) | **MISSING** |
 
-## CSub42F640 — vtable 0x4bedd0 (28 slots; ctor 0x42f640 CSub42F640::CSub42F640)
+## CStartAtDialog — vtable 0x4bedd0 (28 slots; ctor 0x42f640 CStartAtDialog::CStartAtDialog)
 | slot | original | ours (same slot) | status |
 |---|---|---|---|
-| 1 | 0x42fd10 | CSub42F640::~ (deleting) | **MISSING** |
+| 1 | 0x42fd10 | CStartAtDialog::~ (deleting) | **MISSING** |
 
-## CSub42F640 — vtable 0x4bee40 (28 slots; ctor 0x42f640 CSub42F640::CSub42F640)
+## CStartAtDialog — vtable 0x4bee40 (28 slots; ctor 0x42f640 CStartAtDialog::CStartAtDialog)
 | slot | original | ours (same slot) | status |
 |---|---|---|---|
-| 1 | 0x42fcf0 | CSub42F640::~ (deleting) | **MISSING** |
+| 1 | 0x42fcf0 | CStartAtDialog::~ (deleting) | **MISSING** |
 
-## CSub42F640 — vtable 0x4beeb0 (33 slots; ctor 0x42f640 CSub42F640::CSub42F640)
+## CStartAtDialog — vtable 0x4beeb0 (33 slots; ctor 0x42f640 CStartAtDialog::CStartAtDialog)
 | slot | original | ours (same slot) | status |
 |---|---|---|---|
-| 1 | 0x42fd30 | CSub42F640::~ (deleting) | **MISSING** |
-| 7 | 0x42f840 | CSub42F640::GetMessageMap | **MISSING** |
-| 21 | 0x42f7d0 | void CSub42F640::DoDataExchange | FUNCTION |
-| 29 | 0x42f890 | BOOL CSub42F640::OnInitDialog | FUNCTION |
-| 31 | 0x42fcc0 | void CSub42F640::OnOK | FUNCTION |
+| 1 | 0x42fd30 | CStartAtDialog::~ (deleting) | **MISSING** |
+| 7 | 0x42f840 | CStartAtDialog::GetMessageMap | **MISSING** |
+| 21 | 0x42f7d0 | void CStartAtDialog::DoDataExchange | FUNCTION |
+| 29 | 0x42f890 | BOOL CStartAtDialog::OnInitDialog | FUNCTION |
+| 31 | 0x42fcc0 | void CStartAtDialog::OnOK | FUNCTION |
 
-## CSub424720 — vtable 0x4bf090 (33 slots; ctor 0x424720 CSub424720::CSub424720)
+## CLoadingDialog — vtable 0x4bf090 (33 slots; ctor 0x424720 CLoadingDialog::CLoadingDialog)
 | slot | original | ours (same slot) | status |
 |---|---|---|---|
-| 1 | 0x424940 | CSub424720::~ (deleting) | **MISSING** |
-| 7 | 0x41c020 | CSub424720::GetMessageMap | **MISSING** |
+| 1 | 0x424940 | CLoadingDialog::~ (deleting) | **MISSING** |
+| 7 | 0x41c020 | CLoadingDialog::GetMessageMap | **MISSING** |
 | 13 | 0x42fe00 | CWnd::DestroyWindow | **MISSING** |
-| 21 | 0x4247d0 | void CSub424720::DoDataExchange | FUNCTION |
-| 29 | 0x4247f0 | BOOL CSub424720::OnInitDialog | FUNCTION |
+| 21 | 0x4247d0 | void CLoadingDialog::DoDataExchange | FUNCTION |
+| 29 | 0x4247f0 | BOOL CLoadingDialog::OnInitDialog | FUNCTION |
 
-## CSub42FE20 — vtable 0x4bf2e8 (33 slots; ctor 0x42fe20 CSub42FE20::CSub42FE20)
+## CKeyboardDialog — vtable 0x4bf2e8 (33 slots; ctor 0x42fe20 CKeyboardDialog::CKeyboardDialog)
 | slot | original | ours (same slot) | status |
 |---|---|---|---|
-| 1 | 0x430650 | CSub42FE20::~ (deleting) | **MISSING** |
-| 7 | 0x430180 | CSub42FE20::GetMessageMap | **MISSING** |
-| 21 | 0x4300e0 | void CSub42FE20::DoDataExchange | FUNCTION |
-| 29 | 0x4304b0 | BOOL CSub42FE20::OnInitDialog | FUNCTION |
-| 31 | 0x430190 | void CSub42FE20::OnOK | FUNCTION |
+| 1 | 0x430650 | CKeyboardDialog::~ (deleting) | **MISSING** |
+| 7 | 0x430180 | CKeyboardDialog::GetMessageMap | **MISSING** |
+| 21 | 0x4300e0 | void CKeyboardDialog::DoDataExchange | FUNCTION |
+| 29 | 0x4304b0 | BOOL CKeyboardDialog::OnInitDialog | FUNCTION |
+| 31 | 0x430190 | void CKeyboardDialog::OnOK | FUNCTION |
 
-## CSub430780 — vtable 0x4bf5f0 (33 slots; ctor 0x430780 CSub430780::CSub430780)
+## CHumanParamsDialog — vtable 0x4bf5f0 (33 slots; ctor 0x430780 CHumanParamsDialog::CHumanParamsDialog)
 | slot | original | ours (same slot) | status |
 |---|---|---|---|
-| 1 | 0x4336f0 | CSub430780::~ (deleting) | **MISSING** |
-| 7 | 0x430b70 | CSub430780::GetMessageMap | **MISSING** |
-| 21 | 0x430930 | void CSub430780::DoDataExchange | FUNCTION |
-| 29 | 0x430b80 | BOOL CSub430780::OnInitDialog | FUNCTION |
-| 31 | 0x431880 | void CSub430780::OnOK | FUNCTION |
+| 1 | 0x4336f0 | CHumanParamsDialog::~ (deleting) | **MISSING** |
+| 7 | 0x430b70 | CHumanParamsDialog::GetMessageMap | **MISSING** |
+| 21 | 0x430930 | void CHumanParamsDialog::DoDataExchange | FUNCTION |
+| 29 | 0x430b80 | BOOL CHumanParamsDialog::OnInitDialog | FUNCTION |
+| 31 | 0x431880 | void CHumanParamsDialog::OnOK | FUNCTION |
 
-## CSub4319A0 — vtable 0x4bf6a0 (33 slots; ctor 0x4319a0 CSub4319A0::CSub4319A0)
+## CRobotParamsDialog — vtable 0x4bf6a0 (33 slots; ctor 0x4319a0 CRobotParamsDialog::CRobotParamsDialog)
 | slot | original | ours (same slot) | status |
 |---|---|---|---|
-| 1 | 0x433760 | CSub4319A0::~ (deleting) | **MISSING** |
-| 7 | 0x431d00 | CSub4319A0::GetMessageMap | **MISSING** |
-| 21 | 0x431b20 | void CSub4319A0::DoDataExchange | FUNCTION |
-| 29 | 0x431d10 | BOOL CSub4319A0::OnInitDialog | FUNCTION |
-| 31 | 0x432930 | void CSub4319A0::OnOK | FUNCTION |
+| 1 | 0x433760 | CRobotParamsDialog::~ (deleting) | **MISSING** |
+| 7 | 0x431d00 | CRobotParamsDialog::GetMessageMap | **MISSING** |
+| 21 | 0x431b20 | void CRobotParamsDialog::DoDataExchange | FUNCTION |
+| 29 | 0x431d10 | BOOL CRobotParamsDialog::OnInitDialog | FUNCTION |
+| 31 | 0x432930 | void CRobotParamsDialog::OnOK | FUNCTION |
 
-## CSub432A50 — vtable 0x4bf750 (33 slots; ctor 0x432a50 CSub432A50::CSub432A50)
+## CRobotAIParamsDialog — vtable 0x4bf750 (33 slots; ctor 0x432a50 CRobotAIParamsDialog::CRobotAIParamsDialog)
 | slot | original | ours (same slot) | status |
 |---|---|---|---|
-| 1 | 0x4337d0 | CSub432A50::~ (deleting) | **MISSING** |
-| 7 | 0x432da0 | CSub432A50::GetMessageMap | **MISSING** |
-| 21 | 0x432b70 | void CSub432A50::DoDataExchange | FUNCTION |
-| 29 | 0x432f50 | BOOL CSub432A50::OnInitDialog | FUNCTION |
-| 31 | 0x432f30 | void CSub432A50::OnOK | FUNCTION |
+| 1 | 0x4337d0 | CRobotAIParamsDialog::~ (deleting) | **MISSING** |
+| 7 | 0x432da0 | CRobotAIParamsDialog::GetMessageMap | **MISSING** |
+| 21 | 0x432b70 | void CRobotAIParamsDialog::DoDataExchange | FUNCTION |
+| 29 | 0x432f50 | BOOL CRobotAIParamsDialog::OnInitDialog | FUNCTION |
+| 31 | 0x432f30 | void CRobotAIParamsDialog::OnOK | FUNCTION |
 
-## CSub424BD0 — vtable 0x4bf9e8 (33 slots; ctor 0x424bd0 CSub424BD0::CSub424BD0)
+## CHighScoresDialog — vtable 0x4bf9e8 (33 slots; ctor 0x424bd0 CHighScoresDialog::CHighScoresDialog)
 | slot | original | ours (same slot) | status |
 |---|---|---|---|
-| 1 | 0x434070 | CSub424BD0::~ (deleting) | **MISSING** |
-| 7 | 0x433850 | CSub424BD0::GetMessageMap | **MISSING** |
-| 21 | 0x433840 | void CSub424BD0::DoDataExchange | FUNCTION |
+| 1 | 0x434070 | CHighScoresDialog::~ (deleting) | **MISSING** |
+| 7 | 0x433850 | CHighScoresDialog::GetMessageMap | **MISSING** |
+| 21 | 0x433840 | void CHighScoresDialog::DoDataExchange | FUNCTION |
 | 29 | 0x433ee0 | CDialog::OnInitDialog | FUNCTION |
-| 31 | 0x434050 | void CSub424BD0::OnOK | FUNCTION |
+| 31 | 0x434050 | void CHighScoresDialog::OnOK | FUNCTION |
 
-## CSub434170 — vtable 0x4bfbc8 (33 slots; ctor 0x434170 CSub434170::CSub434170)
+## CEnterHighScoreDialog — vtable 0x4bfbc8 (33 slots; ctor 0x434170 CEnterHighScoreDialog::CEnterHighScoreDialog)
 | slot | original | ours (same slot) | status |
 |---|---|---|---|
-| 1 | 0x434240 | CSub434170::~ (deleting) | **MISSING** |
-| 7 | 0x434230 | CSub434170::GetMessageMap | **MISSING** |
-| 21 | 0x434200 | void CSub434170::DoDataExchange | FUNCTION |
+| 1 | 0x434240 | CEnterHighScoreDialog::~ (deleting) | **MISSING** |
+| 7 | 0x434230 | CEnterHighScoreDialog::GetMessageMap | **MISSING** |
+| 21 | 0x434200 | void CEnterHighScoreDialog::DoDataExchange | FUNCTION |
 
 ## CQuickHelpDialog — vtable 0x4bfcc8 (33 slots; ctor 0x424ec0 CQuickHelpDialog::CQuickHelpDialog)
 | slot | original | ours (same slot) | status |
@@ -899,10 +899,10 @@ notes/perfect-match.md rule 50.
 | 29 | 0x434360 | BOOL CQuickHelpDialog::OnInitDialog | FUNCTION |
 | 31 | 0x4342e0 | void CQuickHelpDialog::OnOK | FUNCTION |
 
-## CSub425050 — vtable 0x4bfda0 (5 slots; ctor 0x425050 CSub425050::CSub425050)
+## CMidiStream — vtable 0x4bfda0 (5 slots; ctor 0x425050 CMidiStream::CMidiStream)
 | slot | original | ours (same slot) | status |
 |---|---|---|---|
-| 1 | 0x4384c0 | CSub425050::~ (deleting) | **MISSING** |
+| 1 | 0x4384c0 | CMidiStream::~ (deleting) | **MISSING** |
 
 
 Total missing override slots: 114

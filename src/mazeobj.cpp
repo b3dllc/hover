@@ -9,7 +9,7 @@
 #include "gameobj.h"
 #include "bumperdoc.h"
 #include "mazeobj.h"
-#include "bumpview.h"		// CSub422C80 (the CSlowPod dashboard gauge)
+#include "bumpview.h"		// CSegmentGauge (the CSlowPod dashboard gauge)
 #include "texload.h"		// CCollider
 #include "bumpview.h"
 
@@ -36,27 +36,27 @@ IMPLEMENT_DYNAMIC(CContainer, CPodObj)
 
 // hover.exe:0x4C5334
 // GLOBAL: HOVER 0x4c5334
-DWORD g_dwUnk_4C5334 = 0xA;	// CPodObj pool block size (object count)
+DWORD g_dwPodPoolBlock = 0xA;	// CPodObj pool block size (object count)
 
 // hover.exe:0x4C53E4
 // GLOBAL: HOVER 0x4c53e4
-DWORD g_dwUnk_4C53E4 = 0xA;	// CFloorObj pool block size (object count)
+DWORD g_dwFloorObjPoolBlock = 0xA;	// CFloorObj pool block size (object count)
 
 // hover.exe:0x4C558C
 // GLOBAL: HOVER 0x4c558c
-DWORD g_dwUnk_4C558C = 0x20;	// CWall pool block size (object count)
+DWORD g_dwWallPoolBlock = 0x20;	// CWall pool block size (object count)
 
 // hover.exe:0x4C57AC
 // GLOBAL: HOVER 0x4c57ac
-DWORD g_dwUnk_4C57AC = 5;	// CBeacon pool block size (object count)
+DWORD g_dwBeaconPoolBlock = 5;	// CBeacon pool block size (object count)
 
 // hover.exe:0x4C5590
 // GLOBAL: HOVER 0x4c5590
-DWORD g_dwUnk_4C5590;	// incremented by CWall::Sub_408820, never read
+DWORD g_dwWallRegisterCount;	// incremented by CWall::UpdateRegions, never read
 
 // hover.exe:0x4A4840
 // GLOBAL: HOVER 0x4a4840
-CObArray g_obArrUnk_4A4840;	// beacon table built by Hover_sub_423EA0
+CObArray g_arrBeacons;	// beacon table built by Hover_BuildBeacons
 
 // Sanity checks on the reconstructed class layouts (the pool allocators
 // carve blocks in units of the class size, so these must match hover.exe)
@@ -71,7 +71,7 @@ typedef char _check_cbeacon_size[(sizeof(CBeacon) == 0xB0) ? 1 : -1];
 // still emits the out-of-line copy at hover.exe:0x42AE90.
 // hover.exe:0x42AE90
 // FUNCTION: HOVER 0x42ae90
-inline CSub42AE90::CSub42AE90(WORD wInt, WORD wFrac)
+inline CGaugeFraction::CGaugeFraction(WORD wInt, WORD wFrac)
 {
 	m_wFrac = wFrac;
 	m_wInt = wInt;
@@ -79,9 +79,9 @@ inline CSub42AE90::CSub42AE90(WORD wInt, WORD wFrac)
 
 
 
-// hover.exe expands CSub422C80::Sub_42A9F0 (0x42A9F0) inline in the five
+// hover.exe expands CSegmentGauge::SetFraction (0x42A9F0) inline in the five
 // per-frame pod handlers below while still calling it from the two
-// Sub_42AD50 handlers, i.e. the gauge update was written twice: once as the
+// UsePod handlers, i.e. the gauge update was written twice: once as the
 // out-of-line method and once here. `pGauge` must be a local, because the
 // original computes the gauge address once.
 #define HOVER_INLINE_SUB_42A9F0(pGauge, fix) \
@@ -89,22 +89,22 @@ inline CSub42AE90::CSub42AE90(WORD wInt, WORD wFrac)
 		long _lSegs; \
 		long _lIndex; \
 		*(long*)&(fix) += 0x288; \
-		HOVER_FIXMULWP(*(DWORD*)&(fix), (WORD)(pGauge)->m_dwUnk1C); \
+		HOVER_FIXMULWP(*(DWORD*)&(fix), (WORD)(pGauge)->m_dwSegments); \
 		_lIndex = (short)(fix).m_wInt; \
-		_lSegs = (long)(pGauge)->m_dwUnk1C; \
+		_lSegs = (long)(pGauge)->m_dwSegments; \
 		if (_lIndex > _lSegs) \
 			_lIndex = _lSegs; \
 		if (_lIndex >= _lSegs) \
 		{ \
-			(pGauge)->m_dwUnk24 = _lSegs; \
+			(pGauge)->m_dwLevel = _lSegs; \
 		} \
 		else if (_lIndex <= 0) \
 		{ \
-			(pGauge)->m_dwUnk24 = 0; \
+			(pGauge)->m_dwLevel = 0; \
 		} \
 		else \
 		{ \
-			(pGauge)->m_dwUnk24 = _lIndex; \
+			(pGauge)->m_dwLevel = _lIndex; \
 		} \
 	} while (0)
 
@@ -124,24 +124,24 @@ CPodObj::CPodObj()
 	m_awUnkE0[2] = 0;
 	m_awUnkE0[3] = 0;
 	m_awUnkE0[4] = 0;
-	m_dwUnk88 = 0;
+	m_pOwner = 0;
 	m_awUnkE0[5] = 0;
 	m_awUnkE0[6] = 0;
 	m_awUnkE0[7] = 0;
-	m_dwUnkAC = 0x64;	// stored 0x64 here, then overwritten with 0 below
-	m_pUnk8C = NULL;
+	m_dwZOffset = 0x64;	// stored 0x64 here, then overwritten with 0 below
+	m_pTexture = NULL;
 	wsprintfA(szName, "%s%02d", "POD06_", 0);
-	g_mapUnk_4A1D30.Lookup(szName, (CObject*&)m_pUnk8C);
-	pTexture = m_pUnk8C;
-	m_dwUnkB8 = (short)pTexture->m_wUnk18;
-	nHalf = (short)pTexture->m_wUnk14 / 2;
-	m_dwUnk94 = 0;
+	g_mapUnk_4A1D30.Lookup(szName, (CObject*&)m_pTexture);
+	pTexture = m_pTexture;
+	m_dwHeight = (short)pTexture->m_wHeight;
+	nHalf = (short)pTexture->m_wWidth / 2;
+	m_bOnBoard = 0;
 	m_dwUnk64 = 0;
-	m_dwUnkAC = 0;
-	m_dwUnk9C = 0xA;
+	m_dwZOffset = 0;
+	m_dwRadius = 0xA;
 	m_dwUnkB4 = 0x80;
-	m_dwUnk98 = 1;
-	m_dwUnkBC = (short)nHalf;
+	m_bRespawn = 1;
+	m_dwHalfWidth = (short)nHalf;
 }
 
 // hover.exe:0x42AF20
@@ -152,18 +152,18 @@ void* CPodObj::operator new(size_t nSize)
 	int nCount;
 	int i;
 
-	pObj = (CPodObj*)g_dwUnk_4C5330;
+	pObj = g_pPodObjFree;
 	if (pObj == NULL)
 	{
-		g_dwUnk_4C5330 = (DWORD)::operator new(g_dwUnk_4C5334 * sizeof(CPodObj));
-		g_listUnk_4A45B8.AddTail((void*)g_dwUnk_4C5330);
-		nCount = g_dwUnk_4C5334;
-		pObj = (CPodObj*)g_dwUnk_4C5330;
+		g_pPodObjFree = (CPodObj*)::operator new(g_dwPodPoolBlock * sizeof(CPodObj));
+		g_listPodObjBlocks.AddTail((void*)g_pPodObjFree);
+		nCount = g_dwPodPoolBlock;
+		pObj = g_pPodObjFree;
 		for (i = 0; i < nCount - 1; i++)
-			pObj[i].m_dwUnk84 = (DWORD)&pObj[i + 1];
-		pObj[nCount - 1].m_dwUnk84 = 0;
+			pObj[i].m_pNextFree = &pObj[i + 1];
+		pObj[nCount - 1].m_pNextFree = 0;
 	}
-	g_dwUnk_4C5330 = pObj->m_dwUnk84;
+	g_pPodObjFree = pObj->m_pNextFree;
 	return pObj;
 }
 
@@ -171,9 +171,9 @@ void* CPodObj::operator new(size_t nSize)
 // FUNCTION: HOVER 0x42af90
 void CPodObj::operator delete(void* p)
 {
-	DWORD dwHead = g_dwUnk_4C5330;
-	g_dwUnk_4C5330 = (DWORD)p;
-	((CPodObj*)p)->m_dwUnk84 = dwHead;
+	CPodObj* pHead = g_pPodObjFree;
+	g_pPodObjFree = (CPodObj*)p;
+	((CPodObj*)p)->m_pNextFree = pHead;
 }
 
 // The class destructor has an empty body; the pool release happens in the
@@ -189,9 +189,9 @@ CPodObj::~CPodObj()
 // one-instruction tail jump.
 // hover.exe:0x40D2E0
 // FUNCTION: HOVER 0x40d2e0
-void CPodObj::Sub_42AD30()
+void CPodObj::Think()
 {
-	CGameObj::Sub_42AD30();
+	CGameObj::Think();
 }
 
 // Player touched the pod (vtable slot 8): flag the view for a dashboard
@@ -199,19 +199,19 @@ void CPodObj::Sub_42AD30()
 // on the draw list.
 // hover.exe:0x4115D0
 // FUNCTION: HOVER 0x4115d0
-void CPodObj::Sub_42AD40(CPlayer* pOther, DWORD dwB)
+void CPodObj::OnTouch(CPlayer* pOther, DWORD dwB)
 {
-	Hover_sub_401140()->m_dwUnk051C = 1;
-	theApp.m_pBumperDoc->Sub_410250(this);
-	Sub_408530();
-	m_dwUnk38 = 1;
+	Hover_GetView()->m_dwUnk051C = 1;
+	theApp.m_pBumperDoc->RemoveFromMazeList(this);
+	QueueBeginFrame();
+	m_bHideOnMap = 1;
 }
 
 // Proximity test (vtable slot 10): is the point (dwA,dwB) within
-// m_dwUnk9C + dwC of the pod, measured with the max + min/2 metric?
+// m_dwRadius + lRadius of the pod, measured with the max + min/2 metric?
 // hover.exe:0x413E70
 // FUNCTION: HOVER 0x413e70
-int CPodObj::Sub_42AD70(DWORD dwA, DWORD dwB, DWORD dwC)
+int CPodObj::IsNear(POINT pt, long lRadius)
 {
 	long lRange;
 	DWORD adwPos[2];
@@ -219,10 +219,10 @@ int CPodObj::Sub_42AD70(DWORD dwA, DWORD dwB, DWORD dwC)
 	long lDY;
 	long lMin;
 
-	lRange = (long)m_dwUnk9C + (long)dwC;
-	Sub_403880(adwPos);
-	lDX = abs((long)dwA - (long)adwPos[0]);
-	lDY = abs((long)dwB - (long)adwPos[1]);
+	lRange = (long)m_dwRadius + lRadius;
+	GetCellPos(adwPos);
+	lDX = abs(pt.x - (long)adwPos[0]);
+	lDY = abs(pt.y - (long)adwPos[1]);
 	lMin = (lDY < lDX) ? lDY : lDX;
 	return (lDY - (lMin >> 1) + lDX) < lRange;
 }
@@ -232,15 +232,15 @@ int CPodObj::Sub_42AD70(DWORD dwA, DWORD dwB, DWORD dwC)
 // and then both of the player's proximity points against the pod radius.
 // hover.exe:0x40CB40
 // FUNCTION: HOVER 0x40cb40
-int CPodObj::Sub_42AD60(DWORD dwUnk)
+int CPodObj::Touches(DWORD dwUnk)
 {
-	DWORD* pdwPts;
+	PLAYERPROBE* pProbe;
 	long lRange;
 	long lZ;
 	long lPodZ;
 	long lPodTop;
 	long lTop;
-	DWORD adwPos[2];
+	POINT ptPos;
 	long lDX;
 	long lDY;
 	long lMin;
@@ -250,25 +250,25 @@ int CPodObj::Sub_42AD60(DWORD dwUnk)
 		!IsKindOf(RUNTIME_CLASS(CFlag)))
 		return 0;
 
-	pdwPts = pPlayer->Sub_4089E0();
-	lRange = (long)m_dwUnk9C + (long)pdwPts[4];
-	lZ = (long)pPlayer->m_dwUnk01A4;
-	lPodZ = (long)m_dwUnkB0;
+	pProbe = pPlayer->GetProbe();
+	lRange = (long)m_dwRadius + pProbe->lRadius;
+	lZ = (long)pPlayer->m_dwAltitude;
+	lPodZ = (long)m_dwZ;
 	lPodTop = lPodZ + 0x40;
 	lTop = lZ + 0x40;
 	// one guard, so the two height tests share a single return-0 tail
 	if (lTop < lPodZ || lPodTop < lZ)
 		return 0;
 
-	Sub_403880(adwPos);
-	lDX = abs((long)pdwPts[0] - (long)adwPos[0]);
-	lDY = abs((long)pdwPts[1] - (long)adwPos[1]);
+	GetCellPos((DWORD*)&ptPos);
+	lDX = abs(pProbe->ptFront.x - ptPos.x);
+	lDY = abs(pProbe->ptFront.y - ptPos.y);
 	lMin = (lDY < lDX) ? lDY : lDX;
 	if (lDY - (lMin >> 1) + lDX < lRange)
 		return 1;
 
-	lDX = abs((long)pdwPts[2] - (long)adwPos[0]);
-	lDY = abs((long)pdwPts[3] - (long)adwPos[1]);
+	lDX = abs(pProbe->ptBack.x - ptPos.x);
+	lDY = abs(pProbe->ptBack.y - ptPos.y);
 	lMin = (lDY < lDX) ? lDY : lDX;
 	return (lDY - (lMin >> 1) + lDX) < lRange;
 }
@@ -277,7 +277,7 @@ int CPodObj::Sub_42AD60(DWORD dwUnk)
 // every region-matrix cell its radius touches.
 // hover.exe:0x413180
 // FUNCTION: HOVER 0x413180
-int CPodObj::Sub_408820(DWORD dwA)
+int CPodObj::UpdateRegions(DWORD dwA)
 {
 	int nCell;
 	DWORD adwPos[2];
@@ -289,12 +289,12 @@ int CPodObj::Sub_408820(DWORD dwA)
 	int x;
 	CCollider* pMgr = (CCollider*)dwA;
 
-	nCell = (int)pMgr->m_dwUnk0C;
-	Sub_403880(adwPos);
-	nX2 = ((long)adwPos[0] + (long)m_dwUnk9C) / nCell;
-	nY1 = ((long)adwPos[1] - (long)m_dwUnk9C) / nCell;
-	nY2 = ((long)adwPos[1] + (long)m_dwUnk9C) / nCell;
-	nX1 = ((long)adwPos[0] - (long)m_dwUnk9C) / nCell;
+	nCell = (int)pMgr->m_dwCellSize;
+	GetCellPos(adwPos);
+	nX2 = ((long)adwPos[0] + (long)m_dwRadius) / nCell;
+	nY1 = ((long)adwPos[1] - (long)m_dwRadius) / nCell;
+	nY2 = ((long)adwPos[1] + (long)m_dwRadius) / nCell;
+	nX1 = ((long)adwPos[0] - (long)m_dwRadius) / nCell;
 	x = nX1;
 	if (nX2 >= x)
 	{
@@ -305,10 +305,10 @@ int CPodObj::Sub_408820(DWORD dwA)
 			{
 				do
 				{
-					if (pMgr->m_dwUnk44 != 0)
-						pMgr->Sub_40F8A0(x, y);
+					if (pMgr->m_bQuerying != 0)
+						pMgr->CollectCell(x, y);
 					else
-						pMgr->m_obj10.Sub_4086A0(x, y, this);
+						pMgr->m_grid.AddNode(x, y, this);
 					y++;
 				} while (nY2 >= y);
 			}
@@ -322,20 +322,20 @@ int CPodObj::Sub_408820(DWORD dwA)
 // texture and the height, and mark the pod dirty.
 // hover.exe:0x40E340
 // FUNCTION: HOVER 0x40e340
-void CPodObj::Sub_4087D0()
+void CPodObj::BeginFrame()
 {
-	CGameObj::Sub_4087D0();
-	m_dwUnk90 = (DWORD)m_pUnk8C;
+	CGameObj::BeginFrame();
+	m_pSpriteTexture = m_pTexture;
 	m_dwUnkA8 = m_dwUnkB4;
 	m_dwUnk64 = 1;
-	m_dwUnkB0 = m_dwUnkAC + m_dwUnkA4;
+	m_dwZ = m_dwZOffset + m_dwBaseZ;
 }
 
 // End of frame (vtable slot 16): create, update or drop the CMerlinDynamic
 // sprite that represents the pod inside the level world.
 // hover.exe:0x40E380
 // FUNCTION: HOVER 0x40e380
-void CPodObj::Sub_4087F0()
+void CPodObj::EndFrame()
 {
 	CBumperDoc* pDoc;
 	CMerlinDynamic* pSprite;
@@ -343,45 +343,45 @@ void CPodObj::Sub_4087F0()
 	DWORD adwPos[2];
 
 	pDoc = theApp.m_pBumperDoc;
-	if (m_dwUnk60 == 0)
+	if (m_bDead == 0)
 	{
-		if (m_dwUnk94 != 0 && m_dwUnk78 == 0 && m_dwUnk64 != 0)
+		if (m_bOnBoard != 0 && m_pMerlin == 0 && m_dwUnk64 != 0)
 		{
-			m_dwUnk78 = (DWORD)new CMerlinDynamic;
-			pSprite = (CMerlinDynamic*)m_dwUnk78;
-			pSprite->m_pUnk50 = (CMerlinTexture*)m_dwUnk90;
+			m_pMerlin = new CMerlinDynamic;
+			pSprite = (CMerlinDynamic*)m_pMerlin;
+			pSprite->m_pTexture = m_pSpriteTexture;
 			pSprite->m_dwUnk60 = 0;
-			((CMerlinWorld*)pDoc->m_dwUnk0188)->Sub_4128A0((DWORD)pSprite);
-			if (m_dwUnk78 != 0)
-				((CMerlinDynamic*)m_dwUnk78)->m_wFlags |= 8;
+			(pDoc->m_pWorld)->AddSprite(pSprite);
+			if (m_pMerlin != 0)
+				((CMerlinDynamic*)m_pMerlin)->m_wFlags |= 8;
 		}
-		else if (m_dwUnk94 == 0 && m_dwUnk78 != 0)
+		else if (m_bOnBoard == 0 && m_pMerlin != 0)
 		{
-			((CMerlinWorld*)pDoc->m_dwUnk0188)->Sub_414300(m_dwUnk78);
-			m_dwUnk78 = 0;
+			(pDoc->m_pWorld)->RemoveSprite((CMerlinDynamic*)m_pMerlin);
+			m_pMerlin = 0;
 		}
-		pSprite = (CMerlinDynamic*)m_dwUnk78;
+		pSprite = (CMerlinDynamic*)m_pMerlin;
 		if (pSprite != NULL)
 		{
-			lBase = (long)m_dwUnkB0;
-			pSprite->m_wUnk56 = (WORD)((long)m_dwUnkB8 + lBase);
+			lBase = (long)m_dwZ;
+			pSprite->m_wTop = (WORD)((long)m_dwHeight + lBase);
 			if (lBase <= 0)
 				lBase = 0;
-			pSprite->m_wUnk54 = (WORD)lBase;
-			pSprite->m_wUnk58 = (WORD)m_dwUnkBC;
-			pSprite->m_wUnk5A = (WORD)Sub_413000(adwPos)[0];
-			pSprite->m_wUnk5C = (WORD)Sub_413000(adwPos)[1];
+			pSprite->m_wBottom = (WORD)lBase;
+			pSprite->m_wHalfWidth = (WORD)m_dwHalfWidth;
+			pSprite->m_wX = (WORD)GetFramePos(adwPos)[0];
+			pSprite->m_wY = (WORD)GetFramePos(adwPos)[1];
 		}
 	}
-	CGameObj::Sub_4087F0();
+	CGameObj::EndFrame();
 }
 
 // Link into the draw list (vtable slot 17); forwards to CGameObj.
 // hover.exe:0x42AFB0
 // FUNCTION: HOVER 0x42afb0
-void CPodObj::Sub_413020()
+void CPodObj::KillObject()
 {
-	CGameObj::Sub_413020();
+	CGameObj::KillObject();
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -393,12 +393,12 @@ CSmokeBombPod::CSmokeBombPod()
 {
 	char szName[0x34];
 
-	m_dwUnk28 = 0;
-	m_dwUnk94 = 0;
-	m_pUnk8C = NULL;
-	m_dwUnk9C = 0x40;
+	m_bInUse = 0;
+	m_bOnBoard = 0;
+	m_pTexture = NULL;
+	m_dwRadius = 0x40;
 	wsprintfA(szName, "%s%02d", "POD00_", 0);
-	g_mapUnk_4A1D30.Lookup(szName, (CObject*&)m_pUnk8C);
+	g_mapUnk_4A1D30.Lookup(szName, (CObject*&)m_pTexture);
 }
 
 // The destructor is defined in the class declaration, so the compiler folds
@@ -417,32 +417,32 @@ CSmokeBombPod::~CSmokeBombPod()
 // dashboard gauge from it, and release the pod when it runs out.
 // hover.exe:0x42A660
 // FUNCTION: HOVER 0x42a660
-void CSmokeBombPod::Sub_42AD30()
+void CSmokeBombPod::Think()
 {
-	CSub42AE90 fix;
-	CSub42AE90 fixOut;
-	CSub422C80* pGauge;
+	CGaugeFraction fix;
+	CGaugeFraction fixOut;
+	CSegmentGauge* pGauge;
 	CBumperView* pView;
 
-	if (m_dwUnk5C == 0 && m_dwUnk28 != 0)
+	if (m_bKilled == 0 && m_bInUse != 0)
 	{
-		m_dwUnkA0--;
-		fix = CSub42AE90((WORD)m_dwUnkA0, 0);
-		*(long*)&fixOut = *(long*)&fix / (short)theApp.m_dwUnk0168;
-		pGauge = &Hover_sub_401140()->m_obj03D0;
+		m_dwTimeLeft--;
+		fix = CGaugeFraction((WORD)m_dwTimeLeft, 0);
+		*(long*)&fixOut = *(long*)&fix / (short)theApp.m_dwSmokePodTime;
+		pGauge = &Hover_GetView()->m_gaugeSmoke;
 		HOVER_INLINE_SUB_42A9F0(pGauge, fixOut);
-		if (m_dwUnkA0 == 0)
+		if (m_dwTimeLeft == 0)
 		{
-			pView = Hover_sub_401140();
-			pView->m_dwUnk021C = 0;
-			((CPlayer*)m_dwUnk88)->m_dwUnk0134 = 0;
-			theApp.m_pBumperDoc->Sub_412630(this);
-			if (theApp.m_dwUnk0408 != 0)
-				Sub_40D6E0(0x18, 4, 5, 0);
+			pView = Hover_GetView();
+			pView->m_bSmokeBlind = 0;
+			(m_pOwner)->m_pSmokeBombPod = 0;
+			theApp.m_pBumperDoc->RetireObject(this);
+			if (theApp.m_bGameSounds != 0)
+				PlayObjSound(0x18, 4, 5, 0);
 			return;
 		}
 	}
-	CPodObj::Sub_42AD30();
+	CPodObj::Think();
 }
 
 // Player touched the pod (slot 8): add it to the player's smoke-bomb
@@ -450,7 +450,7 @@ void CSmokeBombPod::Sub_42AD30()
 // bomb pod somewhere else on the board.
 // hover.exe:0x42A760
 // FUNCTION: HOVER 0x42a760
-void CSmokeBombPod::Sub_42AD40(CPlayer* pOther, DWORD dwB)
+void CSmokeBombPod::OnTouch(CPlayer* pOther, DWORD dwB)
 {
 	CPlayer* pPlayer;
 	CSmokeBombPod* pNew;
@@ -458,25 +458,25 @@ void CSmokeBombPod::Sub_42AD40(CPlayer* pOther, DWORD dwB)
 
 	// the "no more pods" message is the cold arm at the end of the
 	// function in hover.exe, so it has to be the `else`
-	if (pOther->m_obList00EC.GetCount() < 9)
+	if (pOther->m_listSmokeBombPods.GetCount() < 9)
 	{
-		CPodObj::Sub_42AD40(pOther, dwB);
-		m_dwUnk88 = (DWORD)pOther;
-		m_dwUnk94 = 0;
-		((CCollider*)theApp.m_pBumperDoc->m_dwUnk8388)->Sub_40E710(this);
-		pPlayer = (CPlayer*)m_dwUnk88;
-		if (pPlayer->m_dwUnk01F8 != 0 && theApp.m_dwUnk0408 != 0)
-			Sub_40D6E0(7, 1, 5, 0);
-		((CPlayer*)m_dwUnk88)->m_obList00EC.AddHead(this);
-		pView = Hover_sub_401140();
-		pView->m_obj0268.m_dwUnk00 = 1;
-		pView->m_obj0268.m_dwUnk08 = ((CPlayer*)m_dwUnk88)->m_obList00EC.GetCount();
+		CPodObj::OnTouch(pOther, dwB);
+		m_pOwner = pOther;
+		m_bOnBoard = 0;
+		(theApp.m_pBumperDoc->m_pCollider)->RemoveObject(this);
+		pPlayer = m_pOwner;
+		if (pPlayer->m_bHuman != 0 && theApp.m_bGameSounds != 0)
+			PlayObjSound(7, 1, 5, 0);
+		(m_pOwner)->m_listSmokeBombPods.AddHead(this);
+		pView = Hover_GetView();
+		pView->m_ctrSmokeBombs.m_bDigitsDirty = 1;
+		pView->m_ctrSmokeBombs.m_dwDisplayValue = (m_pOwner)->m_listSmokeBombPods.GetCount();
 		pNew = new CSmokeBombPod;
-		theApp.m_pBumperDoc->Sub_412250(pNew, (rand() % 4) == 0);
+		theApp.m_pBumperDoc->PlaceObject(pNew, (rand() % 4) == 0);
 	}
-	else if (pOther->m_dwUnk01F8 != 0 && theApp.m_dwUnk0408 != 0)
+	else if (pOther->m_bHuman != 0 && theApp.m_bGameSounds != 0)
 	{
-		Sub_40D6E0(5, 1, 5, 0);
+		PlayObjSound(5, 1, 5, 0);
 	}
 }
 
@@ -484,46 +484,46 @@ void CSmokeBombPod::Sub_42AD40(CPlayer* pOther, DWORD dwB)
 // the maze, blanks the view's shade table and starts the timer.
 // hover.exe:0x42A900
 // FUNCTION: HOVER 0x42a900
-void CSmokeBombPod::Sub_42AD50(DWORD dwUnk)
+void CSmokeBombPod::UsePod(DWORD dwUnk)
 {
 	CPlayer* pPlayer;
 	POSITION pos;
 
-	m_dwUnkA0 = theApp.m_dwUnk0168;
-	m_dwUnk28 = 1;
-	Hover_sub_401140()->m_dwUnk021C = 1;
-	theApp.m_pBumperDoc->m_list83A8.AddTail(this);
-	pPlayer = (CPlayer*)m_dwUnk88;
-	if (pPlayer->m_dwUnk0134 != 0)
-		theApp.m_pBumperDoc->Sub_412630((CGameObj*)pPlayer->m_dwUnk0134);
-	pos = ((CPlayer*)m_dwUnk88)->m_obList00EC.Find(this);
-	((CPlayer*)m_dwUnk88)->m_obList00EC.RemoveAt(pos);
-	((CPlayer*)m_dwUnk88)->m_dwUnk0134 = (DWORD)this;
-	Hover_sub_401140()->m_obj03D0.Sub_42A9F0(CSub42AE90(1.0));
-	if (theApp.m_dwUnk0408 != 0)
-		Sub_40D6E0(0x17, 4, 5, 0);
+	m_dwTimeLeft = theApp.m_dwSmokePodTime;
+	m_bInUse = 1;
+	Hover_GetView()->m_bSmokeBlind = 1;
+	theApp.m_pBumperDoc->m_listActiveObjs.AddTail(this);
+	pPlayer = m_pOwner;
+	if (pPlayer->m_pSmokeBombPod != 0)
+		theApp.m_pBumperDoc->RetireObject((CGameObj*)pPlayer->m_pSmokeBombPod);
+	pos = (m_pOwner)->m_listSmokeBombPods.Find(this);
+	(m_pOwner)->m_listSmokeBombPods.RemoveAt(pos);
+	(m_pOwner)->m_pSmokeBombPod = this;
+	Hover_GetView()->m_gaugeSmoke.SetFraction(CGaugeFraction(1.0));
+	if (theApp.m_bGameSounds != 0)
+		PlayObjSound(0x17, 4, 5, 0);
 }
 
 // Start/end of frame and draw-list linkage (slots 15/16/17): forwarded.
 // hover.exe:0x421270
 // FUNCTION: HOVER 0x421270
-void CSmokeBombPod::Sub_4087D0()
+void CSmokeBombPod::BeginFrame()
 {
-	CPodObj::Sub_4087D0();
+	CPodObj::BeginFrame();
 }
 
 // hover.exe:0x421280
 // FUNCTION: HOVER 0x421280
-void CSmokeBombPod::Sub_4087F0()
+void CSmokeBombPod::EndFrame()
 {
-	CPodObj::Sub_4087F0();
+	CPodObj::EndFrame();
 }
 
 // hover.exe:0x42AA60
 // FUNCTION: HOVER 0x42aa60
-void CSmokeBombPod::Sub_413020()
+void CSmokeBombPod::KillObject()
 {
-	CGameObj::Sub_413020();
+	CGameObj::KillObject();
 }
 
 // hover.exe:0x421310
@@ -532,12 +532,12 @@ CJumpPod::CJumpPod()
 {
 	char szName[0x34];
 
-	m_dwUnk28 = 0;
-	m_dwUnk94 = 0;
-	m_pUnk8C = NULL;
-	m_dwUnk9C = 0x40;
+	m_bInUse = 0;
+	m_bOnBoard = 0;
+	m_pTexture = NULL;
+	m_dwRadius = 0x40;
 	wsprintfA(szName, "%s%02d", "POD01_", 0);
-	g_mapUnk_4A1D30.Lookup(szName, (CObject*&)m_pUnk8C);
+	g_mapUnk_4A1D30.Lookup(szName, (CObject*&)m_pTexture);
 }
 
 // The destructor is defined in the class declaration, so the compiler folds
@@ -556,28 +556,28 @@ CJumpPod::~CJumpPod()
 // deployed jump pad is put back into the maze.
 // hover.exe:0x42AA80
 // FUNCTION: HOVER 0x42aa80
-void CJumpPod::Sub_42AD30()
+void CJumpPod::Think()
 {
 	CPlayer* pPlayer;
 
-	if (m_dwUnk5C == 0 && m_dwUnk28 != 0)
+	if (m_bKilled == 0 && m_bInUse != 0)
 	{
-		pPlayer = (CPlayer*)m_dwUnk88;
-		if (*(DWORD*)&pPlayer->m_pad00A8[0] == 0)
+		pPlayer = m_pOwner;
+		if (pPlayer->m_bAirborne == 0)
 		{
-			pPlayer->m_dwUnk0138 = 0;
-			theApp.m_pBumperDoc->Sub_412630(this);
+			pPlayer->m_pJumpPod = 0;
+			theApp.m_pBumperDoc->RetireObject(this);
 			return;
 		}
 	}
-	CPodObj::Sub_42AD30();
+	CPodObj::Think();
 }
 
 // Player touched the pod (slot 8): add it to the player's jump-pad stock
 // (up to nine) and drop a fresh jump pod somewhere else on the board.
 // hover.exe:0x42AAC0
 // FUNCTION: HOVER 0x42aac0
-void CJumpPod::Sub_42AD40(CPlayer* pOther, DWORD dwB)
+void CJumpPod::OnTouch(CPlayer* pOther, DWORD dwB)
 {
 	CPlayer* pPlayer;
 	CJumpPod* pNew;
@@ -585,67 +585,67 @@ void CJumpPod::Sub_42AD40(CPlayer* pOther, DWORD dwB)
 
 	// the "no more pods" message is the cold arm at the end of the
 	// function in hover.exe, so it has to be the `else`
-	if (pOther->m_obList0108.GetCount() < 9)
+	if (pOther->m_listJumpPods.GetCount() < 9)
 	{
-		CPodObj::Sub_42AD40(pOther, dwB);
-		m_dwUnk88 = (DWORD)pOther;
-		m_dwUnk94 = 0;
-		((CCollider*)theApp.m_pBumperDoc->m_dwUnk8388)->Sub_40E710(this);
-		pPlayer = (CPlayer*)m_dwUnk88;
-		if (pPlayer->m_dwUnk01F8 != 0 && theApp.m_dwUnk0408 != 0)
-			Sub_40D6E0(6, 1, 5, 0);
-		((CPlayer*)m_dwUnk88)->m_obList0108.AddHead(this);
-		pView = Hover_sub_401140();
-		pView->m_obj0240.m_dwUnk00 = 1;
-		pView->m_obj0240.m_dwUnk08 = ((CPlayer*)m_dwUnk88)->m_obList0108.GetCount();
+		CPodObj::OnTouch(pOther, dwB);
+		m_pOwner = pOther;
+		m_bOnBoard = 0;
+		(theApp.m_pBumperDoc->m_pCollider)->RemoveObject(this);
+		pPlayer = m_pOwner;
+		if (pPlayer->m_bHuman != 0 && theApp.m_bGameSounds != 0)
+			PlayObjSound(6, 1, 5, 0);
+		(m_pOwner)->m_listJumpPods.AddHead(this);
+		pView = Hover_GetView();
+		pView->m_ctrJumpPods.m_bDigitsDirty = 1;
+		pView->m_ctrJumpPods.m_dwDisplayValue = (m_pOwner)->m_listJumpPods.GetCount();
 		pNew = new CJumpPod;
-		theApp.m_pBumperDoc->Sub_412250(pNew, (rand() % 4) == 0);
+		theApp.m_pBumperDoc->PlaceObject(pNew, (rand() % 4) == 0);
 	}
-	else if (pOther->m_dwUnk01F8 != 0 && theApp.m_dwUnk0408 != 0)
+	else if (pOther->m_bHuman != 0 && theApp.m_bGameSounds != 0)
 	{
-		Sub_40D6E0(5, 1, 5, 0);
+		PlayObjSound(5, 1, 5, 0);
 	}
 }
 
 // Deploy (slot 9): the player drops the jump pad under himself.
 // hover.exe:0x42AC60
 // FUNCTION: HOVER 0x42ac60
-void CJumpPod::Sub_42AD50(DWORD dwUnk)
+void CJumpPod::UsePod(DWORD dwUnk)
 {
 	CPlayer* pPlayer;
 	POSITION pos;
 
-	theApp.m_pBumperDoc->m_list83A8.AddTail(this);
-	m_dwUnk28 = 1;
-	pPlayer = (CPlayer*)m_dwUnk88;
-	pPlayer->m_dwUnk0138 = (DWORD)this;
-	*(DWORD*)&pPlayer->m_pad00A8[0] = 1;
-	pPlayer->m_awUnk0090[9] += 0x100;
-	pos = ((CPlayer*)m_dwUnk88)->m_obList0108.Find(this);
-	((CPlayer*)m_dwUnk88)->m_obList0108.RemoveAt(pos);
-	if (theApp.m_dwUnk0408 != 0)
-		Sub_40D6E0(0x15, 4, 5, 0);
+	theApp.m_pBumperDoc->m_listActiveObjs.AddTail(this);
+	m_bInUse = 1;
+	pPlayer = m_pOwner;
+	pPlayer->m_pJumpPod = this;
+	pPlayer->m_bAirborne = 1;
+	pPlayer->m_wTargetHeight += 0x100;
+	pos = (m_pOwner)->m_listJumpPods.Find(this);
+	(m_pOwner)->m_listJumpPods.RemoveAt(pos);
+	if (theApp.m_bGameSounds != 0)
+		PlayObjSound(0x15, 4, 5, 0);
 }
 
 // hover.exe:0x421300
 // FUNCTION: HOVER 0x421300
-void CJumpPod::Sub_4087D0()
+void CJumpPod::BeginFrame()
 {
-	CPodObj::Sub_4087D0();
+	CPodObj::BeginFrame();
 }
 
 // hover.exe:0x4213B0
 // FUNCTION: HOVER 0x4213b0
-void CJumpPod::Sub_4087F0()
+void CJumpPod::EndFrame()
 {
-	CPodObj::Sub_4087F0();
+	CPodObj::EndFrame();
 }
 
 // hover.exe:0x42ACE0
 // FUNCTION: HOVER 0x42ace0
-void CJumpPod::Sub_413020()
+void CJumpPod::KillObject()
 {
-	CGameObj::Sub_413020();
+	CGameObj::KillObject();
 }
 
 // hover.exe:0x421440
@@ -654,12 +654,12 @@ CInviciblePod::CInviciblePod()
 {
 	char szName[0x34];
 
-	m_dwUnk28 = 0;
-	m_dwUnk94 = 0;
-	m_pUnk8C = NULL;
-	m_dwUnk9C = 0x40;
+	m_bInUse = 0;
+	m_bOnBoard = 0;
+	m_pTexture = NULL;
+	m_dwRadius = 0x40;
 	wsprintfA(szName, "%s%02d", "POD04_", 0);
-	g_mapUnk_4A1D30.Lookup(szName, (CObject*&)m_pUnk8C);
+	g_mapUnk_4A1D30.Lookup(szName, (CObject*&)m_pTexture);
 }
 
 // The class destructor is empty and lives in the class declaration, so the
@@ -678,94 +678,95 @@ CInviciblePod::~CInviciblePod()
 // dashboard gauge, and clear the player's invincibility when it expires.
 // hover.exe:0x40DE80
 // FUNCTION: HOVER 0x40de80
-void CInviciblePod::Sub_42AD30()
+void CInviciblePod::Think()
 {
-	CSub42AE90 fix;
-	CSub42AE90 fixOut;
-	CSub422C80* pGauge;
+	CGaugeFraction fix;
+	CGaugeFraction fixOut;
+	CSegmentGauge* pGauge;
 	CPlayer* pPlayer;
 
-	if (m_dwUnk5C == 0 && m_dwUnk28 != 0)
+	if (m_bKilled == 0 && m_bInUse != 0)
 	{
-		m_dwUnkA0--;
-		fix = CSub42AE90((WORD)m_dwUnkA0, 0);
-		*(long*)&fixOut = *(long*)&fix / (short)theApp.m_dwUnk015C;
-		pGauge = &Hover_sub_401140()->m_obj0310;
+		m_dwTimeLeft--;
+		fix = CGaugeFraction((WORD)m_dwTimeLeft, 0);
+		*(long*)&fixOut = *(long*)&fix / (short)theApp.m_dwInvinciblePodTime;
+		pGauge = &Hover_GetView()->m_gaugeInvincible;
 		HOVER_INLINE_SUB_42A9F0(pGauge, fixOut);
-		if (m_dwUnkA0 == 0)
+		if (m_dwTimeLeft == 0)
 		{
-			if (theApp.m_dwUnk0408 != 0)
-				Sub_40D6E0(0xA, 1, 5, 0);
-			pPlayer = (CPlayer*)m_dwUnk88;
-			if (pPlayer->m_dwUnk0144 == 0)
-				pPlayer->m_dwUnk0140 = 0;
-			pPlayer->m_dwUnk0124 = 0;
-			theApp.m_pBumperDoc->Sub_412630(this);
+			if (theApp.m_bGameSounds != 0)
+				PlayObjSound(0xA, 1, 5, 0);
+			pPlayer = m_pOwner;
+			if (pPlayer->m_bGodMode == 0)
+				pPlayer->m_bInvincible = 0;
+			pPlayer->m_pInvinciblePod = 0;
+			theApp.m_pBumperDoc->RetireObject(this);
 			return;
 		}
 	}
-	CPodObj::Sub_42AD30();
+	CPodObj::Think();
 }
 
 // Player touched the pod (slot 8): make the player invincible for
-// theApp.m_dwUnk015C frames, cancelling any slow pod that was running.
+// theApp.m_dwInvinciblePodTime frames, cancelling any slow pod that was
+// running.
 // hover.exe:0x4181E0
 // FUNCTION: HOVER 0x4181e0
-void CInviciblePod::Sub_42AD40(CPlayer* pOther, DWORD dwB)
+void CInviciblePod::OnTouch(CPlayer* pOther, DWORD dwB)
 {
 	CPlayer* pPlayer;
 	CInviciblePod* pNew;
 
-	CPodObj::Sub_42AD40(pOther, dwB);
-	theApp.m_pBumperDoc->m_list83A8.AddTail(this);
-	m_dwUnk88 = (DWORD)pOther;
-	m_dwUnk94 = 0;
-	((CCollider*)theApp.m_pBumperDoc->m_dwUnk8388)->Sub_40E710(this);
-	pPlayer = (CPlayer*)m_dwUnk88;
-	if (pPlayer->m_dwUnk01F8 != 0 && theApp.m_dwUnk0408 != 0)
-		Sub_40D6E0(9, 1, 5, 0);
-	if (m_dwUnk98 != 0)
+	CPodObj::OnTouch(pOther, dwB);
+	theApp.m_pBumperDoc->m_listActiveObjs.AddTail(this);
+	m_pOwner = pOther;
+	m_bOnBoard = 0;
+	(theApp.m_pBumperDoc->m_pCollider)->RemoveObject(this);
+	pPlayer = m_pOwner;
+	if (pPlayer->m_bHuman != 0 && theApp.m_bGameSounds != 0)
+		PlayObjSound(9, 1, 5, 0);
+	if (m_bRespawn != 0)
 	{
 		pNew = new CInviciblePod;
-		theApp.m_pBumperDoc->Sub_412250(pNew, (rand() % 4) == 0);
+		theApp.m_pBumperDoc->PlaceObject(pNew, (rand() % 4) == 0);
 	}
-	m_dwUnkA0 = theApp.m_dwUnk015C;
-	m_dwUnk28 = 1;
-	((CPlayer*)m_dwUnk88)->m_dwUnk0140 = 1;
-	if (((CPlayer*)m_dwUnk88)->m_dwUnk0124 != 0)
-		theApp.m_pBumperDoc->Sub_412630(
-			(CGameObj*)((CPlayer*)m_dwUnk88)->m_dwUnk0124);
-	if (((CPlayer*)m_dwUnk88)->m_dwUnk012C != 0)
+	m_dwTimeLeft = theApp.m_dwInvinciblePodTime;
+	m_bInUse = 1;
+	(m_pOwner)->m_bInvincible = 1;
+	if ((m_pOwner)->m_pInvinciblePod != 0)
+		theApp.m_pBumperDoc->RetireObject(
+			(CGameObj*)(m_pOwner)->m_pInvinciblePod);
+	if ((m_pOwner)->m_pSlowPod != 0)
 	{
-		theApp.m_pBumperDoc->Sub_412630(
-			(CGameObj*)((CPlayer*)m_dwUnk88)->m_dwUnk012C);
-		pPlayer = (CPlayer*)m_dwUnk88;
-		pPlayer->m_dwUnk012C = 0;
-		*(DWORD*)&pPlayer->m_awUnk01D0[2] = *(DWORD*)&pPlayer->m_awUnk01D0[4];
-		Hover_sub_401140()->m_obj0340.Sub_42A9F0(CSub42AE90(0, 0));
+		theApp.m_pBumperDoc->RetireObject(
+			(CGameObj*)(m_pOwner)->m_pSlowPod);
+		pPlayer = m_pOwner;
+		pPlayer->m_pSlowPod = 0;
+		pPlayer->m_fxMaxSpeed = pPlayer->m_fxBaseMaxSpeed;
+		Hover_GetView()->m_gaugeSlow.SetFraction(CGaugeFraction(0, 0));
 	}
-	((CPlayer*)m_dwUnk88)->m_dwUnk0124 = (DWORD)this;
+	(m_pOwner)->m_pInvinciblePod = this;
 }
 
 // hover.exe:0x413E50
 // FUNCTION: HOVER 0x413e50
-void CInviciblePod::Sub_4087D0()
+void CInviciblePod::BeginFrame()
 {
-	CPodObj::Sub_4087D0();
+	CPodObj::BeginFrame();
 }
 
 // hover.exe:0x413E60
 // FUNCTION: HOVER 0x413e60
-void CInviciblePod::Sub_4087F0()
+void CInviciblePod::EndFrame()
 {
-	CPodObj::Sub_4087F0();
+	CPodObj::EndFrame();
 }
 
 // hover.exe:0x419DF0
 // FUNCTION: HOVER 0x419df0
-void CInviciblePod::Sub_413020()
+void CInviciblePod::KillObject()
 {
-	CGameObj::Sub_413020();
+	CGameObj::KillObject();
 }
 
 // hover.exe:0x421520
@@ -774,13 +775,13 @@ CTempWallPod::CTempWallPod()
 {
 	char szName[0x34];
 
-	m_dwUnkD4 = 0;
-	m_dwUnk28 = 0;
-	m_dwUnk94 = 0;
-	m_dwUnk9C = 0x40;
-	m_pUnk8C = NULL;
+	m_pForceField = 0;
+	m_bInUse = 0;
+	m_bOnBoard = 0;
+	m_dwRadius = 0x40;
+	m_pTexture = NULL;
 	wsprintfA(szName, "%s%02d", "POD07_", 0);
-	g_mapUnk_4A1D30.Lookup(szName, (CObject*&)m_pUnk8C);
+	g_mapUnk_4A1D30.Lookup(szName, (CObject*&)m_pTexture);
 }
 
 // The destructor is defined in the class declaration, so the compiler folds
@@ -800,33 +801,33 @@ CTempWallPod::~CTempWallPod()
 // and put the pod back into the maze when it expires.
 // hover.exe:0x42B070
 // FUNCTION: HOVER 0x42b070
-void CTempWallPod::Sub_42AD30()
+void CTempWallPod::Think()
 {
 	CPlayer* pPlayer;
-	CSub42AE90 fix;
-	CSub42AE90 fixOut;
-	CSub422C80* pGauge;
+	CGaugeFraction fix;
+	CGaugeFraction fixOut;
+	CSegmentGauge* pGauge;
 
-	if (m_dwUnk5C == 0 && m_dwUnk28 != 0)
+	if (m_bKilled == 0 && m_bInUse != 0)
 	{
-		pPlayer = (CPlayer*)m_dwUnk88;
-		m_dwUnkA0--;
-		if (pPlayer->m_dwUnk0130 == (DWORD)this)
+		pPlayer = m_pOwner;
+		m_dwTimeLeft--;
+		if (pPlayer->m_pTempWallPod == this)
 		{
-			fix = CSub42AE90((WORD)m_dwUnkA0, 0);
-			*(long*)&fixOut = *(long*)&fix / (short)theApp.m_dwUnk0164;
-			pGauge = &Hover_sub_401140()->m_obj0400;
+			fix = CGaugeFraction((WORD)m_dwTimeLeft, 0);
+			*(long*)&fixOut = *(long*)&fix / (short)theApp.m_dwWallPodTime;
+			pGauge = &Hover_GetView()->m_gaugeTempWall;
 		HOVER_INLINE_SUB_42A9F0(pGauge, fixOut);
 		}
-		if (m_dwUnkA0 == 0)
+		if (m_dwTimeLeft == 0)
 		{
-			if (((CPlayer*)m_dwUnk88)->m_dwUnk0130 == (DWORD)this)
-				((CPlayer*)m_dwUnk88)->m_dwUnk0130 = 0;
-			theApp.m_pBumperDoc->Sub_412630(this);
+			if (m_pOwner->m_pTempWallPod == this)
+				(m_pOwner)->m_pTempWallPod = 0;
+			theApp.m_pBumperDoc->RetireObject(this);
 			return;
 		}
 	}
-	CPodObj::Sub_42AD30();
+	CPodObj::Think();
 }
 
 // Player touched the pod (slot 8). While the wall is up this is the wall
@@ -834,33 +835,33 @@ void CTempWallPod::Sub_42AD30()
 // to nine) and a fresh one is dropped elsewhere.
 // hover.exe:0x42B160
 // FUNCTION: HOVER 0x42b160
-void CTempWallPod::Sub_42AD40(CPlayer* pOther, DWORD dwB)
+void CTempWallPod::OnTouch(CPlayer* pOther, DWORD dwB)
 {
 	int nHit;
 	WORD wTop;
 	CBumperView* pView;
 	CTempWallPod* pNew;
 
-	if (m_dwUnk28 != 0)
+	if (m_bInUse != 0)
 	{
-		if (m_dwUnk2C != 0)
+		if (m_bSolidHit != 0)
 		{
-			nHit = pOther->Sub_41A6B0(this, dwB);
-			if (pOther->m_dwUnk01F8 != 0)
+			nHit = pOther->BounceOffWall(this, dwB);
+			if (pOther->m_bHuman != 0)
 			{
-				Hover_sub_401140()->m_dwUnk0518 = 1;
-				if (nHit != 0 && theApp.m_dwUnk0408 != 0)
-					Sub_40D6E0(0x12, 3, 5, 0);
+				Hover_GetView()->m_dwUnk0518 = 1;
+				if (nHit != 0 && theApp.m_bGameSounds != 0)
+					PlayObjSound(0x12, 3, 5, 0);
 			}
 		}
 		else
 		{
-			wTop = (WORD)(((CMerlinDynamic*)m_dwUnkD4)->m_wUnk56 + 0x40);
-			if (((long)(short)wTop << 16) > (long)*(DWORD*)&pOther->m_awUnk0090[8])
+			wTop = (WORD)((m_pForceField)->m_wTop + 0x40);
+			if (((long)(short)wTop << 16) > (long)pOther->m_fxTargetHeight)
 			{
-				pOther->m_dwUnk013C = 1;
-				pOther->m_awUnk0090[8] = 0;
-				pOther->m_awUnk0090[9] = wTop;
+				pOther->m_bOnTop = 1;
+				pOther->m_wTargetHeightFrac = 0;
+				pOther->m_wTargetHeight = wTop;
 			}
 		}
 		return;
@@ -868,24 +869,24 @@ void CTempWallPod::Sub_42AD40(CPlayer* pOther, DWORD dwB)
 
 	// the "no more pods" message is the cold arm at the end of the
 	// function in hover.exe, so it has to be the `else`
-	if (pOther->m_obList00D0.GetCount() < 9)
+	if (pOther->m_listTempWallPods.GetCount() < 9)
 	{
-		CPodObj::Sub_42AD40(pOther, dwB);
-		m_dwUnk88 = (DWORD)pOther;
-		m_dwUnk94 = 0;
-		((CCollider*)theApp.m_pBumperDoc->m_dwUnk8388)->Sub_40E710(this);
-		if (((CPlayer*)m_dwUnk88)->m_dwUnk01F8 != 0 && theApp.m_dwUnk0408 != 0)
-			Sub_40D6E0(8, 1, 5, 0);
-		((CPlayer*)m_dwUnk88)->m_obList00D0.AddHead(this);
-		pView = Hover_sub_401140();
-		pView->m_obj0290.m_dwUnk00 = 1;
-		pView->m_obj0290.m_dwUnk08 = ((CPlayer*)m_dwUnk88)->m_obList00D0.GetCount();
+		CPodObj::OnTouch(pOther, dwB);
+		m_pOwner = pOther;
+		m_bOnBoard = 0;
+		(theApp.m_pBumperDoc->m_pCollider)->RemoveObject(this);
+		if ((m_pOwner)->m_bHuman != 0 && theApp.m_bGameSounds != 0)
+			PlayObjSound(8, 1, 5, 0);
+		(m_pOwner)->m_listTempWallPods.AddHead(this);
+		pView = Hover_GetView();
+		pView->m_ctrTempWalls.m_bDigitsDirty = 1;
+		pView->m_ctrTempWalls.m_dwDisplayValue = (m_pOwner)->m_listTempWallPods.GetCount();
 		pNew = new CTempWallPod;
-		theApp.m_pBumperDoc->Sub_412250(pNew, (rand() % 4) == 0);
+		theApp.m_pBumperDoc->PlaceObject(pNew, (rand() % 4) == 0);
 	}
-	else if (pOther->m_dwUnk01F8 != 0 && theApp.m_dwUnk0408 != 0)
+	else if (pOther->m_bHuman != 0 && theApp.m_bGameSounds != 0)
 	{
-		Sub_40D6E0(5, 1, 5, 0);
+		PlayObjSound(5, 1, 5, 0);
 	}
 }
 
@@ -894,7 +895,7 @@ void CTempWallPod::Sub_42AD40(CPlayer* pOther, DWORD dwB)
 // and heading, registered with both the collider and the level world.
 // hover.exe:0x42B3B0
 // FUNCTION: HOVER 0x42b3b0
-void CTempWallPod::Sub_42AD50(DWORD dwUnk)
+void CTempWallPod::UsePod(DWORD dwUnk)
 {
 	CPlayer* pPlayer;
 	CMerlinDynamic* pSprite;
@@ -910,44 +911,44 @@ void CTempWallPod::Sub_42AD50(DWORD dwUnk)
 	DWORD dwSideX;
 	DWORD dwSideY;
 
-	if (theApp.m_dwUnk0408 != 0)
-		Sub_40D6E0(0x19, 4, 5, 0);
-	theApp.m_pBumperDoc->m_list83A8.AddTail(this);
-	m_dwUnk28 = 1;
-	m_dwUnkA0 = theApp.m_dwUnk0164;
-	pPlayer = (CPlayer*)m_dwUnk88;
+	if (theApp.m_bGameSounds != 0)
+		PlayObjSound(0x19, 4, 5, 0);
+	theApp.m_pBumperDoc->m_listActiveObjs.AddTail(this);
+	m_bInUse = 1;
+	m_dwTimeLeft = theApp.m_dwWallPodTime;
+	pPlayer = m_pOwner;
 	{
-		DWORD* pdwUnk0130 = &pPlayer->m_dwUnk0130;
-		if (*pdwUnk0130 != 0)
-			*pdwUnk0130 = 0;
+		CTempWallPod** ppActiveWall = &pPlayer->m_pTempWallPod;
+		if (*ppActiveWall != 0)
+			*ppActiveWall = 0;
 	}
-	Hover_sub_401140()->m_obj0400.Sub_42A9F0(CSub42AE90(1.0));
+	Hover_GetView()->m_gaugeTempWall.SetFraction(CGaugeFraction(1.0));
 
 	pSprite = new CMerlinDynamic;
-	g_mapUnk_4A1D30.Lookup("FORCE_FIELD", (CObject*&)pSprite->m_pUnk50);
-	m_dwUnkD4 = (DWORD)pSprite;
-	pSprite->m_wUnk58 = 0x190;
-	pSprite->m_dwUnk64 = 0;
-	pPlayer = (CPlayer*)m_dwUnk88;
-	wBase = (WORD)pPlayer->m_dwUnk01A4 - 0x40;
-	pSprite->m_wUnk54 = wBase;
-	pSprite->m_wUnk56 = wBase + 0x100;
-	pSprite->m_wUnk5A = (WORD)((CPlayer*)m_dwUnk88)->Sub_403880(adwPt1)[0];
-	pSprite->m_wUnk5C = (WORD)((CPlayer*)m_dwUnk88)->Sub_403880(adwPt2)[1];
+	m_pForceField = pSprite;
+	g_mapUnk_4A1D30.Lookup("FORCE_FIELD", (CObject*&)pSprite->m_pTexture);
+	pSprite->m_wHalfWidth = 0x190;
+	pSprite->m_bBillboard = 0;
+	pPlayer = m_pOwner;
+	wBase = (WORD)pPlayer->m_dwAltitude - 0x40;
+	pSprite->m_wBottom = wBase;
+	pSprite->m_wTop = wBase + 0x100;
+	pSprite->m_wX = (WORD)(m_pOwner)->GetCellPos(adwPt1)[0];
+	pSprite->m_wY = (WORD)(m_pOwner)->GetCellPos(adwPt2)[1];
 
-	pPlayer = (CPlayer*)m_dwUnk88;
-	lAngle = (short)pPlayer->m_awUnk0194[5];
+	pPlayer = m_pOwner;
+	lAngle = (short)pPlayer->m_wHeading;
 	dwDirX = g_adwSinTable[(((lAngle + 0x80) & 0x1FF) << 4) + 1];
 	HOVER_FIXMULWP(dwDirX, 0x96);
 	dwDirY = g_adwSinTable[((lAngle & 0x1FF) << 4) + 1];
 	HOVER_FIXMULWP(dwDirY, 0x96);
-	lAngle = (short)theApp.m_pBumperDoc->m_humanPlayer.m_awUnk0194[5];
+	lAngle = (short)theApp.m_pBumperDoc->m_humanPlayer.m_wHeading;
 	dwSideX = g_adwSinTable[((lAngle & 0x1FF) << 4) + 1];
 	HOVER_FIXMULWP(dwSideX, 0xC8);
 	dwSideY = g_adwSinTable[(((lAngle - 0x80) & 0x1FF) << 4) + 1];
 	HOVER_FIXMULWP(dwSideY, 0xC8);
 
-	pPlayer->Sub_4038A0(adwPos);
+	pPlayer->GetFixedPos(adwPos);
 	adwPos[0] -= dwDirX;
 	adwPos[1] -= dwDirY;
 	adwPt2[0] = adwPos[0];
@@ -964,22 +965,22 @@ void CTempWallPod::Sub_42AD50(DWORD dwUnk)
 	adwPt3[0] = pSprite->m_dwX2;
 	pSprite->m_dwY2 = ((short*)&adwPt2[1])[1];
 	adwPt3[1] = pSprite->m_dwY2;
-	pSprite->Sub_4010C0();
-	m_obj04.Sub_422BF0(adwPt1, adwPt3);
+	pSprite->Recalc();
+	m_seg.SetEndpoints(adwPt1, adwPt3);
 	pSprite->m_dwUnk60 = 0;
-	((CCollider*)theApp.m_pBumperDoc->m_dwUnk8388)->Sub_40F900(this);
-	((CMerlinWorld*)theApp.m_pBumperDoc->m_dwUnk0188)->Sub_4128A0((DWORD)pSprite);
-	((CPlayer*)m_dwUnk88)->m_dwUnk0130 = (DWORD)this;
-	pos = ((CPlayer*)m_dwUnk88)->m_obList00D0.Find(this);
-	((CPlayer*)m_dwUnk88)->m_obList00D0.RemoveAt(pos);
-	Sub_408530();
+	(theApp.m_pBumperDoc->m_pCollider)->AddStatic(this);
+	(theApp.m_pBumperDoc->m_pWorld)->AddSprite(pSprite);
+	(m_pOwner)->m_pTempWallPod = this;
+	pos = (m_pOwner)->m_listTempWallPods.Find(this);
+	(m_pOwner)->m_listTempWallPods.RemoveAt(pos);
+	QueueBeginFrame();
 }
 
 // Register with the collider (slot 12): while the wall is up, the cells
 // covered by its sprite are claimed instead of the pod's own radius.
 // hover.exe:0x421640
 // FUNCTION: HOVER 0x421640
-int CTempWallPod::Sub_408820(DWORD dwA)
+int CTempWallPod::UpdateRegions(DWORD dwA)
 {
 	CMerlinDynamic* pSprite;
 	int nCell;
@@ -997,13 +998,13 @@ int CTempWallPod::Sub_408820(DWORD dwA)
 	// while the force field is up the pod claims the field's cells; the
 	// plain pod registration is the tail of the function (rule 25)
 	pMgr = (CCollider*)dwA;
-	if (m_dwUnk28 != 0)
+	if (m_bInUse != 0)
 	{
-		nCell = (int)pMgr->m_dwUnk0C;
-		pSprite = (CMerlinDynamic*)m_dwUnkD4;
-		nHalf = (short)pSprite->m_wUnk58;
-		nX = (short)pSprite->m_wUnk5A;
-		nY = (short)pSprite->m_wUnk5C;
+		nCell = (int)pMgr->m_dwCellSize;
+		pSprite = m_pForceField;
+		nHalf = (short)pSprite->m_wHalfWidth;
+		nX = (short)pSprite->m_wX;
+		nY = (short)pSprite->m_wY;
 		nX2 = (nX + nHalf) / nCell;
 		nY1 = (nY - nHalf) / nCell;
 		nY2 = (nY + nHalf) / nCell;
@@ -1012,15 +1013,15 @@ int CTempWallPod::Sub_408820(DWORD dwA)
 		{
 			for (y = nY1; y <= nY2; y++)
 			{
-				if (pMgr->m_dwUnk44 != 0)
-					pMgr->Sub_40F8A0(x, y);
+				if (pMgr->m_bQuerying != 0)
+					pMgr->CollectCell(x, y);
 				else
-					pMgr->m_obj10.Sub_4086A0(x, y, this);
+					pMgr->m_grid.AddNode(x, y, this);
 			}
 		}
 		return 1;
 	}
-	return CPodObj::Sub_408820((DWORD)pMgr);
+	return CPodObj::UpdateRegions((DWORD)pMgr);
 }
 
 // Wall collision test (slot 11): while the wall is up, the player is
@@ -1028,11 +1029,11 @@ int CTempWallPod::Sub_408820(DWORD dwA)
 // otherwise the CPodObj pickup test applies.
 // hover.exe:0x41A3A0
 // FUNCTION: HOVER 0x41a3a0
-int CTempWallPod::Sub_42AD60(DWORD dwUnk)
+int CTempWallPod::Touches(DWORD dwUnk)
 {
 	CPlayer* pPlayer;
 	CMerlinDynamic* pSprite;
-	DWORD* pdwPts;
+	PLAYERPROBE* pProbe;
 	long lZ;
 	long lTop;
 	long lBottom;
@@ -1046,13 +1047,13 @@ int CTempWallPod::Sub_42AD60(DWORD dwUnk)
 	// ordinary pickup, and the base test is the tail of the function
 	// (notes/perfect-match.md rule 25)
 	pPlayer = (CPlayer*)dwUnk;
-	if (m_dwUnk28 != 0)
+	if (m_bInUse != 0)
 	{
-		pdwPts = pPlayer->Sub_4089E0();
-		pSprite = (CMerlinDynamic*)m_dwUnkD4;
-		lBottom = (short)pSprite->m_wUnk54;
-		lTopEdge = (short)pSprite->m_wUnk56;
-		lZ = (long)pPlayer->m_dwUnk01A4;
+		pProbe = pPlayer->GetProbe();
+		pSprite = m_pForceField;
+		lBottom = (short)pSprite->m_wBottom;
+		lTopEdge = (short)pSprite->m_wTop;
+		lZ = (long)pPlayer->m_dwAltitude;
 		lTop = lZ + 0x40;
 		if (lTopEdge >= lZ)
 		{
@@ -1060,57 +1061,57 @@ int CTempWallPod::Sub_42AD60(DWORD dwUnk)
 				return 0;
 			// one shared body: the original's first test jumps
 			// straight into the success tail (rule 38)
-			if (m_obj04.Sub_40C9B0(pdwPts, &dwOutC, &dwOutB, &dwOutA) <=
-					(long)pdwPts[4] ||
-				m_obj04.Sub_40C9B0(pdwPts + 2, &dwOutC, &dwOutB,
-					&dwOutA) <= (long)pdwPts[4])
+			if (m_seg.DistanceTo(&pProbe->ptFront, &dwOutC, &dwOutB, &dwOutA) <=
+					pProbe->lRadius ||
+				m_seg.DistanceTo(&pProbe->ptBack, &dwOutC, &dwOutB,
+					&dwOutA) <= pProbe->lRadius)
 			{
-				m_dwUnk2C = 1;
+				m_bSolidHit = 1;
 				return 1;
 			}
 		}
 		// the field top is below the player: only a brush is possible
-		else if (m_obj04.Sub_40C9B0(pdwPts + 2, &dwOutC, &dwOutB, &dwOutA) <=
-					(long)pdwPts[4] ||
-				m_obj04.Sub_40C9B0(pPlayer->Sub_403880(adwPos), &dwOutC,
-					&dwOutB, &dwOutA) <= (long)pdwPts[4] ||
-				m_obj04.Sub_40C9B0(pdwPts, &dwOutC, &dwOutB, &dwOutA) <=
-					(long)pdwPts[4])
+		else if (m_seg.DistanceTo(&pProbe->ptBack, &dwOutC, &dwOutB, &dwOutA) <=
+					pProbe->lRadius ||
+				m_seg.DistanceTo((POINT*)pPlayer->GetCellPos(adwPos), &dwOutC,
+					&dwOutB, &dwOutA) <= pProbe->lRadius ||
+				m_seg.DistanceTo(&pProbe->ptFront, &dwOutC, &dwOutB, &dwOutA) <=
+					pProbe->lRadius)
 		{
-			m_dwUnk2C = 0;
+			m_bSolidHit = 0;
 			return 1;
 		}
 		return 0;
 	}
-	return CPodObj::Sub_42AD60((DWORD)pPlayer);
+	return CPodObj::Touches((DWORD)pPlayer);
 }
 
 // hover.exe:0x421430
 // FUNCTION: HOVER 0x421430
-void CTempWallPod::Sub_4087D0()
+void CTempWallPod::BeginFrame()
 {
-	CPodObj::Sub_4087D0();
+	CPodObj::BeginFrame();
 }
 
 // End of frame (slot 16): drop the wall sprite from the level world
 // once the pod has been released.
 // hover.exe:0x4214E0
 // FUNCTION: HOVER 0x4214e0
-void CTempWallPod::Sub_4087F0()
+void CTempWallPod::EndFrame()
 {
-	if (m_dwUnk60 != 0 && m_dwUnkD4 != 0)
+	if (m_bDead != 0 && m_pForceField != 0)
 	{
-		((CMerlinWorld*)theApp.m_pBumperDoc->m_dwUnk0188)->Sub_414300(m_dwUnkD4);
-		m_dwUnkD4 = 0;
+		(theApp.m_pBumperDoc->m_pWorld)->RemoveSprite(m_pForceField);
+		m_pForceField = 0;
 	}
-	CPodObj::Sub_4087F0();
+	CPodObj::EndFrame();
 }
 
 // hover.exe:0x42B690
 // FUNCTION: HOVER 0x42b690
-void CTempWallPod::Sub_413020()
+void CTempWallPod::KillObject()
 {
-	CGameObj::Sub_413020();
+	CGameObj::KillObject();
 }
 
 // hover.exe:0x421710
@@ -1119,12 +1120,12 @@ CSpeedPod::CSpeedPod()
 {
 	char szName[0x34];
 
-	m_dwUnk28 = 0;
-	m_dwUnk94 = 0;
-	m_pUnk8C = NULL;
-	m_dwUnk9C = 0x40;
+	m_bInUse = 0;
+	m_bOnBoard = 0;
+	m_pTexture = NULL;
+	m_dwRadius = 0x40;
 	wsprintfA(szName, "%s%02d", "POD02_", 0);
-	g_mapUnk_4A1D30.Lookup(szName, (CObject*&)m_pUnk8C);
+	g_mapUnk_4A1D30.Lookup(szName, (CObject*&)m_pTexture);
 }
 
 // The destructor is defined in the class declaration, so the compiler folds
@@ -1144,99 +1145,99 @@ CSpeedPod::~CSpeedPod()
 // expires.
 // hover.exe:0x414370
 // FUNCTION: HOVER 0x414370
-void CSpeedPod::Sub_42AD30()
+void CSpeedPod::Think()
 {
-	CSub42AE90 fix;
-	CSub42AE90 fixOut;
-	CSub422C80* pGauge;
+	CGaugeFraction fix;
+	CGaugeFraction fixOut;
+	CSegmentGauge* pGauge;
 	CPlayer* pPlayer;
 
-	if (m_dwUnk5C == 0 && m_dwUnk28 != 0)
+	if (m_bKilled == 0 && m_bInUse != 0)
 	{
-		m_dwUnkA0--;
-		fix = CSub42AE90((WORD)m_dwUnkA0, 0);
-		*(long*)&fixOut = *(long*)&fix / (short)theApp.m_dwUnk0158;
-		pGauge = &Hover_sub_401140()->m_obj0370;
+		m_dwTimeLeft--;
+		fix = CGaugeFraction((WORD)m_dwTimeLeft, 0);
+		*(long*)&fixOut = *(long*)&fix / (short)theApp.m_dwSpeedPodTime;
+		pGauge = &Hover_GetView()->m_gaugeSpeedPod;
 		HOVER_INLINE_SUB_42A9F0(pGauge, fixOut);
-		if ((long)m_dwUnkA0 <= 0)
+		if ((long)m_dwTimeLeft <= 0)
 		{
-			if (theApp.m_dwUnk0408 != 0)
-				Sub_40D6E0(0xE, 1, 5, 0);
-			pPlayer = (CPlayer*)m_dwUnk88;
-			pPlayer->m_dwUnk0128 = 0;
-			*(DWORD*)&pPlayer->m_awUnk01D0[2] = *(DWORD*)&pPlayer->m_awUnk01D0[4];
-			theApp.m_pBumperDoc->Sub_412630(this);
+			if (theApp.m_bGameSounds != 0)
+				PlayObjSound(0xE, 1, 5, 0);
+			pPlayer = m_pOwner;
+			pPlayer->m_pSpeedPod = 0;
+			pPlayer->m_fxMaxSpeed = pPlayer->m_fxBaseMaxSpeed;
+			theApp.m_pBumperDoc->RetireObject(this);
 			return;
 		}
 	}
-	CPodObj::Sub_42AD30();
+	CPodObj::Think();
 }
 
 // Player touched the pod (slot 8): raise the player's speed limit for
-// theApp.m_dwUnk0158 frames, cancelling any slow pod that was running.
+// theApp.m_dwSpeedPodTime frames, cancelling any slow pod that was running.
 // hover.exe:0x421070
 // FUNCTION: HOVER 0x421070
-void CSpeedPod::Sub_42AD40(CPlayer* pOther, DWORD dwB)
+void CSpeedPod::OnTouch(CPlayer* pOther, DWORD dwB)
 {
 	CPlayer* pPlayer;
 	CSpeedPod* pNew;
 	DWORD dwLimit;
 	DWORD dwScale;
 
-	CPodObj::Sub_42AD40(pOther, dwB);
-	m_dwUnk88 = (DWORD)pOther;
-	m_dwUnk94 = 0;
-	((CCollider*)theApp.m_pBumperDoc->m_dwUnk8388)->Sub_40E710(this);
-	pPlayer = (CPlayer*)m_dwUnk88;
-	if (pPlayer->m_dwUnk01F8 != 0 && theApp.m_dwUnk0408 != 0)
-		Sub_40D6E0(0xD, 1, 5, 0);
-	if (m_dwUnk98 != 0)
+	CPodObj::OnTouch(pOther, dwB);
+	m_pOwner = pOther;
+	m_bOnBoard = 0;
+	(theApp.m_pBumperDoc->m_pCollider)->RemoveObject(this);
+	pPlayer = m_pOwner;
+	if (pPlayer->m_bHuman != 0 && theApp.m_bGameSounds != 0)
+		PlayObjSound(0xD, 1, 5, 0);
+	if (m_bRespawn != 0)
 	{
 		pNew = new CSpeedPod;
-		theApp.m_pBumperDoc->Sub_412250(pNew, (rand() % 4) == 0);
+		theApp.m_pBumperDoc->PlaceObject(pNew, (rand() % 4) == 0);
 	}
-	theApp.m_pBumperDoc->m_list83A8.AddTail(this);
-	m_dwUnk28 = 1;
-	m_dwUnkA0 = theApp.m_dwUnk0158;
-	pPlayer = (CPlayer*)m_dwUnk88;
-	if (pPlayer->m_dwUnk0128 != 0)
+	theApp.m_pBumperDoc->m_listActiveObjs.AddTail(this);
+	m_bInUse = 1;
+	m_dwTimeLeft = theApp.m_dwSpeedPodTime;
+	pPlayer = m_pOwner;
+	if (pPlayer->m_pSpeedPod != 0)
 	{
-		theApp.m_pBumperDoc->Sub_412630((CGameObj*)pPlayer->m_dwUnk0128);
-		((CPlayer*)m_dwUnk88)->m_dwUnk0128 = 0;
+		theApp.m_pBumperDoc->RetireObject((CGameObj*)pPlayer->m_pSpeedPod);
+		(m_pOwner)->m_pSpeedPod = 0;
 	}
-	if (((CPlayer*)m_dwUnk88)->m_dwUnk012C != 0)
+	if ((m_pOwner)->m_pSlowPod != 0)
 	{
-		theApp.m_pBumperDoc->Sub_412630(
-			(CGameObj*)((CPlayer*)m_dwUnk88)->m_dwUnk012C);
-		((CPlayer*)m_dwUnk88)->m_dwUnk012C = 0;
+		theApp.m_pBumperDoc->RetireObject(
+			(CGameObj*)(m_pOwner)->m_pSlowPod);
+		(m_pOwner)->m_pSlowPod = 0;
 	}
-	pPlayer = (CPlayer*)m_dwUnk88;
-	dwLimit = *(DWORD*)&pPlayer->m_awUnk01D0[4];
-	dwScale = ((DWORD*)pPlayer->m_dwUnk0084)[8];
-	pPlayer->m_dwUnk0128 = (DWORD)this;
+	pPlayer = m_pOwner;
+	dwLimit = pPlayer->m_fxBaseMaxSpeed;
+	dwScale = pPlayer->m_pParams->m_adw[8];
+	pPlayer->m_pSpeedPod = this;
 	HOVER_FIXMULP(dwLimit, dwScale);
-	*(DWORD*)&pPlayer->m_awUnk01D0[2] = dwLimit;
+	pPlayer->m_fxMaxSpeed = dwLimit;
 }
 
 // hover.exe:0x414A40
 // FUNCTION: HOVER 0x414a40
-void CSpeedPod::Sub_4087D0()
+void CSpeedPod::BeginFrame()
 {
-	CPodObj::Sub_4087D0();
+	CPodObj::BeginFrame();
 }
 
 // hover.exe:0x414A70
 // FUNCTION: HOVER 0x414a70
-void CSpeedPod::Sub_4087F0()
+void CSpeedPod::EndFrame()
 {
-	CPodObj::Sub_4087F0();
+	CPodObj::EndFrame();
 }
 
 // hover.exe:0x421700
 // FUNCTION: HOVER 0x421700
-void CSpeedPod::Sub_413020()
+void CSpeedPod::KillObject()
 {
-	CGameObj::Sub_413020();
+	CGameObj::KillObject();
 }
 
 // hover.exe:0x4223C0
@@ -1245,13 +1246,13 @@ CMapEraserPod::CMapEraserPod()
 {
 	char szName[0x34];
 
-	m_dwUnk88 = 0;
-	m_dwUnk28 = 0;
-	m_dwUnk94 = 0;
-	m_dwUnk9C = 0x40;
-	m_pUnk8C = NULL;
+	m_pOwner = 0;
+	m_bInUse = 0;
+	m_bOnBoard = 0;
+	m_dwRadius = 0x40;
+	m_pTexture = NULL;
 	wsprintfA(szName, "%s%02d", "POD05_", 0);
-	g_mapUnk_4A1D30.Lookup(szName, (CObject*&)m_pUnk8C);
+	g_mapUnk_4A1D30.Lookup(szName, (CObject*&)m_pTexture);
 }
 
 // The destructor is defined in the class declaration, so the compiler folds
@@ -1268,68 +1269,68 @@ CMapEraserPod::~CMapEraserPod()
 
 // hover.exe:0x42C410
 // FUNCTION: HOVER 0x42c410
-void CMapEraserPod::Sub_42AD30()
+void CMapEraserPod::Think()
 {
-	CPodObj::Sub_42AD30();
+	CPodObj::Think();
 }
 
 // Player touched the pod (slot 8): clear the "seen on the map" bit of
 // every non-pod object the document still tracks, then release the pod.
 // hover.exe:0x422470
 // FUNCTION: HOVER 0x422470
-void CMapEraserPod::Sub_42AD40(CPlayer* pOther, DWORD dwB)
+void CMapEraserPod::OnTouch(CPlayer* pOther, DWORD dwB)
 {
 	CMapEraserPod* pNew;
 	POSITION pos;
 	CGameObj* pObj;
 
-	CPodObj::Sub_42AD40(pOther, dwB);
-	m_dwUnk94 = 0;
-	m_dwUnk88 = (DWORD)pOther;
-	((CCollider*)theApp.m_pBumperDoc->m_dwUnk8388)->Sub_40E710(this);
-	if (m_dwUnk98 != 0)
+	CPodObj::OnTouch(pOther, dwB);
+	m_bOnBoard = 0;
+	m_pOwner = pOther;
+	(theApp.m_pBumperDoc->m_pCollider)->RemoveObject(this);
+	if (m_bRespawn != 0)
 	{
 		pNew = new CMapEraserPod;
-		theApp.m_pBumperDoc->Sub_412250(pNew, (rand() % 4) == 0);
+		theApp.m_pBumperDoc->PlaceObject(pNew, (rand() % 4) == 0);
 	}
-	if (((CPlayer*)m_dwUnk88)->m_dwUnk0140 == 0)
+	if ((m_pOwner)->m_bInvincible == 0)
 	{
-		if (theApp.m_dwUnk0408 != 0)
-			Sub_40D6E0(0xF, 1, 5, 0);
-		pos = theApp.m_pBumperDoc->m_list838C.GetHeadPosition();
+		if (theApp.m_bGameSounds != 0)
+			PlayObjSound(0xF, 1, 5, 0);
+		pos = theApp.m_pBumperDoc->m_listMazeObjs.GetHeadPosition();
 		while (pos != NULL)
 		{
-			pObj = (CGameObj*)theApp.m_pBumperDoc->m_list838C.GetNext(pos);
-			if (!pObj->IsKindOf(RUNTIME_CLASS(CPodObj)) && pObj->m_dwUnk78 != 0)
+			pObj = (CGameObj*)theApp.m_pBumperDoc->m_listMazeObjs.GetNext(pos);
+			if (!pObj->IsKindOf(RUNTIME_CLASS(CPodObj)) && pObj->m_pMerlin != 0)
 				// hover.exe clears the flag with a byte-wide AND
-				*(BYTE*)&((CMerlinLine*)pObj->m_dwUnk78)->m_wFlags &= ~8;
-			if (pObj->IsKindOf(RUNTIME_CLASS(CWall)) && pObj->m_dwUnk78 != 0)
+				*(BYTE*)&(pObj->m_pMerlin)->m_wFlags &= ~8;
+			if (pObj->IsKindOf(RUNTIME_CLASS(CWall)) && pObj->m_pMerlin != 0)
 				// hover.exe clears the flag with a byte-wide AND
-				*(BYTE*)&((CMerlinLine*)pObj->m_dwUnk78)->m_wFlags &= ~8;
+				*(BYTE*)&(pObj->m_pMerlin)->m_wFlags &= ~8;
 		}
 	}
-	theApp.m_pBumperDoc->Sub_412630(this);
+	theApp.m_pBumperDoc->RetireObject(this);
 }
 
 // hover.exe:0x41B2C0
 // FUNCTION: HOVER 0x41b2c0
-void CMapEraserPod::Sub_4087D0()
+void CMapEraserPod::BeginFrame()
 {
-	CPodObj::Sub_4087D0();
+	CPodObj::BeginFrame();
 }
 
 // hover.exe:0x41B340
 // FUNCTION: HOVER 0x41b340
-void CMapEraserPod::Sub_4087F0()
+void CMapEraserPod::EndFrame()
 {
-	CPodObj::Sub_4087F0();
+	CPodObj::EndFrame();
 }
 
 // hover.exe:0x422620
 // FUNCTION: HOVER 0x422620
-void CMapEraserPod::Sub_413020()
+void CMapEraserPod::KillObject()
 {
-	CGameObj::Sub_413020();
+	CGameObj::KillObject();
 }
 
 // hover.exe:0x422630
@@ -1338,12 +1339,12 @@ CSlowPod::CSlowPod()
 {
 	char szName[0x34];
 
-	m_dwUnk28 = 0;
-	m_dwUnk94 = 0;
-	m_pUnk8C = NULL;
-	m_dwUnk9C = 0x40;
+	m_bInUse = 0;
+	m_bOnBoard = 0;
+	m_pTexture = NULL;
+	m_dwRadius = 0x40;
 	wsprintfA(szName, "%s%02d", "POD03_", 0);
-	g_mapUnk_4A1D30.Lookup(szName, (CObject*&)m_pUnk8C);
+	g_mapUnk_4A1D30.Lookup(szName, (CObject*&)m_pTexture);
 }
 
 // The destructor is defined in the class declaration, so the compiler folds
@@ -1362,105 +1363,105 @@ CSlowPod::~CSlowPod()
 // dashboard gauge and restore the player's speed limit when it expires.
 // hover.exe:0x42C430
 // FUNCTION: HOVER 0x42c430
-void CSlowPod::Sub_42AD30()
+void CSlowPod::Think()
 {
-	CSub42AE90 fix;
-	CSub42AE90 fixOut;
-	CSub422C80* pGauge;
+	CGaugeFraction fix;
+	CGaugeFraction fixOut;
+	CSegmentGauge* pGauge;
 	CPlayer* pPlayer;
 
-	if (m_dwUnk5C == 0 && m_dwUnk28 != 0)
+	if (m_bKilled == 0 && m_bInUse != 0)
 	{
-		m_dwUnkA0--;
-		fix = CSub42AE90((WORD)m_dwUnkA0, 0);
-		*(long*)&fixOut = *(long*)&fix / (short)theApp.m_dwUnk0160;
-		pGauge = &Hover_sub_401140()->m_obj0340;
+		m_dwTimeLeft--;
+		fix = CGaugeFraction((WORD)m_dwTimeLeft, 0);
+		*(long*)&fixOut = *(long*)&fix / (short)theApp.m_dwSlowPodTime;
+		pGauge = &Hover_GetView()->m_gaugeSlow;
 		HOVER_INLINE_SUB_42A9F0(pGauge, fixOut);
-		if ((long)m_dwUnkA0 <= 0)
+		if ((long)m_dwTimeLeft <= 0)
 		{
-			if (theApp.m_dwUnk0408 != 0)
-				Sub_40D6E0(0xC, 1, 5, 0);
-			pPlayer = (CPlayer*)m_dwUnk88;
-			pPlayer->m_dwUnk012C = 0;
-			*(DWORD*)&pPlayer->m_awUnk01D0[2] = *(DWORD*)&pPlayer->m_awUnk01D0[4];
-			theApp.m_pBumperDoc->Sub_412630(this);
+			if (theApp.m_bGameSounds != 0)
+				PlayObjSound(0xC, 1, 5, 0);
+			pPlayer = m_pOwner;
+			pPlayer->m_pSlowPod = 0;
+			pPlayer->m_fxMaxSpeed = pPlayer->m_fxBaseMaxSpeed;
+			theApp.m_pBumperDoc->RetireObject(this);
 			return;
 		}
 	}
-	CPodObj::Sub_42AD30();
+	CPodObj::Think();
 }
 
 // Player touched the pod (slot 8): slow the player down for
-// theApp.m_dwUnk0160 frames, cancelling any speed pod that was running.
+// theApp.m_dwSlowPodTime frames, cancelling any speed pod that was running.
 // hover.exe:0x4226D0
 // FUNCTION: HOVER 0x4226d0
-void CSlowPod::Sub_42AD40(CPlayer* pOther, DWORD dwB)
+void CSlowPod::OnTouch(CPlayer* pOther, DWORD dwB)
 {
 	CSlowPod* pNew;
 	CPlayer* pPlayer;
 	DWORD dwLimit;
 	DWORD dwScale;
 
-	CPodObj::Sub_42AD40(pOther, dwB);
-	m_dwUnk94 = 0;
-	m_dwUnk88 = (DWORD)pOther;
-	((CCollider*)theApp.m_pBumperDoc->m_dwUnk8388)->Sub_40E710(this);
-	if (m_dwUnk98 != 0)
+	CPodObj::OnTouch(pOther, dwB);
+	m_bOnBoard = 0;
+	m_pOwner = pOther;
+	(theApp.m_pBumperDoc->m_pCollider)->RemoveObject(this);
+	if (m_bRespawn != 0)
 	{
 		pNew = new CSlowPod;
-		theApp.m_pBumperDoc->Sub_412250(pNew, (rand() % 4) == 0);
+		theApp.m_pBumperDoc->PlaceObject(pNew, (rand() % 4) == 0);
 	}
-	pPlayer = (CPlayer*)m_dwUnk88;
-	if (pPlayer->m_dwUnk0140 != 0)
+	pPlayer = m_pOwner;
+	if (pPlayer->m_bInvincible != 0)
 	{
-		theApp.m_pBumperDoc->Sub_412630(this);
+		theApp.m_pBumperDoc->RetireObject(this);
 		return;
 	}
-	if (pPlayer->m_dwUnk01F8 != 0 && theApp.m_dwUnk0408 != 0)
-		Sub_40D6E0(0xB, 1, 5, 0);
-	theApp.m_pBumperDoc->m_list83A8.AddTail(this);
-	m_dwUnk28 = 1;
-	m_dwUnkA0 = theApp.m_dwUnk0160;
-	pPlayer = (CPlayer*)m_dwUnk88;
-	if (pPlayer->m_dwUnk012C != 0)
+	if (pPlayer->m_bHuman != 0 && theApp.m_bGameSounds != 0)
+		PlayObjSound(0xB, 1, 5, 0);
+	theApp.m_pBumperDoc->m_listActiveObjs.AddTail(this);
+	m_bInUse = 1;
+	m_dwTimeLeft = theApp.m_dwSlowPodTime;
+	pPlayer = m_pOwner;
+	if (pPlayer->m_pSlowPod != 0)
 	{
-		theApp.m_pBumperDoc->Sub_412630((CGameObj*)pPlayer->m_dwUnk012C);
-		((CPlayer*)m_dwUnk88)->m_dwUnk012C = 0;
+		theApp.m_pBumperDoc->RetireObject((CGameObj*)pPlayer->m_pSlowPod);
+		(m_pOwner)->m_pSlowPod = 0;
 	}
-	if (((CPlayer*)m_dwUnk88)->m_dwUnk0128 != 0)
+	if ((m_pOwner)->m_pSpeedPod != 0)
 	{
-		theApp.m_pBumperDoc->Sub_412630(
-			(CGameObj*)((CPlayer*)m_dwUnk88)->m_dwUnk0128);
-		((CPlayer*)m_dwUnk88)->m_dwUnk0128 = 0;
-		Hover_sub_401140()->m_obj0370.Sub_42A9F0(CSub42AE90(0, 0));
+		theApp.m_pBumperDoc->RetireObject(
+			(CGameObj*)(m_pOwner)->m_pSpeedPod);
+		(m_pOwner)->m_pSpeedPod = 0;
+		Hover_GetView()->m_gaugeSpeedPod.SetFraction(CGaugeFraction(0, 0));
 	}
-	pPlayer = (CPlayer*)m_dwUnk88;
-	dwLimit = *(DWORD*)&pPlayer->m_awUnk01D0[4];
-	dwScale = ((DWORD*)pPlayer->m_dwUnk0084)[7];
-	pPlayer->m_dwUnk012C = (DWORD)this;
+	pPlayer = m_pOwner;
+	dwLimit = pPlayer->m_fxBaseMaxSpeed;
+	dwScale = pPlayer->m_pParams->m_adw[7];
+	pPlayer->m_pSlowPod = this;
 	HOVER_FIXMULP(dwLimit, dwScale);
-	*(DWORD*)&pPlayer->m_awUnk01D0[2] = dwLimit;
+	pPlayer->m_fxMaxSpeed = dwLimit;
 }
 
 // hover.exe:0x41B3C0
 // FUNCTION: HOVER 0x41b3c0
-void CSlowPod::Sub_4087D0()
+void CSlowPod::BeginFrame()
 {
-	CPodObj::Sub_4087D0();
+	CPodObj::BeginFrame();
 }
 
 // hover.exe:0x41B3D0
 // FUNCTION: HOVER 0x41b3d0
-void CSlowPod::Sub_4087F0()
+void CSlowPod::EndFrame()
 {
-	CPodObj::Sub_4087F0();
+	CPodObj::EndFrame();
 }
 
 // hover.exe:0x422910
 // FUNCTION: HOVER 0x422910
-void CSlowPod::Sub_413020()
+void CSlowPod::KillObject()
 {
-	CGameObj::Sub_413020();
+	CGameObj::KillObject();
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1472,17 +1473,17 @@ CFlag::CFlag(DWORD dwUnk)
 {
 	char szName[0x34];
 
-	m_dwUnk88 = 0;
-	m_dwUnk9C = 0x80;
-	m_pUnk8C = NULL;
-	m_dwUnkCC = dwUnk;
+	m_pOwner = 0;
+	m_dwRadius = 0x80;
+	m_pTexture = NULL;
+	m_bRobotFlag = dwUnk;
 	if (dwUnk == 0)
 		wsprintfA(szName, "%s%02d", "FLG01_", 0);
 	else
 		wsprintfA(szName, "%s%02d", "FLG00_", 0);
-	g_mapUnk_4A1D30.Lookup(szName, (CObject*&)m_pUnk8C);
-	m_dwUnkB8 = (short)m_pUnk8C->m_wUnk18 * 2;
-	m_dwUnkBC = (short)m_pUnk8C->m_wUnk14;
+	g_mapUnk_4A1D30.Lookup(szName, (CObject*&)m_pTexture);
+	m_dwHeight = (short)m_pTexture->m_wHeight * 2;
+	m_dwHalfWidth = (short)m_pTexture->m_wWidth;
 }
 
 // The destructor is defined in the class declaration, so the compiler folds
@@ -1499,9 +1500,9 @@ CFlag::~CFlag()
 
 // hover.exe:0x42C160
 // FUNCTION: HOVER 0x42c160
-void CFlag::Sub_42AD30()
+void CFlag::Think()
 {
-	CPodObj::Sub_42AD30();
+	CPodObj::Think();
 }
 
 // The flag is captured (slot 8): it joins the player's flag list, the
@@ -1509,7 +1510,7 @@ void CFlag::Sub_42AD30()
 // when the last flag of the level has been taken.
 // hover.exe:0x41AE40
 // FUNCTION: HOVER 0x41ae40
-void CFlag::Sub_42AD40(CPlayer* pOther, DWORD dwB)
+void CFlag::OnTouch(CPlayer* pOther, DWORD dwB)
 {
 	CRobotPlayer* pRobot;
 	CBumperDoc* pDoc;
@@ -1517,134 +1518,137 @@ void CFlag::Sub_42AD40(CPlayer* pOther, DWORD dwB)
 	long lLimit;
 	long lCount;
 
-	CPodObj::Sub_42AD40(pOther, dwB);
-	m_dwUnk88 = (DWORD)pOther;
-	m_dwUnk94 = 0;
-	((CCollider*)theApp.m_pBumperDoc->m_dwUnk8388)->Sub_40E710(this);
-	((CPlayer*)m_dwUnk88)->m_obList00B4.AddHead(this);
+	CPodObj::OnTouch(pOther, dwB);
+	m_pOwner = pOther;
+	m_bOnBoard = 0;
+	(theApp.m_pBumperDoc->m_pCollider)->RemoveObject(this);
+	(m_pOwner)->m_listFlags.AddHead(this);
 
-	if (m_dwUnkCC == 0)
+	if (m_bRobotFlag == 0)
 	{
 		// a robot took the human flag
-		pRobot = (CRobotPlayer*)m_dwUnk88;
-		if (pRobot->m_dwUnk01FC == (DWORD)this)
+		pRobot = (CRobotPlayer*)m_pOwner;
+		if (pRobot->m_pTarget == this)
 		{
-			pRobot->m_dwUnk01FC = 0;
-			pRobot->m_pUnk0220->Sub_41BC10((CSub423670*)&pRobot->m_obj0264);
+			pRobot->m_pTarget = 0;
+			pRobot->m_pState->ChangeState((CRobotState*)&pRobot->m_stSeek);
 		}
 		pDoc = theApp.m_pBumperDoc;
-		pDoc->m_dwUnk83E8++;
-		pView = Hover_sub_401140();
+		pDoc->m_dwRobotFlags++;
+		pView = Hover_GetView();
 		{
-			CSub422C30* pGauge = &pView->m_obj0480;
-			lLimit = (long)pGauge->m_dwUnk3C;
-			pGauge->m_dwUnk00 = 1;
-			lCount = (long)pDoc->m_dwUnk83E8;
+			CFlagStrip* pGauge = &pView->m_flagsRobot;
+			lLimit = (long)pGauge->m_dwSlots;
+			pGauge->m_bFlagsDirty = 1;
+			lCount = (long)pDoc->m_dwRobotFlags;
 			if (lLimit <= lCount)
 			{
-				pGauge->m_dwUnk44 = lLimit;
+				pGauge->m_dwFilled = lLimit;
 			}
 			else
 			{
-				pGauge->m_dwUnk44 = 0;
+				pGauge->m_dwFilled = 0;
 				if (lCount > 0)
-					pGauge->m_dwUnk44 = lCount;
+					pGauge->m_dwFilled = lCount;
 			}
 		}
-		if (LVLPARAM((int)g_dwUnk_46049C).m_dwUnk30 ==
-			theApp.m_pBumperDoc->m_dwUnk83E8)
+		if (LVLPARAM((int)g_dwLevel).m_dwUnk30 ==
+			(int)theApp.m_pBumperDoc->m_dwRobotFlags)
 		{
-			Hover_sub_401140()->Sub_427CF0(4);
-			if (theApp.m_dwUnk0404 != 0)
-				((CSub40B800*)theApp.m_pBumperDoc->m_adwUnk83EC[0x1A])->
-					Sub_4118A0(5, 1);
-			if (theApp.m_dwUnk0408 != 0)
-				((CSub40B800*)theApp.m_pBumperDoc->m_adwUnk83EC[0x20])->
-					Sub_40B800(8, 5, 0);
+			Hover_GetView()->SetGameState(4);
+			if (theApp.m_bEngineSound != 0)
+				((CSoundSlot*)theApp.m_pBumperDoc->m_adwSounds[0x1A])->
+					StopWave(5, 1);
+			if (theApp.m_bGameSounds != 0)
+				((CSoundSlot*)theApp.m_pBumperDoc->m_adwSounds[0x20])->
+					PlayWave(8, 5, 0);
 			return;
 		}
-		if (theApp.m_dwUnk0408 != 0)
-			Sub_40D6E0(0x10, 2, 5, 0);
+		if (theApp.m_bGameSounds != 0)
+			PlayObjSound(0x10, 2, 5, 0);
 		return;
 	}
 
 	// the human took a robot flag
 	pDoc = theApp.m_pBumperDoc;
-	pDoc->m_dwUnk83E4 +=
-		(&LVLPARAM((int)g_dwUnk_46049C).m_dwUnk40)[theApp.m_dwUnk01C8];
-	pView = Hover_sub_401140();
+	pDoc->m_dwScore +=
+		LVLPARAM((int)g_dwLevel).m_anCaptureScore[theApp.m_dwSkill];
+	pView = Hover_GetView();
 	{
-		CSub422C30* pGauge = &pView->m_obj0430;
-		pGauge->m_dwUnk00 = 1;
-		lCount = (long)((CPlayer*)m_dwUnk88)->m_obList00B4.GetCount();
-		lLimit = (long)pGauge->m_dwUnk3C;
+		CFlagStrip* pGauge = &pView->m_flagsPlayer;
+		pGauge->m_bFlagsDirty = 1;
+		lCount = (long)(m_pOwner)->m_listFlags.GetCount();
+		lLimit = (long)pGauge->m_dwSlots;
 		if (lCount >= lLimit)
 		{
-			pGauge->m_dwUnk44 = lLimit;
+			pGauge->m_dwFilled = lLimit;
 		}
 		else
 		{
-			pGauge->m_dwUnk44 = 0;
+			pGauge->m_dwFilled = 0;
 			if (lCount > 0)
-				pGauge->m_dwUnk44 = lCount;
+				pGauge->m_dwFilled = lCount;
 		}
 	}
-	lCount = (long)theApp.m_pBumperDoc->m_dwUnk83E4;
-	pView = Hover_sub_401140();
-	pView->m_obj02B8.m_dwUnk00 = 1;
-	pView->m_obj02B8.m_dwUnk08 = lCount;
-	if (LVLPARAM((int)g_dwUnk_46049C).m_dwUnk30 ==
-		(DWORD)((CPlayer*)m_dwUnk88)->m_obList00B4.GetCount())
+	lCount = (long)theApp.m_pBumperDoc->m_dwScore;
+	pView = Hover_GetView();
 	{
-		Hover_sub_401140()->Sub_427CF0(5);
-		if (theApp.m_dwUnk0404 != 0)
-			((CSub40B800*)theApp.m_pBumperDoc->m_adwUnk83EC[0x1A])->
-				Sub_4118A0(5, 1);
-		if (theApp.m_dwUnk0408 != 0)
-			((CSub40B800*)theApp.m_pBumperDoc->m_adwUnk83EC[0x1F])->
-				Sub_40B800(8, 5, 0);
+		CDigitDisplay* pGauge2 = &pView->m_score;
+		pGauge2->m_bDigitsDirty = 1;
+		pGauge2->m_dwDisplayValue = lCount;
+	}
+	if (LVLPARAM((int)g_dwLevel).m_dwUnk30 ==
+		(m_pOwner)->m_listFlags.GetCount())
+	{
+		Hover_GetView()->SetGameState(5);
+		if (theApp.m_bEngineSound != 0)
+			((CSoundSlot*)theApp.m_pBumperDoc->m_adwSounds[0x1A])->
+				StopWave(5, 1);
+		if (theApp.m_bGameSounds != 0)
+			((CSoundSlot*)theApp.m_pBumperDoc->m_adwSounds[0x1F])->
+				PlayWave(8, 5, 0);
 		return;
 	}
-	if (theApp.m_dwUnk0408 != 0)
-		Sub_40D6E0(0x11, 2, 5, 0);
+	if (theApp.m_bGameSounds != 0)
+		PlayObjSound(0x11, 2, 5, 0);
 }
 
 // Pickup test (slot 11): a flag can only be picked up by the other team
-// (m_dwUnkCC 0 = human flag, 1 = robot flag).
+// (m_bRobotFlag 0 = human flag, 1 = robot flag).
 // hover.exe:0x414470
 // FUNCTION: HOVER 0x414470
-int CFlag::Sub_42AD60(DWORD dwUnk)
+int CFlag::Touches(DWORD dwUnk)
 {
 	// two independent tests, not an if/else chain: the original re-reads
-	// m_dwUnkCC for the second one (there is a call in between, rule 65)
-	if (m_dwUnkCC == 0 &&
+	// m_bRobotFlag for the second one (there is a call in between, rule 65)
+	if (m_bRobotFlag == 0 &&
 		((CPlayer*)dwUnk)->IsKindOf(RUNTIME_CLASS(CHumanPlayer)))
 		return 0;
-	if (m_dwUnkCC == 1 &&
+	if (m_bRobotFlag == 1 &&
 		((CPlayer*)dwUnk)->IsKindOf(RUNTIME_CLASS(CRobotPlayer)))
 		return 0;
-	return CPodObj::Sub_42AD60(dwUnk);
+	return CPodObj::Touches(dwUnk);
 }
 
 // hover.exe:0x414D00
 // FUNCTION: HOVER 0x414d00
-void CFlag::Sub_4087D0()
+void CFlag::BeginFrame()
 {
-	CPodObj::Sub_4087D0();
+	CPodObj::BeginFrame();
 }
 
 // hover.exe:0x414D10
 // FUNCTION: HOVER 0x414d10
-void CFlag::Sub_4087F0()
+void CFlag::EndFrame()
 {
-	CPodObj::Sub_4087F0();
+	CPodObj::EndFrame();
 }
 
 // hover.exe:0x42C170
 // FUNCTION: HOVER 0x42c170
-void CFlag::Sub_413020()
+void CFlag::KillObject()
 {
-	CGameObj::Sub_413020();
+	CGameObj::KillObject();
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1656,15 +1660,15 @@ CContainer::CContainer(CPodObj* pObj, DWORD dwX, DWORD dwY, DWORD dwPt)
 {
 	char szName[0x34];
 
-	m_dwUnkD0 = (DWORD)pObj;
-	Sub_40F880(dwX, dwY);
-	m_dwUnk9C = dwPt;
+	m_pInner = pObj;
+	SetCellPos(dwX, dwY);
+	m_dwRadius = dwPt;
 	// re-read through the member, not through the parameter: the original
-	// keeps a pointer to m_dwUnkD0 live across Sub_40F880 (rule 65)
-	m_dwUnkA4 = ((CPodObj*)m_dwUnkD0)->m_dwUnkA4;
-	m_pUnk8C = NULL;
+	// keeps a pointer to m_pInner live across SetCellPos (rule 65)
+	m_dwBaseZ = (m_pInner)->m_dwBaseZ;
+	m_pTexture = NULL;
 	wsprintfA(szName, "%s%02d", "POD06_", 0);
-	g_mapUnk_4A1D30.Lookup(szName, (CObject*&)m_pUnk8C);
+	g_mapUnk_4A1D30.Lookup(szName, (CObject*&)m_pTexture);
 }
 
 // Destroys the pod nested inside the container. The body is folded into
@@ -1680,8 +1684,8 @@ CContainer::CContainer(CPodObj* pObj, DWORD dwX, DWORD dwY, DWORD dwPt)
 // FUNCTION: HOVER 0x41b230
 CContainer::~CContainer()
 {
-	if (m_dwUnkD0 != 0)
-		delete (CGameObj*)m_dwUnkD0;
+	if (m_pInner != 0)
+		delete (CGameObj*)m_pInner;
 }
 #endif
 
@@ -1690,49 +1694,49 @@ CContainer::~CContainer()
 // of that pod type is already full.
 // hover.exe:0x421E20
 // FUNCTION: HOVER 0x421e20
-void CContainer::Sub_42AD40(CPlayer* pOther, DWORD dwB)
+void CContainer::OnTouch(CPlayer* pOther, DWORD dwB)
 {
 	CPodObj* pInner;
 	int bRelease;
 
-	pInner = (CPodObj*)m_dwUnkD0;
+	pInner = m_pInner;
 	if ((pInner->IsKindOf(RUNTIME_CLASS(CTempWallPod)) &&
-			pOther->m_obList00D0.GetCount() == 9) ||
-		(((CPodObj*)m_dwUnkD0)->IsKindOf(RUNTIME_CLASS(CSmokeBombPod)) &&
-			pOther->m_obList00EC.GetCount() == 9) ||
-		(((CPodObj*)m_dwUnkD0)->IsKindOf(RUNTIME_CLASS(CJumpPod)) &&
-			pOther->m_obList0108.GetCount() == 9))
+			pOther->m_listTempWallPods.GetCount() == 9) ||
+		((m_pInner)->IsKindOf(RUNTIME_CLASS(CSmokeBombPod)) &&
+			pOther->m_listSmokeBombPods.GetCount() == 9) ||
+		((m_pInner)->IsKindOf(RUNTIME_CLASS(CJumpPod)) &&
+			pOther->m_listJumpPods.GetCount() == 9))
 		bRelease = 0;
 	else
 		bRelease = 1;
 
-	((CPodObj*)m_dwUnkD0)->Sub_42AD40(pOther, dwB);
+	(m_pInner)->OnTouch(pOther, dwB);
 	if (bRelease != 0)
 	{
-		m_dwUnkD0 = 0;
-		theApp.m_pBumperDoc->Sub_412630(this);
+		m_pInner = 0;
+		theApp.m_pBumperDoc->RetireObject(this);
 	}
 }
 
 // hover.exe:0x414D20
 // FUNCTION: HOVER 0x414d20
-void CContainer::Sub_4087D0()
+void CContainer::BeginFrame()
 {
-	CPodObj::Sub_4087D0();
+	CPodObj::BeginFrame();
 }
 
 // hover.exe:0x414D30
 // FUNCTION: HOVER 0x414d30
-void CContainer::Sub_4087F0()
+void CContainer::EndFrame()
 {
-	CPodObj::Sub_4087F0();
+	CPodObj::EndFrame();
 }
 
 // hover.exe:0x421EC0
 // FUNCTION: HOVER 0x421ec0
-void CContainer::Sub_413020()
+void CContainer::KillObject()
 {
-	CGameObj::Sub_413020();
+	CGameObj::KillObject();
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1742,22 +1746,22 @@ void CContainer::Sub_413020()
 // FUNCTION: HOVER 0x40e6a0
 CWall::CWall()
 {
-	m_dwUnk9C = 0;
+	m_pNextFree = 0;
 }
 
 // hover.exe:0x414D40
 // FUNCTION: HOVER 0x414d40
-int CWall::Sub_414D40(CObject* pTexture)
+int CWall::SetFace(CMerlinLine* pFace)
 {
-	int nRet = CGameObj::Sub_414A50((DWORD)pTexture);
-	m_obj04.Sub_40E8E0(pTexture);
+	int nRet = CGameObj::SetMerlin(pFace);
+	m_seg.SetFromLine(pFace);
 	return nRet;
 }
 
 // The class destructor has an empty body; only CGameObj::~CGameObj runs.
 // Unlike the pod classes, CWall keeps a separate out-of-line ??1 (the
-// collider builds CWall objects on the stack, see CCollider::Sub_40C2B0
-// and Sub_411600, so the plain destructor is needed); the scalar deleting
+// collider builds CWall objects on the stack, see CCollider::IsPathClear
+// and ProbeSegment, so the plain destructor is needed); the scalar deleting
 // destructor at hover.exe:0x417BA0 is a second copy of this body followed
 // by an inlined CWall::operator delete.
 // hover.exe:0x40E650
@@ -1768,37 +1772,37 @@ CWall::~CWall()
 
 // hover.exe:0x42C660
 // FUNCTION: HOVER 0x42c660
-void CWall::Sub_42AD30()
+void CWall::Think()
 {
-	CGameObj::Sub_42AD30();
+	CGameObj::Think();
 }
 
 // The player hit the wall (slot 8): bounce him off it, or - when the
 // wall is low enough to stand on - lift him onto its top edge.
 // hover.exe:0x41B450
 // FUNCTION: HOVER 0x41b450
-void CWall::Sub_42AD40(CPlayer* pOther, DWORD dwB)
+void CWall::OnTouch(CPlayer* pOther, DWORD dwB)
 {
 	int nHit;
 	WORD wTop;
 
-	if (m_dwUnk2C != 0)
+	if (m_bSolidHit != 0)
 	{
-		nHit = pOther->Sub_41A6B0(this, dwB);
-		if (pOther->m_dwUnk01F8 != 0)
+		nHit = pOther->BounceOffWall(this, dwB);
+		if (pOther->m_bHuman != 0)
 		{
-			Hover_sub_401140()->m_dwUnk0518 = 1;
-			if (nHit != 0 && theApp.m_dwUnk0408 != 0)
-				Sub_40D6E0(0x12, 3, 5, 0);
+			Hover_GetView()->m_dwUnk0518 = 1;
+			if (nHit != 0 && theApp.m_bGameSounds != 0)
+				PlayObjSound(0x12, 3, 5, 0);
 		}
 		return;
 	}
-	wTop = (WORD)(((CMerlinStatic*)m_dwUnk78)->m_wUnkA6 + 0x40);
-	if (((long)(short)wTop << 16) > (long)*(DWORD*)&pOther->m_awUnk0090[8])
+	wTop = (WORD)(((CMerlinStatic*)m_pMerlin)->m_wTop + 0x40);
+	if (((long)(short)wTop << 16) > (long)pOther->m_fxTargetHeight)
 	{
-		pOther->m_dwUnk013C = 1;
-		pOther->m_awUnk0090[8] = 0;
-		pOther->m_awUnk0090[9] = wTop;
+		pOther->m_bOnTop = 1;
+		pOther->m_wTargetHeightFrac = 0;
+		pOther->m_wTargetHeight = wTop;
 	}
 }
 
@@ -1806,25 +1810,25 @@ void CWall::Sub_42AD40(CPlayer* pOther, DWORD dwB)
 // the wall segment?
 // hover.exe:0x422B90
 // FUNCTION: HOVER 0x422b90
-int CWall::Sub_42AD70(DWORD dwA, DWORD dwB, DWORD dwC)
+int CWall::IsNear(POINT pt, long lRadius)
 {
 	DWORD dwOutA;
 	DWORD dwOutB;
 	DWORD dwOutC;
 
-	return m_obj04.Sub_40C9B0(&dwA, &dwOutC, &dwOutB, &dwOutA) <= (long)dwC;
+	return m_seg.DistanceTo(&pt, &dwOutC, &dwOutB, &dwOutA) <= lRadius;
 }
 
 // Player collision test (slot 11). A wall whose top is below the player
 // only registers a brush (m_dwUnk2C = 0); otherwise a hit sets
-// m_dwUnk2C so that Sub_42AD40 bounces him off.
+// m_dwUnk2C so that OnTouch bounces him off.
 // hover.exe:0x40D4B0
 // FUNCTION: HOVER 0x40d4b0
-int CWall::Sub_42AD60(DWORD dwUnk)
+int CWall::Touches(DWORD dwUnk)
 {
 	CPlayer* pPlayer;
 	CMerlinStatic* pLine;
-	DWORD* pdwPts;
+	PLAYERPROBE* pProbe;
 	long lZ;
 	long lTop;
 	long lBottom;
@@ -1835,14 +1839,14 @@ int CWall::Sub_42AD60(DWORD dwUnk)
 	DWORD dwOutC;
 
 	pPlayer = (CPlayer*)dwUnk;
-	pdwPts = pPlayer->Sub_4089E0();
-	lZ = (long)pPlayer->m_dwUnk01A4;
+	pProbe = pPlayer->GetProbe();
+	lZ = (long)pPlayer->m_dwAltitude;
 	lTop = lZ + 0x40;
-	pLine = (CMerlinStatic*)m_dwUnk78;
+	pLine = (CMerlinStatic*)m_pMerlin;
 	if (pLine == NULL)
 		return 0;
-	lBottom = (short)pLine->m_wUnkA4;
-	lTopEdge = (short)pLine->m_wUnkA6;
+	lBottom = (short)pLine->m_wBottom;
+	lTopEdge = (short)pLine->m_wTop;
 	if (lTopEdge >= lZ)
 	{
 		if (lBottom > lTop)
@@ -1850,28 +1854,28 @@ int CWall::Sub_42AD60(DWORD dwUnk)
 		// the two proximity points are tested with their own success
 		// return, which is what makes hover.exe emit the
 		// `m_dwUnk2C = 1; return 1` tail twice
-		if (m_obj04.Sub_40C9B0(pdwPts, &dwOutC, &dwOutB, &dwOutA) <=
-				(long)pdwPts[4])
+		if (m_seg.DistanceTo(&pProbe->ptFront, &dwOutC, &dwOutB, &dwOutA) <=
+				pProbe->lRadius)
 		{
-			m_dwUnk2C = 1;
+			m_bSolidHit = 1;
 			return 1;
 		}
-		if (m_obj04.Sub_40C9B0(pdwPts + 2, &dwOutC, &dwOutB, &dwOutA) <=
-				(long)pdwPts[4])
+		if (m_seg.DistanceTo(&pProbe->ptBack, &dwOutC, &dwOutB, &dwOutA) <=
+				pProbe->lRadius)
 		{
-			m_dwUnk2C = 1;
+			m_bSolidHit = 1;
 			return 1;
 		}
 	}
 	// the wall top is below the player: only a brush is possible
-	else if (m_obj04.Sub_40C9B0(pdwPts + 2, &dwOutC, &dwOutB, &dwOutA) <=
-				(long)pdwPts[4] ||
-			m_obj04.Sub_40C9B0(pPlayer->Sub_403880(adwPos), &dwOutC,
-				&dwOutB, &dwOutA) <= (long)pdwPts[4] ||
-			m_obj04.Sub_40C9B0(pdwPts, &dwOutC, &dwOutB, &dwOutA) <=
-				(long)pdwPts[4])
+	else if (m_seg.DistanceTo(&pProbe->ptBack, &dwOutC, &dwOutB, &dwOutA) <=
+				pProbe->lRadius ||
+			m_seg.DistanceTo((POINT*)pPlayer->GetCellPos(adwPos), &dwOutC,
+				&dwOutB, &dwOutA) <= pProbe->lRadius ||
+			m_seg.DistanceTo(&pProbe->ptFront, &dwOutC, &dwOutB, &dwOutA) <=
+				pProbe->lRadius)
 	{
-		m_dwUnk2C = 0;
+		m_bSolidHit = 0;
 		return 1;
 	}
 	return 0;
@@ -1881,53 +1885,56 @@ int CWall::Sub_42AD60(DWORD dwUnk)
 // it pass through the wall's height band?
 // hover.exe:0x40F7F0
 // FUNCTION: HOVER 0x40f7f0
-int CWall::Sub_411570(DWORD dwA, DWORD dwB, DWORD dwC, DWORD* pdwOut)
+int CWall::IntersectLine(DWORD dwA, DWORD dwB, DWORD dwC, DWORD* pdwOut)
 {
 	CMerlinStatic* pLine;
 	long lBottom;
 	long lTop;
 	DWORD adwPt[2];
 
-	pLine = (CMerlinStatic*)m_dwUnk78;
+	pLine = (CMerlinStatic*)m_pMerlin;
 	if (pLine == NULL)
 	{
 		*pdwOut = 0;
 		return 0;
 	}
-	if (pLine->Sub_401260((CMerlinLine*)dwA, adwPt) != 0)
+	if (pLine->IntersectSegment((CMerlinLine*)dwA, adwPt) != 0)
 	{
-		// the original re-reads m_dwUnk78 after the intersection call
-		lTop = (short)((CMerlinStatic*)m_dwUnk78)->m_wUnkA6;
-		lBottom = (short)((CMerlinStatic*)m_dwUnk78)->m_wUnkA4;
+		// the original re-reads m_pMerlin after the intersection call
+		lTop = (short)((CMerlinStatic*)m_pMerlin)->m_wTop;
+		lBottom = (short)((CMerlinStatic*)m_pMerlin)->m_wBottom;
 		if (lBottom < (long)dwC && (long)dwB < lTop)
 		{
 			*pdwOut = 1;
 			return 1;
 		}
+		*pdwOut = 0;
+		return 1;
 	}
+	// no intersection: hover.exe reports 0 here, not 1
 	*pdwOut = 0;
-	return 1;
+	return 0;
 }
 
 // hover.exe:0x42C670
 // FUNCTION: HOVER 0x42c670
-void CWall::Sub_4087D0()
+void CWall::BeginFrame()
 {
-	CGameObj::Sub_4087D0();
+	CGameObj::BeginFrame();
 }
 
 // hover.exe:0x42C680
 // FUNCTION: HOVER 0x42c680
-void CWall::Sub_4087F0()
+void CWall::EndFrame()
 {
-	CGameObj::Sub_4087F0();
+	CGameObj::EndFrame();
 }
 
 // hover.exe:0x42C690
 // FUNCTION: HOVER 0x42c690
-void CWall::Sub_413020()
+void CWall::KillObject()
 {
-	CGameObj::Sub_413020();
+	CGameObj::KillObject();
 }
 
 // The original disables frame-pointer omission for this function (full ebp
@@ -1939,24 +1946,24 @@ void CWall::Sub_413020()
 // use site therefore materializes an 8-byte temporary (edx:eax) and, when the
 // first member is the one selected, copies it into a further stack slot.
 // That is what gives hover.exe:0x40EF30 its 0x1B8-byte frame.
-inline POINT SegPt0(const CSub40D320* pSeg)
+inline POINT SegPt0(const CSegment* pSeg)
 {
-	return *(POINT*)&pSeg->m_dwUnk00;
+	return *(POINT*)&pSeg->m_dwX1;
 }
 
-inline POINT SegPt1(const CSub40D320* pSeg)
+inline POINT SegPt1(const CSegment* pSeg)
 {
-	return *(POINT*)&pSeg->m_dwUnk08;
+	return *(POINT*)&pSeg->m_dwX2;
 }
 
 inline POINT ColliderCells(const CCollider* pMgr)
 {
-	return *(POINT*)&pMgr->m_dwUnk04;
+	return *(POINT*)&pMgr->m_dwCols;
 }
 
 // hover.exe:0x40EF30
 // FUNCTION: HOVER 0x40ef30
-int CWall::Sub_408820(DWORD dwA)
+int CWall::UpdateRegions(DWORD dwA)
 {
 	// 16.16 fixed-point value built word-wise by the original (signed:
 	// the slope divides and multiplies are idiv/imul)
@@ -1966,6 +1973,7 @@ int CWall::Sub_408820(DWORD dwA)
 		short s[2];
 	};
 
+	int nColB;
 	int nCell;
 	int nDX;
 	int nDY;
@@ -1976,52 +1984,51 @@ int CWall::Sub_408820(DWORD dwA)
 	int nEndX;
 	int nEndY;
 	int nColA;
-	int nColB;
 	int nRowA;
 	int nRowB;
 	int nXBound;
 	int nYBound;
 	int nCross;
 	FIXEDPT fxSlope;
-	FIXEDPT fxT;
-	FIXEDPT* pFx;
-	short sDelta;
 
-	nCell = ((CCollider*)dwA)->m_dwUnk0C;
-	nDX = SegPt0(&m_obj04).x - SegPt1(&m_obj04).x;
-	g_dwUnk_4C5590++;
-	nDY = SegPt0(&m_obj04).y - SegPt1(&m_obj04).y;
+	nCell = ((CCollider*)dwA)->m_dwCellSize;
+	nDX = SegPt0(&m_seg).x - SegPt1(&m_seg).x;
+	g_dwWallRegisterCount++;
+	nDY = SegPt0(&m_seg).y - SegPt1(&m_seg).y;
 
 	if (nDY == 0 && nDX == 0)
 	{
-		nCol = SegPt0(&m_obj04).x / nCell;
-		nRow = SegPt0(&m_obj04).y / nCell;
-		if (((CCollider*)dwA)->m_dwUnk44)
-			((CCollider*)dwA)->Sub_40F8A0(nCol, nRow);
+		nCol = SegPt0(&m_seg).x / nCell;
+		nRow = SegPt0(&m_seg).y / nCell;
+		if (((CCollider*)dwA)->m_bQuerying)
+			((CCollider*)dwA)->CollectCell(nCol, nRow);
 		else
-			((CCollider*)dwA)->m_obj10.Sub_4086A0(nCol, nRow, this);
+			((CCollider*)dwA)->m_grid.AddNode(nCol, nRow, this);
 		return 1;
 	}
 
 	if (abs(nDY) < abs(nDX))
 	{
+		FIXEDPT* pFx;
+		FIXEDPT fxT;
+		short sDelta;
 		int nRowStep;
 		int nRowDir;
 
 		// walk the cell columns from the leftmost endpoint
 		if (nDX < 0)
 		{
-			nStartX = SegPt0(&m_obj04).x;
-			nStartY = SegPt0(&m_obj04).y;
-			nEndX = SegPt1(&m_obj04).x;
-			nEndY = SegPt1(&m_obj04).y;
+			nStartX = SegPt0(&m_seg).x;
+			nStartY = SegPt0(&m_seg).y;
+			nEndX = SegPt1(&m_seg).x;
+			nEndY = SegPt1(&m_seg).y;
 		}
 		else
 		{
-			nEndX = SegPt0(&m_obj04).x;
-			nEndY = SegPt0(&m_obj04).y;
-			nStartX = SegPt1(&m_obj04).x;
-			nStartY = SegPt1(&m_obj04).y;
+			nEndX = SegPt0(&m_seg).x;
+			nEndY = SegPt0(&m_seg).y;
+			nStartX = SegPt1(&m_seg).x;
+			nStartY = SegPt1(&m_seg).y;
 			nDX = -nDX;
 			nDY = -nDY;
 		}
@@ -2061,10 +2068,10 @@ int CWall::Sub_408820(DWORD dwA)
 
 		for (nCol = nColA; nCol < nColB; nCol++)
 		{
-			if (((CCollider*)dwA)->m_dwUnk44)
-				((CCollider*)dwA)->Sub_40F8A0(nCol, nRow);
+			if (((CCollider*)dwA)->m_bQuerying)
+				((CCollider*)dwA)->CollectCell(nCol, nRow);
 			else
-				((CCollider*)dwA)->m_obj10.Sub_4086A0(nCol, nRow, this);
+				((CCollider*)dwA)->m_grid.AddNode(nCol, nRow, this);
 
 			// y at the next vertical grid line
 			fxT.dw = fxSlope.dw;
@@ -2087,10 +2094,10 @@ int CWall::Sub_408820(DWORD dwA)
 					_asm int 3
 				}
 				nYBound += nRowStep;
-				if (((CCollider*)dwA)->m_dwUnk44)
-					((CCollider*)dwA)->Sub_40F8A0(nCol, nRow);
+				if (((CCollider*)dwA)->m_bQuerying)
+					((CCollider*)dwA)->CollectCell(nCol, nRow);
 				else
-					((CCollider*)dwA)->m_obj10.Sub_4086A0(nCol, nRow, this);
+					((CCollider*)dwA)->m_grid.AddNode(nCol, nRow, this);
 			}
 
 			nXBound += nCell;
@@ -2098,23 +2105,26 @@ int CWall::Sub_408820(DWORD dwA)
 	}
 	else
 	{
+		FIXEDPT* pFx;
+		FIXEDPT fxT;
+		short sDelta;
 		int nColStep;
 		int nColDir;
 
 		// walk the cell rows from the topmost endpoint
 		if (nDY < 0)
 		{
-			nStartX = SegPt0(&m_obj04).x;
-			nStartY = SegPt0(&m_obj04).y;
-			nEndX = SegPt1(&m_obj04).x;
-			nEndY = SegPt1(&m_obj04).y;
+			nStartX = SegPt0(&m_seg).x;
+			nStartY = SegPt0(&m_seg).y;
+			nEndX = SegPt1(&m_seg).x;
+			nEndY = SegPt1(&m_seg).y;
 		}
 		else
 		{
-			nEndX = SegPt0(&m_obj04).x;
-			nEndY = SegPt0(&m_obj04).y;
-			nStartX = SegPt1(&m_obj04).x;
-			nStartY = SegPt1(&m_obj04).y;
+			nEndX = SegPt0(&m_seg).x;
+			nEndY = SegPt0(&m_seg).y;
+			nStartX = SegPt1(&m_seg).x;
+			nStartY = SegPt1(&m_seg).y;
 			nDX = -nDX;
 			nDY = -nDY;
 		}
@@ -2154,10 +2164,10 @@ int CWall::Sub_408820(DWORD dwA)
 
 		for (nRow = nRowA; nRow < nRowB; nRow++)
 		{
-			if (((CCollider*)dwA)->m_dwUnk44)
-				((CCollider*)dwA)->Sub_40F8A0(nCol, nRow);
+			if (((CCollider*)dwA)->m_bQuerying)
+				((CCollider*)dwA)->CollectCell(nCol, nRow);
 			else
-				((CCollider*)dwA)->m_obj10.Sub_4086A0(nCol, nRow, this);
+				((CCollider*)dwA)->m_grid.AddNode(nCol, nRow, this);
 
 			// x at the next horizontal grid line
 			fxT.dw = fxSlope.dw;
@@ -2175,10 +2185,10 @@ int CWall::Sub_408820(DWORD dwA)
 				// crossed into the next column before leaving this row
 				nXBound += nColStep;
 				nCol += nColDir;
-				if (((CCollider*)dwA)->m_dwUnk44)
-					((CCollider*)dwA)->Sub_40F8A0(nCol, nRow);
+				if (((CCollider*)dwA)->m_bQuerying)
+					((CCollider*)dwA)->CollectCell(nCol, nRow);
 				else
-					((CCollider*)dwA)->m_obj10.Sub_4086A0(nCol, nRow, this);
+					((CCollider*)dwA)->m_grid.AddNode(nCol, nRow, this);
 			}
 
 			nYBound += nCell;
@@ -2187,10 +2197,10 @@ int CWall::Sub_408820(DWORD dwA)
 
 	nCol = nColB;
 	nRow = nRowB;
-	if (((CCollider*)dwA)->m_dwUnk44)
-		((CCollider*)dwA)->Sub_40F8A0(nCol, nRow);
+	if (((CCollider*)dwA)->m_bQuerying)
+		((CCollider*)dwA)->CollectCell(nCol, nRow);
 	else
-		((CCollider*)dwA)->m_obj10.Sub_4086A0(nCol, nRow, this);
+		((CCollider*)dwA)->m_grid.AddNode(nCol, nRow, this);
 	return 1;
 }
 
@@ -2204,18 +2214,18 @@ void* CWall::operator new(size_t nSize)
 	int nCount;
 	int i;
 
-	pWall = (CWall*)g_dwUnk_4C5588;
+	pWall = g_pWallFree;
 	if (pWall == NULL)
 	{
-		g_dwUnk_4C5588 = (DWORD)::operator new(g_dwUnk_4C558C * sizeof(CWall));
-		g_listUnk_4A46D0.AddTail((void*)g_dwUnk_4C5588);
-		nCount = g_dwUnk_4C558C;
-		pWall = (CWall*)g_dwUnk_4C5588;
+		g_pWallFree = (CWall*)::operator new(g_dwWallPoolBlock * sizeof(CWall));
+		g_listWallBlocks.AddTail((void*)g_pWallFree);
+		nCount = g_dwWallPoolBlock;
+		pWall = g_pWallFree;
 		for (i = 0; i < nCount - 1; i++)
-			pWall[i].m_dwUnk9C = (DWORD)&pWall[i + 1];
-		pWall[nCount - 1].m_dwUnk9C = 0;
+			pWall[i].m_pNextFree = &pWall[i + 1];
+		pWall[nCount - 1].m_pNextFree = 0;
 	}
-	g_dwUnk_4C5588 = pWall->m_dwUnk9C;
+	g_pWallFree = pWall->m_pNextFree;
 	return pWall;
 }
 
@@ -2223,9 +2233,9 @@ void* CWall::operator new(size_t nSize)
 // (hover.exe:0x417BA0); there is no standalone function in hover.exe.
 void CWall::operator delete(void* p)
 {
-	DWORD dwHead = g_dwUnk_4C5588;
-	g_dwUnk_4C5588 = (DWORD)p;
-	((CWall*)p)->m_dwUnk9C = dwHead;
+	CWall* pHead = g_pWallFree;
+	g_pWallFree = (CWall*)p;
+	((CWall*)p)->m_pNextFree = pHead;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -2234,23 +2244,23 @@ void CWall::operator delete(void* p)
 // hover.exe:0x421930
 // FUNCTION: HOVER 0x421930
 CFloorObj::CFloorObj()
-	: m_list94(10)
+	: m_listEdges(10)
 {
-	m_dwUnk8C = 0;
-	m_dwUnk90 = 0;
-	m_dwUnk2C = 0;
-	m_dwUnkB0 = 0xFFFFFFFF;
+	m_dwLowHeight = 0;
+	m_dwHighHeight = 0;
+	m_bSolidHit = 0;
+	m_dwKind = 0xFFFFFFFF;
 }
 
 // hover.exe:0x41A610
 // FUNCTION: HOVER 0x41a610
 CFloorObj::CFloorObj(DWORD dwUnk)
-	: m_list94(10)
+	: m_listEdges(10)
 {
-	m_dwUnk8C = 0;
-	m_dwUnk90 = 0;
-	m_dwUnk2C = 0;
-	m_dwUnkB0 = dwUnk;
+	m_dwLowHeight = 0;
+	m_dwHighHeight = 0;
+	m_bSolidHit = 0;
+	m_dwKind = dwUnk;
 }
 
 // Deletes every object still standing on the pad. The pool release
@@ -2262,10 +2272,10 @@ CFloorObj::~CFloorObj()
 	POSITION pos;
 	CGameObj* pObj;
 
-	pos = m_list94.GetHeadPosition();
+	pos = m_listEdges.GetHeadPosition();
 	while (pos != NULL)
 	{
-		pObj = (CGameObj*)m_list94.GetNext(pos);
+		pObj = (CGameObj*)m_listEdges.GetNext(pos);
 		if (pObj != NULL)
 			delete pObj;
 	}
@@ -2274,36 +2284,37 @@ CFloorObj::~CFloorObj()
 // Per-frame think (slot 7): pads do nothing.
 // hover.exe:0x42B800
 // FUNCTION: HOVER 0x42b800
-void CFloorObj::Sub_42AD30()
+void CFloorObj::Think()
 {
 }
 
 // The player is standing on / bumping into the pad (slot 8). Type 6 is a
-// two-level pad (the nearer of m_dwUnk8C and m_dwUnk90 wins), type 7 is a
-// solid step, everything else drops the player back to the floor.
+// two-level pad (the nearer of m_dwLowHeight and m_dwHighHeight wins),
+// type 7 is a solid step, everything else drops the player back to the
+// floor.
 // hover.exe:0x40D730
 // FUNCTION: HOVER 0x40d730
-void CFloorObj::Sub_42AD40(CPlayer* pOther, DWORD dwB)
+void CFloorObj::OnTouch(CPlayer* pOther, DWORD dwB)
 {
 	long lZ;
 	long lLow;
 	long lHigh;
 	WORD wTop;
 
-	if (pOther->m_dwUnk01F8 != 0)
-		Hover_sub_401140()->m_dwUnk0520 = 1;
+	if (pOther->m_bHuman != 0)
+		Hover_GetView()->m_dwUnk0520 = 1;
 
-	if (m_dwUnk2C != 0)
+	if (m_bSolidHit != 0)
 	{
-		if (pOther->Sub_41A6B0((CGameObj*)m_dwUnk88, dwB) != 0 &&
-			pOther->m_dwUnk01F8 != 0 && theApp.m_dwUnk0408 != 0)
-			Sub_40D6E0(0x12, 3, 5, 0);
-		if (m_dwUnkB0 == 7 && *(DWORD*)&pOther->m_pad00A8[0] == 0)
+		if (pOther->BounceOffWall((CGameObj*)m_pHitEdge, dwB) != 0 &&
+			pOther->m_bHuman != 0 && theApp.m_bGameSounds != 0)
+			PlayObjSound(0x12, 3, 5, 0);
+		if (m_dwKind == 7 && pOther->m_bAirborne == 0)
 		{
-			wTop = (WORD)(m_dwUnk8C + 0x40);
-			pOther->m_dwUnk013C = 1;
-			pOther->m_awUnk0090[8] = 0;
-			pOther->m_awUnk0090[9] = wTop;
+			wTop = (WORD)(m_dwLowHeight + 0x40);
+			pOther->m_bOnTop = 1;
+			pOther->m_wTargetHeightFrac = 0;
+			pOther->m_wTargetHeight = wTop;
 		}
 		return;
 	}
@@ -2311,86 +2322,86 @@ void CFloorObj::Sub_42AD40(CPlayer* pOther, DWORD dwB)
 	// Not a switch: hover.exe tests "!= 6" first so the case-7 test (and
 	// its short body) falls straight through with no jump, while case 6's
 	// longer body sits off in the else arm reached by a jump (mirrors the
-	// inverted-if shape rule 148 uses for the sibling Sub_42AD60; a plain
+	// inverted-if shape rule 148 uses for the sibling Touches; a plain
 	// switch or an ascending if-chain both place case 6 first instead,
 	// notes/perfect-match.md rule 243).
-	if (m_dwUnkB0 != 6)
+	if (m_dwKind != 6)
 	{
-		if (m_dwUnkB0 == 7)
+		if (m_dwKind == 7)
 		{
-			if (*(DWORD*)&pOther->m_pad00A8[0] != 0)
+			if (pOther->m_bAirborne != 0)
 				return;
-			wTop = (WORD)(m_dwUnk8C + 0x40);
-			pOther->m_dwUnk013C = 1;
-			pOther->m_awUnk0090[8] = 0;
-			pOther->m_awUnk0090[9] = wTop;
+			wTop = (WORD)(m_dwLowHeight + 0x40);
+			pOther->m_bOnTop = 1;
+			pOther->m_wTargetHeightFrac = 0;
+			pOther->m_wTargetHeight = wTop;
 			return;
 		}
 	}
 	else
 	{
-		lZ = (long)pOther->m_dwUnk01A4;
-		if ((long)m_dwUnk90 < lZ)
+		lZ = (long)pOther->m_dwAltitude;
+		if ((long)m_dwHighHeight < lZ)
 		{
-			if (*(DWORD*)&pOther->m_pad00A8[0] != 0)
+			if (pOther->m_bAirborne != 0)
 				return;
-			wTop = (WORD)(m_dwUnk90 + 0x40);
-			pOther->m_dwUnk013C = 1;
-			pOther->m_awUnk0090[8] = 0;
-			pOther->m_awUnk0090[9] = wTop;
+			wTop = (WORD)(m_dwHighHeight + 0x40);
+			pOther->m_bOnTop = 1;
+			pOther->m_wTargetHeightFrac = 0;
+			pOther->m_wTargetHeight = wTop;
 			return;
 		}
-		lLow = abs(lZ - (long)m_dwUnk8C + 0x40);
-		lHigh = abs(lZ - (long)m_dwUnk90);
-		if (lLow < lHigh && m_dwUnk8C != 0)
+		lLow = abs(lZ - (long)m_dwLowHeight + 0x40);
+		lHigh = abs(lZ - (long)m_dwHighHeight);
+		if (lLow < lHigh && m_dwLowHeight != 0)
 		{
 			// closer to the lower level: drop back to the floor
-			pOther->m_awUnk0090[8] = 0;
-			pOther->m_dwUnk013C = 0;
-			pOther->m_awUnk0090[9] = 0x40;
-			*(DWORD*)&pOther->m_pad00A8[0] = 0;
+			pOther->m_wTargetHeightFrac = 0;
+			pOther->m_bOnTop = 0;
+			pOther->m_wTargetHeight = 0x40;
+			pOther->m_bAirborne = 0;
 			return;
 		}
-		pOther->m_awUnk0090[9] = (WORD)(m_dwUnk90 + 0x40);
-		pOther->m_awUnk0090[8] = 0;
-		pOther->m_dwUnk013C = 1;
-		*(DWORD*)&pOther->m_pad00A8[0] = 0;
+		pOther->m_wTargetHeight = (WORD)(m_dwHighHeight + 0x40);
+		pOther->m_wTargetHeightFrac = 0;
+		pOther->m_bOnTop = 1;
+		pOther->m_bAirborne = 0;
 		return;
 	}
 
-	if (*(DWORD*)&pOther->m_pad00A8[0] != 0)
+	if (pOther->m_bAirborne != 0)
 		return;
-	pOther->m_awUnk0090[9] = 0x40;
-	pOther->m_awUnk0090[8] = 0;
+	pOther->m_wTargetHeight = 0x40;
+	pOther->m_wTargetHeightFrac = 0;
 }
 
 // Containment test (slot 10): the point (dwA,dwB) is on the pad when it
 // is on the inner side of every one of the pad's edge objects.
 // hover.exe:0x42B810
 // FUNCTION: HOVER 0x42b810
-int CFloorObj::Sub_42AD70(DWORD dwA, DWORD dwB, DWORD dwC)
+int CFloorObj::IsNear(POINT pt, long lRadius)
 {
 	POSITION pos;
 	CGameObj* pObj;
 
-	pos = m_list94.GetHeadPosition();
+	pos = m_listEdges.GetHeadPosition();
 	while (pos != NULL)
 	{
-		pObj = (CGameObj*)m_list94.GetNext(pos);
-		if (pObj->m_obj04.Sub_40D2F0((long*)&dwA) == 0)
+		pObj = (CGameObj*)m_listEdges.GetNext(pos);
+		if (pObj->m_seg.SideOf(&pt) == 0)
 			return 0;
 	}
 	return 1;
 }
 
-// Player/pad interaction test (slot 11). m_dwUnkB0 selects the pad kind:
+// Player/pad interaction test (slot 11). m_dwKind selects the pad kind:
 // -1 is a plain floor patch, 6 a two-level pad and 7 a step; the edge
-// object that was hit is left in m_dwUnk88 for Sub_42AD40.
+// object that was hit is left in m_pHitEdge for OnTouch.
 // hover.exe:0x40C620
 // FUNCTION: HOVER 0x40c620
-int CFloorObj::Sub_42AD60(DWORD dwUnk)
+int CFloorObj::Touches(DWORD dwUnk)
 {
-	DWORD* pdwPts;
+	PLAYERPROBE* pProbe;
 	POSITION pos;
 	CGameObj* pObj;
 	int bIn1;
@@ -2403,31 +2414,31 @@ int CFloorObj::Sub_42AD60(DWORD dwUnk)
 	CPlayer* pPlayer;
 
 	pPlayer = (CPlayer*)dwUnk;
-	pdwPts = pPlayer->Sub_4089E0();
-	m_dwUnk88 = 0;
+	pProbe = pPlayer->GetProbe();
+	m_pHitEdge = 0;
 
 	// hover.exe tests -1, then 7, then 6 and falls through into the
 	// case 6 body, which is a nested chain of inverted equality tests
 	// (a `switch` sorts its comparison chain ascending and would put
 	// the -1 test last, notes/perfect-match.md rule 102).
-	if (m_dwUnkB0 != (DWORD)-1)
+	if (m_dwKind != (DWORD)-1)
 	{
-		if (m_dwUnkB0 != 7)
+		if (m_dwKind != 7)
 		{
-			if (m_dwUnkB0 == 6)
+			if (m_dwKind == 6)
 			{
-				if ((long)m_dwUnk8C > (long)pPlayer->m_dwUnk01A4 + 0x40)
+				if ((long)m_dwLowHeight > (long)pPlayer->m_dwAltitude + 0x40)
 					return 0;
 
 				bIn1 = 1;
 				bIn2 = 1;
 				bIn3 = 1;
-				m_dwUnk2C = 0;
-				pos = m_list94.GetHeadPosition();
+				m_bSolidHit = 0;
+				pos = m_listEdges.GetHeadPosition();
 				while (pos != NULL)
 				{
-					pObj = (CGameObj*)m_list94.GetNext(pos);
-					if (pObj->m_obj04.Sub_40D2F0((long*)pdwPts) == 0)
+					pObj = (CGameObj*)m_listEdges.GetNext(pos);
+					if (pObj->m_seg.SideOf(&pProbe->ptFront) == 0)
 					{
 						bIn1 = 0;
 						break;
@@ -2436,11 +2447,11 @@ int CFloorObj::Sub_42AD60(DWORD dwUnk)
 				if (bIn1 != 0)
 					return 1;
 
-				pos = m_list94.GetHeadPosition();
+				pos = m_listEdges.GetHeadPosition();
 				while (pos != NULL)
 				{
-					pObj = (CGameObj*)m_list94.GetNext(pos);
-					if (pObj->m_obj04.Sub_40D2F0((long*)(pdwPts + 2)) == 0)
+					pObj = (CGameObj*)m_listEdges.GetNext(pos);
+					if (pObj->m_seg.SideOf(&pProbe->ptBack) == 0)
 					{
 						bIn2 = 0;
 						break;
@@ -2449,11 +2460,11 @@ int CFloorObj::Sub_42AD60(DWORD dwUnk)
 				if (bIn2 != 0)
 					return 1;
 
-				pos = m_list94.GetHeadPosition();
+				pos = m_listEdges.GetHeadPosition();
 				while (pos != NULL)
 				{
-					pObj = (CGameObj*)m_list94.GetNext(pos);
-					if (pObj->m_obj04.Sub_40D2F0((long*)pPlayer->Sub_403880(adwPos)) == 0)
+					pObj = (CGameObj*)m_listEdges.GetNext(pos);
+					if (pObj->m_seg.SideOf((POINT*)pPlayer->GetCellPos(adwPos)) == 0)
 					{
 						bIn3 = 0;
 						break;
@@ -2462,20 +2473,20 @@ int CFloorObj::Sub_42AD60(DWORD dwUnk)
 				if (bIn3 != 0)
 					return 1;
 
-				if ((long)m_dwUnk90 < (long)pPlayer->m_dwUnk01A4)
+				if ((long)m_dwHighHeight < (long)pPlayer->m_dwAltitude)
 					return 0;
 
-				pos = m_list94.GetHeadPosition();
+				pos = m_listEdges.GetHeadPosition();
 				while (pos != NULL)
 				{
-					pObj = (CGameObj*)m_list94.GetNext(pos);
-					if (pObj->m_obj04.Sub_40C9B0(pdwPts, &dwOutC, &dwOutB, &dwOutA) <=
-							(long)pdwPts[4] ||
-						pObj->m_obj04.Sub_40C9B0(pdwPts + 2, &dwOutC, &dwOutB, &dwOutA) <=
-							(long)pdwPts[4])
+					pObj = (CGameObj*)m_listEdges.GetNext(pos);
+					if (pObj->m_seg.DistanceTo(&pProbe->ptFront, &dwOutC, &dwOutB, &dwOutA) <=
+							pProbe->lRadius ||
+						pObj->m_seg.DistanceTo(&pProbe->ptBack, &dwOutC, &dwOutB, &dwOutA) <=
+							pProbe->lRadius)
 					{
-						m_dwUnk88 = (DWORD)pObj;
-						m_dwUnk2C = 1;
+						m_pHitEdge = (CWall*)pObj;
+						m_bSolidHit = 1;
 						return 1;
 					}
 				}
@@ -2485,35 +2496,35 @@ int CFloorObj::Sub_42AD60(DWORD dwUnk)
 		}
 		else
 		{
-			if ((long)m_dwUnk90 >= (long)pPlayer->m_dwUnk01A4)
+			if ((long)m_dwHighHeight >= (long)pPlayer->m_dwAltitude)
 			{
-				pos = m_list94.GetHeadPosition();
+				pos = m_listEdges.GetHeadPosition();
 				while (pos != NULL)
 				{
-					pObj = (CGameObj*)m_list94.GetNext(pos);
+					pObj = (CGameObj*)m_listEdges.GetNext(pos);
 					// The pad's edge objects carry their top height at
 					// +0x98; the concrete class of the list elements is not
 					// identified yet, so the field is reached by offset.
 					if (*(long*)((BYTE*)pObj + 0x98) <=
-						(long)pPlayer->m_dwUnk01A4)
+						(long)pPlayer->m_dwAltitude)
 						continue;
-					if (pObj->m_obj04.Sub_40C9B0(pdwPts, &dwOutC, &dwOutB,
-							&dwOutA) <= (long)pdwPts[4] ||
-						pObj->m_obj04.Sub_40C9B0(pdwPts + 2, &dwOutC, &dwOutB,
-							&dwOutA) <= (long)pdwPts[4])
+					if (pObj->m_seg.DistanceTo(&pProbe->ptFront, &dwOutC, &dwOutB,
+							&dwOutA) <= pProbe->lRadius ||
+						pObj->m_seg.DistanceTo(&pProbe->ptBack, &dwOutC, &dwOutB,
+							&dwOutA) <= pProbe->lRadius)
 					{
-						m_dwUnk88 = (DWORD)pObj;
-						m_dwUnk2C = 1;
+						m_pHitEdge = (CWall*)pObj;
+						m_bSolidHit = 1;
 						return 1;
 					}
 				}
 			}
-			m_dwUnk2C = 0;
-			pos = m_list94.GetHeadPosition();
+			m_bSolidHit = 0;
+			pos = m_listEdges.GetHeadPosition();
 			while (pos != NULL)
 			{
-				pObj = (CGameObj*)m_list94.GetNext(pos);
-				if (pObj->m_obj04.Sub_40D2F0((long*)pPlayer->Sub_403880(adwPos)) == 0)
+				pObj = (CGameObj*)m_listEdges.GetNext(pos);
+				if (pObj->m_seg.SideOf((POINT*)pPlayer->GetCellPos(adwPos)) == 0)
 					return 0;
 			}
 			return 1;
@@ -2521,24 +2532,24 @@ int CFloorObj::Sub_42AD60(DWORD dwUnk)
 	}
 	else
 	{
-		if ((long)m_dwUnk8C + 0x60 < (long)pPlayer->m_dwUnk01A4)
+		if ((long)m_dwLowHeight + 0x60 < (long)pPlayer->m_dwAltitude)
 			return 0;
 		bIn1 = 1;
 		bIn2 = 1;
-		m_dwUnk2C = 0;
-		pos = m_list94.GetHeadPosition();
+		m_bSolidHit = 0;
+		pos = m_listEdges.GetHeadPosition();
 		while (pos != NULL)
 		{
-			pObj = (CGameObj*)m_list94.GetNext(pos);
-			if (pObj->m_obj04.Sub_40D2F0((long*)pdwPts) == 0)
+			pObj = (CGameObj*)m_listEdges.GetNext(pos);
+			if (pObj->m_seg.SideOf(&pProbe->ptFront) == 0)
 				bIn1 = 0;
 		}
 		// Original quirk: `pos` is NULL by now and is never reset to the
 		// head, so the second proximity point is in fact never tested.
 		while (pos != NULL)
 		{
-			pObj = (CGameObj*)m_list94.GetNext(pos);
-			if (pObj->m_obj04.Sub_40D2F0((long*)(pdwPts + 2)) == 0)
+			pObj = (CGameObj*)m_listEdges.GetNext(pos);
+			if (pObj->m_seg.SideOf(&pProbe->ptBack) == 0)
 				bIn2 = 0;
 		}
 		return (bIn1 != 0 && bIn2 != 0);
@@ -2551,16 +2562,16 @@ int CFloorObj::Sub_42AD60(DWORD dwUnk)
 // bounding box of the pad's edge points.
 // hover.exe:0x41A960
 // FUNCTION: HOVER 0x41a960
-int CFloorObj::Sub_408820(DWORD dwA)
+int CFloorObj::UpdateRegions(DWORD dwA)
 {
 	CCollider* pMgr;
 	POSITION pos;
 	CGameObj* pObj;
 	int nCell;
-	long lMinX;
-	long lMinY;
 	long lMaxX;
 	long lMaxY;
+	long lMinX;
+	long lMinY;
 	int nX1;
 	int nX2;
 	int nY1;
@@ -2569,31 +2580,31 @@ int CFloorObj::Sub_408820(DWORD dwA)
 	int y;
 
 	pMgr = (CCollider*)dwA;
-	nCell = (int)pMgr->m_dwUnk0C;
+	nCell = (int)pMgr->m_dwCellSize;
 	lMaxX = 0;
 	lMaxY = 0;
 	lMinX = 0x5A00;
 	lMinY = 0x5A00;
-	pos = m_list94.GetHeadPosition();
+	pos = m_listEdges.GetHeadPosition();
 	while (pos != NULL)
 	{
-		pObj = (CGameObj*)m_list94.GetNext(pos);
-		if (lMinX > SegPt0(&pObj->m_obj04).x)
-			lMinX = SegPt0(&pObj->m_obj04).x;
-		if (lMinY > SegPt0(&pObj->m_obj04).y)
-			lMinY = SegPt0(&pObj->m_obj04).y;
-		if (SegPt0(&pObj->m_obj04).x > lMaxX)
-			lMaxX = SegPt0(&pObj->m_obj04).x;
-		if (SegPt0(&pObj->m_obj04).y > lMaxY)
-			lMaxY = SegPt0(&pObj->m_obj04).y;
-		if (SegPt1(&pObj->m_obj04).x < lMinX)
-			lMinX = SegPt1(&pObj->m_obj04).x;
-		if (SegPt1(&pObj->m_obj04).y < lMinY)
-			lMinY = SegPt1(&pObj->m_obj04).y;
-		if (SegPt1(&pObj->m_obj04).x > lMaxX)
-			lMaxX = SegPt1(&pObj->m_obj04).x;
-		if (lMaxY < SegPt1(&pObj->m_obj04).y)
-			lMaxY = SegPt1(&pObj->m_obj04).y;
+		pObj = (CGameObj*)m_listEdges.GetNext(pos);
+		if (lMinX > SegPt0(&pObj->m_seg).x)
+			lMinX = SegPt0(&pObj->m_seg).x;
+		if (lMinY > SegPt0(&pObj->m_seg).y)
+			lMinY = SegPt0(&pObj->m_seg).y;
+		if (SegPt0(&pObj->m_seg).x > lMaxX)
+			lMaxX = SegPt0(&pObj->m_seg).x;
+		if (SegPt0(&pObj->m_seg).y > lMaxY)
+			lMaxY = SegPt0(&pObj->m_seg).y;
+		if (SegPt1(&pObj->m_seg).x < lMinX)
+			lMinX = SegPt1(&pObj->m_seg).x;
+		if (SegPt1(&pObj->m_seg).y < lMinY)
+			lMinY = SegPt1(&pObj->m_seg).y;
+		if (SegPt1(&pObj->m_seg).x > lMaxX)
+			lMaxX = SegPt1(&pObj->m_seg).x;
+		if (lMaxY < SegPt1(&pObj->m_seg).y)
+			lMaxY = SegPt1(&pObj->m_seg).y;
 	}
 	nX1 = lMinX / nCell;
 	nX2 = lMaxX / nCell;
@@ -2603,10 +2614,10 @@ int CFloorObj::Sub_408820(DWORD dwA)
 	{
 		for (y = nY1; y <= nY2; y++)
 		{
-			if (pMgr->m_dwUnk44 != 0)
-				pMgr->Sub_40F8A0(x, y);
+			if (pMgr->m_bQuerying != 0)
+				pMgr->CollectCell(x, y);
 			else
-				pMgr->m_obj10.Sub_4086A0(x, y, this);
+				pMgr->m_grid.AddNode(x, y, this);
 		}
 	}
 	return 1;
@@ -2616,7 +2627,7 @@ int CFloorObj::Sub_408820(DWORD dwA)
 // and ORs the results together.
 // hover.exe:0x413220
 // FUNCTION: HOVER 0x413220
-int CFloorObj::Sub_411570(DWORD dwA, DWORD dwB, DWORD dwC, DWORD* pdwOut)
+int CFloorObj::IntersectLine(DWORD dwA, DWORD dwB, DWORD dwC, DWORD* pdwOut)
 {
 	POSITION pos;
 	CGameObj* pObj;
@@ -2625,40 +2636,40 @@ int CFloorObj::Sub_411570(DWORD dwA, DWORD dwB, DWORD dwC, DWORD* pdwOut)
 
 	bAny = 0;
 	*pdwOut = 0;
-	pos = m_list94.GetHeadPosition();
+	pos = m_listEdges.GetHeadPosition();
 	while (pos != NULL)
 	{
-		pObj = (CGameObj*)m_list94.GetNext(pos);
+		pObj = (CGameObj*)m_listEdges.GetNext(pos);
 		if (pObj != NULL)
 		{
-			bAny |= pObj->Sub_411570(dwA, dwB, dwC, &dwFlag);
+			bAny |= pObj->IntersectLine(dwA, dwB, dwC, &dwFlag);
 			*pdwOut |= dwFlag;
-			if (bAny != 0 && *pdwOut != 0)
-				return 1;
 		}
+		if (bAny != 0 && *pdwOut != 0)
+			return 1;
 	}
 	return bAny;
 }
 
 // hover.exe:0x42B860
 // FUNCTION: HOVER 0x42b860
-void CFloorObj::Sub_4087D0()
+void CFloorObj::BeginFrame()
 {
-	CGameObj::Sub_4087D0();
+	CGameObj::BeginFrame();
 }
 
 // hover.exe:0x42B870
 // FUNCTION: HOVER 0x42b870
-void CFloorObj::Sub_4087F0()
+void CFloorObj::EndFrame()
 {
-	CGameObj::Sub_4087F0();
+	CGameObj::EndFrame();
 }
 
 // hover.exe:0x42B880
 // FUNCTION: HOVER 0x42b880
-void CFloorObj::Sub_413020()
+void CFloorObj::KillObject()
 {
-	CGameObj::Sub_413020();
+	CGameObj::KillObject();
 }
 
 // hover.exe:0x42B760
@@ -2669,19 +2680,19 @@ void* CFloorObj::operator new(size_t nSize)
 	int nCount;
 	int i;
 
-	pObj = (CFloorObj*)g_dwUnk_4C53E0;
+	pObj = g_pFloorObjFree;
 	if (pObj == NULL)
 	{
-		g_dwUnk_4C53E0 =
-			(DWORD)::operator new(g_dwUnk_4C53E4 * sizeof(CFloorObj));
-		g_listUnk_4A45E0.AddTail((void*)g_dwUnk_4C53E0);
-		nCount = g_dwUnk_4C53E4;
-		pObj = (CFloorObj*)g_dwUnk_4C53E0;
+		g_pFloorObjFree =
+			(CFloorObj*)::operator new(g_dwFloorObjPoolBlock * sizeof(CFloorObj));
+		g_listFloorObjBlocks.AddTail((void*)g_pFloorObjFree);
+		nCount = g_dwFloorObjPoolBlock;
+		pObj = g_pFloorObjFree;
 		for (i = 0; i < nCount - 1; i++)
-			pObj[i].m_dwUnk84 = (DWORD)&pObj[i + 1];
-		pObj[nCount - 1].m_dwUnk84 = 0;
+			pObj[i].m_pNextFree = &pObj[i + 1];
+		pObj[nCount - 1].m_pNextFree = 0;
 	}
-	g_dwUnk_4C53E0 = pObj->m_dwUnk84;
+	g_pFloorObjFree = pObj->m_pNextFree;
 	return pObj;
 }
 
@@ -2689,9 +2700,9 @@ void* CFloorObj::operator new(size_t nSize)
 // FUNCTION: HOVER 0x42b7e0
 void CFloorObj::operator delete(void* p)
 {
-	DWORD dwHead = g_dwUnk_4C53E0;
-	g_dwUnk_4C53E0 = (DWORD)p;
-	((CFloorObj*)p)->m_dwUnk84 = dwHead;
+	CFloorObj* pHead = g_pFloorObjFree;
+	g_pFloorObjFree = (CFloorObj*)p;
+	((CFloorObj*)p)->m_pNextFree = pHead;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -2701,7 +2712,7 @@ void CFloorObj::operator delete(void* p)
 // FUNCTION: HOVER 0x421820
 CSledPad::CSledPad(DWORD dwUnk)
 {
-	m_dwUnkB4 = dwUnk;
+	m_dwSledDir = dwUnk;
 }
 
 // The destructor is defined in the class declaration, so the compiler folds
@@ -2718,45 +2729,45 @@ CSledPad::~CSledPad()
 
 // hover.exe:0x42B6C0
 // FUNCTION: HOVER 0x42b6c0
-void CSledPad::Sub_42AD30()
+void CSledPad::Think()
 {
-	CFloorObj::Sub_42AD30();
+	CFloorObj::Think();
 }
 
 // Player entered the sled pad (slot 8): latch the pad direction into the
 // player and start the sled timer.
 // hover.exe:0x41A5C0
 // FUNCTION: HOVER 0x41a5c0
-void CSledPad::Sub_42AD40(CPlayer* pOther, DWORD dwB)
+void CSledPad::OnTouch(CPlayer* pOther, DWORD dwB)
 {
-	if (pOther->m_dwUnk0140 != 0)
+	if (pOther->m_bInvincible != 0)
 		return;
-	*(DWORD*)&pOther->m_pad0160[0] = m_dwUnkB4;
-	if (pOther->m_dwUnk01F8 != 0)
-		Hover_sub_401140()->m_dwUnk0520 = 1;
-	if (pOther->m_dwUnk014C == (DWORD)-1)
-		pOther->m_dwUnk014C = 0x1E;
+	pOther->m_dwSledAngle = m_dwSledDir;
+	if (pOther->m_bHuman != 0)
+		Hover_GetView()->m_dwUnk0520 = 1;
+	if (pOther->m_dwSledTimer == (DWORD)-1)
+		pOther->m_dwSledTimer = 0x1E;
 }
 
 // hover.exe:0x42B6D0
 // FUNCTION: HOVER 0x42b6d0
-void CSledPad::Sub_4087D0()
+void CSledPad::BeginFrame()
 {
-	CFloorObj::Sub_4087D0();
+	CFloorObj::BeginFrame();
 }
 
 // hover.exe:0x42B6E0
 // FUNCTION: HOVER 0x42b6e0
-void CSledPad::Sub_4087F0()
+void CSledPad::EndFrame()
 {
-	CFloorObj::Sub_4087F0();
+	CFloorObj::EndFrame();
 }
 
 // hover.exe:0x42B6F0
 // FUNCTION: HOVER 0x42b6f0
-void CSledPad::Sub_413020()
+void CSledPad::KillObject()
 {
-	CFloorObj::Sub_413020();
+	CFloorObj::KillObject();
 }
 
 // hover.exe:0x421ED0
@@ -2779,43 +2790,43 @@ CHoldPad::~CHoldPad()
 
 // hover.exe:0x42C1A0
 // FUNCTION: HOVER 0x42c1a0
-void CHoldPad::Sub_42AD30()
+void CHoldPad::Think()
 {
 }
 
 // Player entered the hold pad (slot 8): freeze him for 90 frames.
 // hover.exe:0x42C1B0
 // FUNCTION: HOVER 0x42c1b0
-void CHoldPad::Sub_42AD40(CPlayer* pOther, DWORD dwB)
+void CHoldPad::OnTouch(CPlayer* pOther, DWORD dwB)
 {
-	if (pOther->m_dwUnk0140 != 0)
+	if (pOther->m_bInvincible != 0)
 		return;
-	if (pOther->m_dwUnk01F8 != 0)
-		Hover_sub_401140()->m_dwUnk0520 = 1;
-	if (pOther->m_dwUnk0148 == (DWORD)-1)
-		pOther->m_dwUnk0148 = 0x5A;
-	pOther->m_dwUnk0154 = 1;
+	if (pOther->m_bHuman != 0)
+		Hover_GetView()->m_dwUnk0520 = 1;
+	if (pOther->m_dwHoldTimer == (DWORD)-1)
+		pOther->m_dwHoldTimer = 0x5A;
+	pOther->m_bOnHoldPad = 1;
 }
 
 // hover.exe:0x42C200
 // FUNCTION: HOVER 0x42c200
-void CHoldPad::Sub_4087D0()
+void CHoldPad::BeginFrame()
 {
-	CFloorObj::Sub_4087D0();
+	CFloorObj::BeginFrame();
 }
 
 // hover.exe:0x42C210
 // FUNCTION: HOVER 0x42c210
-void CHoldPad::Sub_4087F0()
+void CHoldPad::EndFrame()
 {
-	CFloorObj::Sub_4087F0();
+	CFloorObj::EndFrame();
 }
 
 // hover.exe:0x42C220
 // FUNCTION: HOVER 0x42c220
-void CHoldPad::Sub_413020()
+void CHoldPad::KillObject()
 {
-	CFloorObj::Sub_413020();
+	CFloorObj::KillObject();
 }
 
 // hover.exe:0x422AC0
@@ -2838,7 +2849,7 @@ CFlagRemover::~CFlagRemover()
 
 // hover.exe:0x42C540
 // FUNCTION: HOVER 0x42c540
-void CFlagRemover::Sub_42AD30()
+void CFlagRemover::Think()
 {
 }
 
@@ -2846,7 +2857,7 @@ void CFlagRemover::Sub_42AD30()
 // is scored and a fresh one is dropped back onto the board.
 // hover.exe:0x422920
 // FUNCTION: HOVER 0x422920
-void CFlagRemover::Sub_42AD40(CPlayer* pOther, DWORD dwB)
+void CFlagRemover::OnTouch(CPlayer* pOther, DWORD dwB)
 {
 	CBumperDoc* pDoc;
 	CBumperView* pView;
@@ -2854,126 +2865,126 @@ void CFlagRemover::Sub_42AD40(CPlayer* pOther, DWORD dwB)
 	long lCount;
 	long lLimit;
 
-	if (pOther->m_dwUnk01F8 != 0)
-		Hover_sub_401140()->m_dwUnk0520 = 1;
-	if (pOther->m_dwUnk0140 != 0)
+	if (pOther->m_bHuman != 0)
+		Hover_GetView()->m_dwUnk0520 = 1;
+	if (pOther->m_bInvincible != 0)
 		return;
-	if (pOther->m_dwUnk015C == (DWORD)-1)
+	if (pOther->m_dwFlagRemoverState == (DWORD)-1)
 	{
-		pOther->m_dwUnk015C = 1;
-		if (pOther->m_obList00B4.GetCount() != 0)
+		pOther->m_dwFlagRemoverState = 1;
+		if (pOther->m_listFlags.GetCount() != 0)
 		{
-			theApp.m_pBumperDoc->Sub_412630(
-				(CGameObj*)pOther->m_obList00B4.GetHead());
-			pOther->m_obList00B4.RemoveHead();
-			if (pOther->m_dwUnk01F8 == 0)
+			theApp.m_pBumperDoc->RetireObject(
+				(CGameObj*)pOther->m_listFlags.GetHead());
+			pOther->m_listFlags.RemoveHead();
+			if (pOther->m_bHuman == 0)
 			{
 				pDoc = theApp.m_pBumperDoc;
-				pDoc->m_dwUnk83E8--;
-				pView = Hover_sub_401140();
+				pDoc->m_dwRobotFlags--;
+				pView = Hover_GetView();
 				{
-					CSub422C30* pGauge = &pView->m_obj0480;
-					lLimit = (long)pGauge->m_dwUnk3C;
-					pGauge->m_dwUnk00 = 1;
-					lCount = (long)pDoc->m_dwUnk83E8;
+					CFlagStrip* pGauge = &pView->m_flagsRobot;
+					lLimit = (long)pGauge->m_dwSlots;
+					pGauge->m_bFlagsDirty = 1;
+					lCount = (long)pDoc->m_dwRobotFlags;
 					if (lLimit <= lCount)
 					{
-						pGauge->m_dwUnk44 = lLimit;
+						pGauge->m_dwFilled = lLimit;
 					}
 					else
 					{
-						pGauge->m_dwUnk44 = 0;
+						pGauge->m_dwFilled = 0;
 						if (lCount > 0)
-							pGauge->m_dwUnk44 = lCount;
+							pGauge->m_dwFilled = lCount;
 					}
 				}
 				pFlag = new CFlag(0);
-				theApp.m_pBumperDoc->Sub_412250(pFlag, 0);
-				if (theApp.m_dwUnk0408 != 0)
-					Sub_40D6E0(0x21, 0, 5, 0);
+				theApp.m_pBumperDoc->PlaceObject(pFlag, 0);
+				if (theApp.m_bGameSounds != 0)
+					PlayObjSound(0x21, 0, 5, 0);
 			}
 			else
 			{
-				pView = Hover_sub_401140();
+				pView = Hover_GetView();
 				{
-					CSub422C30* pGauge = &pView->m_obj0430;
-					lLimit = (long)pGauge->m_dwUnk3C;
-					pGauge->m_dwUnk00 = 1;
-					lCount = (long)pOther->m_obList00B4.GetCount();
+					CFlagStrip* pGauge = &pView->m_flagsPlayer;
+					lLimit = (long)pGauge->m_dwSlots;
+					pGauge->m_bFlagsDirty = 1;
+					lCount = (long)pOther->m_listFlags.GetCount();
 					if (lLimit <= lCount)
 					{
-						pGauge->m_dwUnk44 = lLimit;
+						pGauge->m_dwFilled = lLimit;
 					}
 					else
 					{
-						pGauge->m_dwUnk44 = 0;
+						pGauge->m_dwFilled = 0;
 						if (lCount > 0)
-							pGauge->m_dwUnk44 = lCount;
+							pGauge->m_dwFilled = lCount;
 					}
 				}
 				pFlag = new CFlag(1);
-				theApp.m_pBumperDoc->Sub_412250(pFlag, 0);
-				if (theApp.m_dwUnk0408 != 0)
-					Sub_40D6E0(4, 0, 5, 0);
+				theApp.m_pBumperDoc->PlaceObject(pFlag, 0);
+				if (theApp.m_bGameSounds != 0)
+					PlayObjSound(4, 0, 5, 0);
 			}
 		}
 	}
-	pOther->m_dwUnk0158 = 1;
+	pOther->m_bOnFlagRemover = 1;
 }
 
 // hover.exe:0x42C550
 // FUNCTION: HOVER 0x42c550
-void CFlagRemover::Sub_4087D0()
+void CFlagRemover::BeginFrame()
 {
-	CFloorObj::Sub_4087D0();
+	CFloorObj::BeginFrame();
 }
 
 // hover.exe:0x42C560
 // FUNCTION: HOVER 0x42c560
-void CFlagRemover::Sub_4087F0()
+void CFlagRemover::EndFrame()
 {
-	CFloorObj::Sub_4087F0();
+	CFloorObj::EndFrame();
 }
 
 // hover.exe:0x42C570
 // FUNCTION: HOVER 0x42c570
-void CFlagRemover::Sub_413020()
+void CFlagRemover::KillObject()
 {
-	CFloorObj::Sub_413020();
+	CFloorObj::KillObject();
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// CSub424210
+// CBeaconArray
 
 // hover.exe:0x424210
 // FUNCTION: HOVER 0x424210
-CSub424210::~CSub424210()
+CBeaconArray::~CBeaconArray()
 {
 }
 
 /////////////////////////////////////////////////////////////////////////////
 // CBeacon
 
-// The original CBeacon constructor is folded into Hover_sub_423EA0
+// The original CBeacon constructor is folded into Hover_BuildBeacons
 // (hover.exe:0x423EA0), which placement-constructs the object straight
 // out of the class pool; there is no standalone constructor in hover.exe.
 inline CBeacon::CBeacon(CObject* pTexture)
 {
 	WORD wUnk;
 
-	m_wUnk46 = ((WORD*)pTexture)[0xA];	// texture +0x14
+	m_wX = ((WORD*)pTexture)[0xA];	// texture +0x14
 	wUnk = ((WORD*)pTexture)[0xB];		// texture +0x16
-	m_pUnk98 = pTexture;
-	m_dwUnkA8 = 0;
-	m_wUnk44 = 0;
-	m_wUnk48 = 0;
-	m_wUnk4A = wUnk;
+	m_pLocation = pTexture;
+	m_bTargeted = 0;
+	m_wXFrac = 0;
+	m_wYFrac = 0;
+	m_wY = wUnk;
 }
 
-// The class destructor is empty: the m_arr84 member and the CGameObj base
+// The class destructor is empty: the m_arrLinks member and the CGameObj base
 // are destroyed by the compiler-generated calls that follow it inside the
 // scalar deleting destructor, which also inlines CBeacon::operator delete
-// (the pool push onto g_dwUnk_4C57A8). Rule 34: the marker pairs our ??1
+// (the pool push onto g_pBeaconFree). Rule 34: the marker pairs our ??1
 // against the original's ??_G, which is what the vtable slot holds.
 // hover.exe:0x424180
 // The destructor is defined in the class declaration, so the compiler folds
@@ -2990,16 +3001,16 @@ CBeacon::~CBeacon()
 
 // hover.exe:0x423E50
 // FUNCTION: HOVER 0x423e50
-int CBeacon::Sub_42AD90(CGameObj* pObj)
+int CBeacon::OnProbeHit(CGameObj* pObj)
 {
 	if (pObj->IsKindOf(RUNTIME_CLASS(CSledPad)) ||
 		pObj->IsKindOf(RUNTIME_CLASS(CHoldPad)) ||
 		pObj->IsKindOf(RUNTIME_CLASS(CFlagRemover)))
-		m_dwUnkA4 = 1;
-	return m_dwUnkA4;
+		m_bBlocked = 1;
+	return m_bBlocked;
 }
 
-// The original inlines this pool allocator into Hover_sub_423EA0
+// The original inlines this pool allocator into Hover_BuildBeacons
 // (hover.exe:0x423FD0-0x424036) and the matching operator delete into
 // the deleting destructor (hover.exe:0x424180).
 inline void* CBeacon::operator new(size_t nSize)
@@ -3008,43 +3019,43 @@ inline void* CBeacon::operator new(size_t nSize)
 	int nCount;
 	int i;
 
-	nCount = g_dwUnk_4C57AC;
-	pBeacon = (CBeacon*)g_dwUnk_4C57A8;
+	nCount = g_dwBeaconPoolBlock;
+	pBeacon = g_pBeaconFree;
 	if (pBeacon == NULL)
 	{
-		g_dwUnk_4C57A8 = (DWORD)::operator new(nCount * sizeof(CBeacon));
-		g_listUnk_4A4858.AddTail((void*)g_dwUnk_4C57A8);
-		nCount = g_dwUnk_4C57AC;
-		pBeacon = (CBeacon*)g_dwUnk_4C57A8;
+		g_pBeaconFree = (CBeacon*)::operator new(nCount * sizeof(CBeacon));
+		g_listBeaconBlocks.AddTail((void*)g_pBeaconFree);
+		nCount = g_dwBeaconPoolBlock;
+		pBeacon = g_pBeaconFree;
 		for (i = 0; i < nCount - 1; i++)
-			pBeacon[i].m_dwUnkAC = (DWORD)&pBeacon[i + 1];
-		pBeacon[nCount - 1].m_dwUnkAC = 0;
+			pBeacon[i].m_pNextFree = &pBeacon[i + 1];
+		pBeacon[nCount - 1].m_pNextFree = 0;
 	}
-	g_dwUnk_4C57A8 = pBeacon->m_dwUnkAC;
+	g_pBeaconFree = pBeacon->m_pNextFree;
 	return pBeacon;
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// CSub40D320 methods
+// CSegment methods
 
 // hover.exe:0x422BF0
 // FUNCTION: HOVER 0x422bf0
-void CSub40D320::Sub_422BF0(DWORD* pdwPt1, DWORD* pdwPt2)
+void CSegment::SetEndpoints(DWORD* pdwPt1, DWORD* pdwPt2)
 {
-	*(POINT*)&m_dwUnk00 = *(POINT*)pdwPt1;
-	*(POINT*)&m_dwUnk08 = *(POINT*)pdwPt2;
-	Sub_42C820();
+	*(POINT*)&m_dwX1 = *(POINT*)pdwPt1;
+	*(POINT*)&m_dwX2 = *(POINT*)pdwPt2;
+	Recalc();
 }
 
 // hover.exe:0x40E8E0
 // FUNCTION: HOVER 0x40e8e0
-CSub40D320* CSub40D320::Sub_40E8E0(CObject* pObj)
+CSegment* CSegment::SetFromLine(CObject* pObj)
 {
-	m_dwUnk00 = ((DWORD*)pObj)[5];	// pObj +0x14
-	m_dwUnk08 = ((DWORD*)pObj)[7];	// pObj +0x1C
-	m_dwUnk04 = ((DWORD*)pObj)[6];	// pObj +0x18
-	m_dwUnk0C = ((DWORD*)pObj)[8];	// pObj +0x20
-	Sub_42C820();
+	m_dwX1 = ((DWORD*)pObj)[5];	// pObj +0x14
+	m_dwX2 = ((DWORD*)pObj)[7];	// pObj +0x1C
+	m_dwY1 = ((DWORD*)pObj)[6];	// pObj +0x18
+	m_dwY2 = ((DWORD*)pObj)[8];	// pObj +0x20
+	Recalc();
 	return this;
 }
 
@@ -3053,7 +3064,7 @@ CSub40D320* CSub40D320::Sub_40E8E0(CObject* pObj)
 
 // hover.exe:0x423EA0
 // FUNCTION: HOVER 0x423ea0
-void Hover_sub_423EA0()
+void Hover_BuildBeacons()
 {
 	POSITION pos;
 	int nBeacons;
@@ -3071,7 +3082,7 @@ void Hover_sub_423EA0()
 		if (strncmp((const char*)strName, "BEACON_", 7) == 0)
 			nBeacons++;
 	}
-	g_obArrUnk_4A4840.SetSize(nBeacons, -1);
+	g_arrBeacons.SetSize(nBeacons, -1);
 	pos = g_mapUnk_4A4768.GetStartPosition();
 	i = 0;
 	while (pos != NULL)
@@ -3085,15 +3096,15 @@ void Hover_sub_423EA0()
 		{
 			// CBeacon::operator new returns NULL when the pool is
 			// exhausted; the original stores that NULL in the table
-			g_obArrUnk_4A4840[i++] = new CBeacon(pValue);
+			g_arrBeacons[i++] = new CBeacon(pValue);
 		}
 	}
-	Hover_sub_423CD0();
+	Hover_LinkBeacons();
 }
 
 // hover.exe:0x423CD0
 // FUNCTION: HOVER 0x423cd0
-void Hover_sub_423CD0()
+void Hover_LinkBeacons()
 {
 	DWORD adwA[2];
 	DWORD adwB[2];
@@ -3108,19 +3119,19 @@ void Hover_sub_423CD0()
 	int i;
 	int j;
 
-	nSize = g_obArrUnk_4A4840.GetSize();
-	pMgr = (CCollider*)theApp.m_pBumperDoc->m_dwUnk8388;
+	nSize = g_arrBeacons.GetSize();
+	pMgr = theApp.m_pBumperDoc->m_pCollider;
 	for (i = 0; i < nSize - 1; i++)
 	{
-		pBeaconA = (CBeacon*)g_obArrUnk_4A4840[i];
-		pBeaconA->Sub_403880(adwA);
+		pBeaconA = (CBeacon*)g_arrBeacons[i];
+		pBeaconA->GetCellPos(adwA);
 		for (j = i + 1; j < nSize; j++)
 		{
-			pBeaconB = (CBeacon*)g_obArrUnk_4A4840[j];
-			pBeaconB->Sub_403880(adwB);
-			sA = (short)((WORD*)pBeaconA->m_pUnk98)[0xD];	// texture +0x1A
-			sB = (short)((WORD*)pBeaconB->m_pUnk98)[0xD];
-			if (abs(sA - sB) >= (int)((DWORD*)theApp.m_pUnk0154)[8])	// +0x20
+			pBeaconB = (CBeacon*)g_arrBeacons[j];
+			pBeaconB->GetCellPos(adwB);
+			sA = (short)((WORD*)pBeaconA->m_pLocation)[0xD];	// texture +0x1A
+			sB = (short)((WORD*)pBeaconB->m_pLocation)[0xD];
+			if (abs(sA - sB) >= (int)theApp.m_pRobotAIParams->m_adw[8])	// +0x20
 				continue;
 			nHi = (sA > sB) ? sA : sB;
 			nLo = ((sA < sB) ? sA : sB) + 0x64;
@@ -3129,17 +3140,17 @@ void Hover_sub_423CD0()
 				nHi = (nHi + nLo) / 2;
 				nLo = nHi;
 			}
-			if (pMgr->Sub_40C2B0(adwA[0], adwA[1], adwB[0], adwB[1],
+			if (pMgr->IsPathClear(adwA[0], adwA[1], adwB[0], adwB[1],
 					(DWORD)nHi, (DWORD)nLo,
-					((DWORD*)theApp.m_pUnk0154)[7]))	// +0x1C
+					theApp.m_pRobotAIParams->m_adw[7]))	// +0x1C
 			{
-				pBeaconA->m_dwUnkA4 = 0;
-				pMgr->Sub_411600(adwA[0], adwA[1], adwB[0], adwB[1],
-					((DWORD*)theApp.m_pUnk0154)[7], pBeaconA);
-				if (pBeaconA->m_dwUnkA4 == 0)
+				pBeaconA->m_bBlocked = 0;
+				pMgr->ProbeSegment(adwA[0], adwA[1], adwB[0], adwB[1],
+					theApp.m_pRobotAIParams->m_adw[7], pBeaconA);
+				if (pBeaconA->m_bBlocked == 0)
 				{
-					pBeaconA->m_arr84.Add(pBeaconB);
-					pBeaconB->m_arr84.Add(pBeaconA);
+					pBeaconA->m_arrLinks.Add(pBeaconB);
+					pBeaconB->m_arrLinks.Add(pBeaconA);
 				}
 			}
 		}
@@ -3147,14 +3158,14 @@ void Hover_sub_423CD0()
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// CCollider manager methods used by Hover_sub_423CD0.
+// CCollider manager methods used by Hover_LinkBeacons.
 
 // hover.exe:0x40C2B0
 // FUNCTION: HOVER 0x40c2b0
-int CCollider::Sub_40C2B0(DWORD dwX1, DWORD dwY1, DWORD dwX2, DWORD dwY2,
+int CCollider::IsPathClear(DWORD dwX1, DWORD dwY1, DWORD dwX2, DWORD dwY2,
 	DWORD dwHi, DWORD dwLo, int nLimit)
 {
-	int nDist = (int)Hover_sub_408A00((long)dwX1, (long)dwY1, (long)dwX2,
+	int nDist = (int)Hover_ApproxDistance((long)dwX1, (long)dwY1, (long)dwX2,
 		(long)dwY2);
 
 	if (nDist > nLimit)
@@ -3165,27 +3176,27 @@ int CCollider::Sub_40C2B0(DWORD dwX1, DWORD dwY1, DWORD dwX2, DWORD dwY2,
 	{
 		CWall wall;
 
-		wall.m_obj04.Sub_40E8E0(&line);
+		wall.m_seg.SetFromLine(&line);
 
-		m_arrUnk48.SetSize(0, -1);
-		m_dwUnk44 = 1;
-		wall.Sub_408820((DWORD)this);
-		m_dwUnk44 = 0;
+		m_arrQueryHits.SetSize(0, -1);
+		m_bQuerying = 1;
+		wall.UpdateRegions((DWORD)this);
+		m_bQuerying = 0;
 	}
 
 	int i = 0;
-	if (i < m_arrUnk48.GetSize())
+	if (i < m_arrQueryHits.GetSize())
 	{
 		do
 		{
-			CGameObj* pObj = (CGameObj*)m_arrUnk48.GetAt(i);
+			CGameObj* pObj = (CGameObj*)m_arrQueryHits.GetAt(i);
 			DWORD dwResult;
 
-			pObj->Sub_411570((DWORD)&line, dwHi, dwLo, &dwResult);
+			pObj->IntersectLine((DWORD)&line, dwHi, dwLo, &dwResult);
 			if (dwResult != 0)
 				return 0;
 			i++;
-		} while (i < m_arrUnk48.GetSize());
+		} while (i < m_arrQueryHits.GetSize());
 	}
 
 	return 1;
@@ -3193,18 +3204,18 @@ int CCollider::Sub_40C2B0(DWORD dwX1, DWORD dwY1, DWORD dwX2, DWORD dwY2,
 
 // hover.exe:0x411600
 // FUNCTION: HOVER 0x411600
-void CCollider::Sub_411600(DWORD dwX1, DWORD dwY1, DWORD dwX2, DWORD dwY2,
+void CCollider::ProbeSegment(DWORD dwX1, DWORD dwY1, DWORD dwX2, DWORD dwY2,
 	int nLimit, CBeacon* pBeacon)
 {
 	// Shadow copies of the three parameters that stay live across the
-	// Hover_sub_408A00 call (dwY1 does not and is left alone): declaring
+	// Hover_ApproxDistance call (dwY1 does not and is left alone): declaring
 	// them as locals rather than reading the stack parameters directly
 	// is what gets dwX2 into the original's ebx (notes/perfect-match.md
 	// rule 207's lever, extended from one shadowed value to three).
 	DWORD dwLX1 = dwX1;
 	DWORD dwLX2 = dwX2;
 	DWORD dwLY2 = dwY2;
-	int nDist = (int)Hover_sub_408A00((long)dwLX1, (long)dwY1, (long)dwLX2,
+	int nDist = (int)Hover_ApproxDistance((long)dwLX1, (long)dwY1, (long)dwLX2,
 		(long)dwLY2);
 
 	if (nDist > nLimit)
@@ -3218,22 +3229,22 @@ void CCollider::Sub_411600(DWORD dwX1, DWORD dwY1, DWORD dwX2, DWORD dwY2,
 	{
 		CWall wall;
 
-		wall.m_obj04.Sub_40E8E0(&line);
+		wall.m_seg.SetFromLine(&line);
 
-		m_arrUnk48.SetSize(0, -1);
-		m_dwUnk44 = 1;
-		wall.Sub_408820((DWORD)this);
-		m_dwUnk44 = 0;
+		m_arrQueryHits.SetSize(0, -1);
+		m_bQuerying = 1;
+		wall.UpdateRegions((DWORD)this);
+		m_bQuerying = 0;
 	}
 
-	for (int i = 0; i < m_arrUnk48.GetSize(); i++)
+	for (int i = 0; i < m_arrQueryHits.GetSize(); i++)
 	{
-		CGameObj* pObj = (CGameObj*)m_arrUnk48.GetAt(i);
+		CGameObj* pObj = (CGameObj*)m_arrQueryHits.GetAt(i);
 		DWORD dwResult;
 
-		if (pObj->Sub_411570((DWORD)&line, 0, 0, &dwResult))
+		if (pObj->IntersectLine((DWORD)&line, 0, 0, &dwResult))
 		{
-			if (pBeacon->Sub_42AD90(pObj))
+			if (pBeacon->OnProbeHit(pObj))
 				break;
 		}
 	}
@@ -3253,21 +3264,21 @@ void CCollider::Sub_411600(DWORD dwX1, DWORD dwY1, DWORD dwX2, DWORD dwY2,
 // FUNCTION: HOVER 0x4132a0
 CMerlinDynamic::CMerlinDynamic()
 {
-	m_wUnk54 = 0;
-	m_wUnk56 = 0x80;
+	m_wBottom = 0;
+	m_wTop = 0x80;
 	m_dwUnk60 = 1;
-	m_wUnk58 = 0x80;
-	m_dwUnk64 = 1;
-	m_wUnk5C = 0;
-	m_wUnk5A = 0;
-	m_strUnk44.Empty();
-	m_pUnk50 = NULL;
-	m_dwUnk68 = 0;
+	m_wHalfWidth = 0x80;
+	m_bBillboard = 1;
+	m_wY = 0;
+	m_wX = 0;
+	m_strTexName.Empty();
+	m_pTexture = NULL;
+	m_bMirror = 0;
 }
 
 // Serialize (vtable slot 2): the texture name, the height/scale/position
 // words and the m_dwUnk60 flag byte. On load the sprite registers itself
-// in g_mapUnk_4A4728 under its object name and resolves its texture name
+// in g_mapDynamicSprites under its object name and resolves its texture name
 // in g_mapUnk_4A1D30.
 
 // hover.exe:0x42CC40
@@ -3285,31 +3296,31 @@ void CMerlinDynamic::Serialize(CArchive& ar)
 	CMerlinLine::Serialize(ar);
 	if (ar.IsStoring())
 	{
-		*pAr << m_strUnk44;
-		pAr->WriteWord(m_wUnk54);
-		pAr->WriteWord(m_wUnk56);
-		pAr->WriteWord(m_wUnk58);
-		pAr->WriteWord(m_wUnk5A);
-		pAr->WriteWord(m_wUnk5C);
+		*pAr << m_strTexName;
+		pAr->WriteWord(m_wBottom);
+		pAr->WriteWord(m_wTop);
+		pAr->WriteWord(m_wHalfWidth);
+		pAr->WriteWord(m_wX);
+		pAr->WriteWord(m_wY);
 		pAr->WriteByte((BYTE)m_dwUnk60);
 		pAr->WriteWord((WORD)0);
 	}
 	else
 	{
-		if (!m_strUnk04.IsEmpty())
-			g_mapUnk_4A4728[m_strUnk04] = this;
-		*pAr >> m_strUnk44;
-		if (strcmp(m_strUnk44, "") != 0)
+		if (!m_strName.IsEmpty())
+			g_mapDynamicSprites[m_strName] = this;
+		*pAr >> m_strTexName;
+		if (strcmp(m_strTexName, "") != 0)
 		{
-			if (!g_mapUnk_4A1D30.Lookup(m_strUnk44,
-					(CObject*&)m_pUnk50))
-				m_pUnk50 = NULL;
+			if (!g_mapUnk_4A1D30.Lookup(m_strTexName,
+					(CObject*&)m_pTexture))
+				m_pTexture = NULL;
 		}
-		pAr->ReadWord(&m_wUnk54);
-		pAr->ReadWord(&m_wUnk56);
-		pAr->ReadWord(&m_wUnk58);
-		pAr->ReadWord(&m_wUnk5A);
-		pAr->ReadWord(&m_wUnk5C);
+		pAr->ReadWord(&m_wBottom);
+		pAr->ReadWord(&m_wTop);
+		pAr->ReadWord(&m_wHalfWidth);
+		pAr->ReadWord(&m_wX);
+		pAr->ReadWord(&m_wY);
 		*(BYTE*)&m_dwUnk60 = pAr->ReadByte();
 		nCount = (short)pAr->ReadCount();
 		while (nCount > 0)		// trailing comment bytes, skipped
@@ -3340,25 +3351,25 @@ CMerlinArchive& CMerlinArchive::ReadByte(BYTE* pby)
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// CSub40D320 geometry helpers used by the maze objects
+// CSegment geometry helpers used by the maze objects
 
-// Side-of-line test: nonzero when pdwPt is on (or in front of) the
+// Side-of-line test: nonzero when pPt is on (or in front of) the
 // segment's positive side.
 // hover.exe:0x40D2F0
 // FUNCTION: HOVER 0x40d2f0
-int CSub40D320::Sub_40D2F0(const long* plPt)
+int CSegment::SideOf(const POINT* pPt)
 {
 	long lCross;
 
 	// The members are DWORD in this reconstruction; going through long
 	// locals is what makes VC 2.2 emit the original's xor/setns instead
 	// of a branch (notes/perfect-match.md rule 10).
-	long lX0 = (long)m_dwUnk00;
-	long lY0 = (long)m_dwUnk04;
-	long lDX = (long)m_dwUnk10;
-	long lDY = (long)m_dwUnk14;
+	long lX0 = (long)m_dwX1;
+	long lY0 = (long)m_dwY1;
+	long lDX = (long)m_dwDeltaX;
+	long lDY = (long)m_dwDeltaY;
 
-	lCross = (lY0 - plPt[1]) * lDX + (plPt[0] - lX0) * lDY;
+	lCross = (lY0 - pPt->y) * lDX + (pPt->x - lX0) * lDY;
 	return lCross >= 0;
 }
 
@@ -3369,13 +3380,13 @@ int CSub40D320::Sub_40D2F0(const long* plPt)
 // Drops pObj from the document's active-pod list.
 // hover.exe:0x410250
 // FUNCTION: HOVER 0x410250
-int CBumperDoc::Sub_410250(CObject* pObj)
+int CBumperDoc::RemoveFromMazeList(CObject* pObj)
 {
 	POSITION pos;
 
-	pos = m_list838C.Find(pObj);
+	pos = m_listMazeObjs.Find(pObj);
 	if (pos != NULL)
-		m_list838C.RemoveAt(pos);
+		m_listMazeObjs.RemoveAt(pos);
 	return pos != NULL;
 }
 
@@ -3384,37 +3395,38 @@ int CBumperDoc::Sub_410250(CObject* pObj)
 
 // hover.exe:0x42A9D0
 // FUNCTION: HOVER 0x42a9d0
-CSub42AE90::CSub42AE90(double dbl)
+CGaugeFraction::CGaugeFraction(double dbl)
 {
 	*(long*)this = (long)(dbl * 65536.0);
 }
 
 
-// Lights the first clamp(fix * m_dwUnk1C, 0, m_dwUnk1C) gauge segments.
+// Lights the first clamp(fix * m_dwSegments, 0, m_dwSegments) gauge
+// segments.
 // hover.exe:0x42A9F0
 // FUNCTION: HOVER 0x42a9f0
-void CSub422C80::Sub_42A9F0(CSub42AE90 fix)
+void CSegmentGauge::SetFraction(CGaugeFraction fix)
 {
 	long lSegs;
 	long lIndex;
 
 	*(long*)&fix += 0x288;
-	HOVER_FIXMULWP(*(DWORD*)&fix, (WORD)m_dwUnk1C);
+	HOVER_FIXMULWP(*(DWORD*)&fix, (WORD)m_dwSegments);
 	lIndex = (short)fix.m_wInt;
-	lSegs = (long)m_dwUnk1C;
+	lSegs = (long)m_dwSegments;
 	if (lIndex > lSegs)
 		lIndex = lSegs;
 	if (lIndex >= lSegs)
 	{
-		m_dwUnk24 = lSegs;
+		m_dwLevel = lSegs;
 	}
 	else if (lIndex <= 0)
 	{
-		m_dwUnk24 = 0;
+		m_dwLevel = 0;
 	}
 	else
 	{
-		m_dwUnk24 = lIndex;
+		m_dwLevel = lIndex;
 	}
 }
 
@@ -3424,11 +3436,11 @@ void CSub422C80::Sub_42A9F0(CSub42AE90 fix)
 
 // hover.exe:0x427CF0
 // FUNCTION: HOVER 0x427cf0
-void CBumperView::Sub_427CF0(DWORD dwState)
+void CBumperView::SetGameState(DWORD dwState)
 {
-	theApp.m_dwUnk01B8 = dwState;
+	theApp.m_dwGameState = dwState;
 	if (dwState == 2)
-		m_dwUnk007C = 0x28;
+		m_dwStateCountdown = 0x28;
 	else
-		m_dwUnk007C = 0x3C;
+		m_dwStateCountdown = 0x3C;
 }

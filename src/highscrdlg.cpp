@@ -9,12 +9,13 @@
 #include <string.h>
 
 /////////////////////////////////////////////////////////////////////////////
-// CSub424BD0 dialog
+// CHighScoresDialog dialog
 
 // hover.exe:0x4BF8B8
 // Help context ID pairs (control ID, help context ID) passed to WinHelp
 // with HELP_WM_HELP / HELP_CONTEXTMENU; terminated by a zero pair.
-static DWORD s_adwHelpMap[] =
+// GLOBAL: HOVER 0x4bf8b8
+DWORD s_adwHighScoresHelp[] =
 {
 	IDC_CLEARSCORES, 2210,
 	1071, 2200,
@@ -50,30 +51,30 @@ static DWORD s_adwHelpMap[] =
 	0, 0
 };
 
-BEGIN_MESSAGE_MAP(CSub424BD0, CDialog)
-	//{{AFX_MSG_MAP(CSub424BD0)
-	ON_MESSAGE(WM_HELP, Sub_434010)
-	ON_MESSAGE(WM_CONTEXTMENU, Sub_434030)
-	ON_COMMAND(IDC_CLEARSCORES, Sub_433C60)
+BEGIN_MESSAGE_MAP(CHighScoresDialog, CDialog)
+	//{{AFX_MSG_MAP(CHighScoresDialog)
+	ON_MESSAGE(WM_HELP, OnHelpInfo)
+	ON_MESSAGE(WM_CONTEXTMENU, OnHelpContextMenu)
+	ON_COMMAND(IDC_CLEARSCORES, OnClearScores)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
 // hover.exe:0x424BD0
 // FUNCTION: HOVER 0x424bd0
-CSub424BD0::CSub424BD0(CWnd* pParent) : CDialog(IDD_HIGHSCORES, pParent)
+CHighScoresDialog::CHighScoresDialog(CWnd* pParent) : CDialog(IDD_HIGHSCORES, pParent)
 {
-	m_dwUnk134 = 0;
+	m_bDialogUp = 0;
 }
 
 // hover.exe:0x41D540
 // FUNCTION: HOVER 0x41d540
-CSub424BD0::~CSub424BD0()
+CHighScoresDialog::~CHighScoresDialog()
 {
 }
 
 // hover.exe:0x424C80
 // FUNCTION: HOVER 0x424c80
-void CSub424BD0::Sub_424C80()
+void CHighScoresDialog::LoadScores()
 {
 	HKEY hKey;
 	// hover.exe places the RegOpenKeyExA failure handler at the end of the
@@ -87,7 +88,7 @@ void CSub424BD0::Sub_424C80()
 		if (RegQueryValueExA(hKey, "HighScoreNames", 0, &dwType, NULL,
 				&cbData) != ERROR_SUCCESS || cbData == 0) {
 			RegCloseKey(hKey);
-			Sub_433CF0(FALSE);
+			ResetScores(FALSE);
 			return;
 		}
 
@@ -99,7 +100,7 @@ void CSub424BD0::Sub_424C80()
 		if (RegQueryValueExA(hKey, "HighScores", 0, &dwType, (LPBYTE)m_adwScores,
 				&cbData) != ERROR_SUCCESS || cbData != sizeof(m_adwScores)) {
 			RegCloseKey(hKey);
-			Sub_433CF0(FALSE);
+			ResetScores(FALSE);
 			delete[] pNames;
 			return;
 		}
@@ -116,27 +117,27 @@ void CSub424BD0::Sub_424C80()
 		RegCloseKey(hKey);
 	}
 	else {
-		Sub_433CF0(FALSE);
-		Sub_433940();
+		ResetScores(FALSE);
+		SortScores();
 	}
 }
 
 // hover.exe:0x424DF0
 // FUNCTION: HOVER 0x424df0
-BOOL CSub424BD0::Sub_424DF0(DWORD dwScore)
+BOOL CHighScoresDialog::CheckNewHighScore(DWORD dwScore)
 {
-	Sub_424C80();
+	LoadScores();
 
 	if ((long)m_adwScores[14] < (long)dwScore) {
-		CSub434170 dlg(NULL);
+		CEnterHighScoreDialog dlg(NULL);
 
 		if (dlg.DoModal() == IDOK) {
 			if (dlg.m_strName.IsEmpty())
 				dlg.m_strName = "  ";
 			m_adwScores[14] = dwScore;
 			m_astrNames[14] = dlg.m_strName;
-			Sub_433940();
-			Sub_433F10();
+			SortScores();
+			SaveScores();
 			return TRUE;
 		}
 	}
@@ -146,9 +147,9 @@ BOOL CSub424BD0::Sub_424DF0(DWORD dwScore)
 
 // hover.exe:0x434050
 // FUNCTION: HOVER 0x434050
-void CSub424BD0::OnOK()
+void CHighScoresDialog::OnOK()
 {
-	Sub_433F10();
+	SaveScores();
 	CDialog::OnOK();
 }
 
@@ -157,48 +158,48 @@ void CSub424BD0::OnOK()
 // CDialog::OnInitDialog (0x44a9b0, confirmed by tools/libmatch.py --show)
 // and the function returns TRUE in eax, which a void OnCancel would not do.
 // FUNCTION: HOVER 0x433ee0
-BOOL CSub424BD0::OnInitDialog()
+BOOL CHighScoresDialog::OnInitDialog()
 {
 	CDialog::OnInitDialog();
-	m_dwUnk134 = 1;
-	Sub_424C80();
-	Sub_433940();
+	m_bDialogUp = 1;
+	LoadScores();
+	SortScores();
 	return TRUE;
 }
 
 // hover.exe:0x433840
 // FUNCTION: HOVER 0x433840
-void CSub424BD0::DoDataExchange(CDataExchange* pDX)
+void CHighScoresDialog::DoDataExchange(CDataExchange* pDX)
 {
 	CDialog::DoDataExchange(pDX);
 }
 
 // hover.exe:0x434010
 // FUNCTION: HOVER 0x434010
-LRESULT CSub424BD0::Sub_434010(WPARAM wParam, LPARAM lParam)
+LRESULT CHighScoresDialog::OnHelpInfo(WPARAM wParam, LPARAM lParam)
 {
 	return ::WinHelp((HWND)((LPHELPINFO)lParam)->hItemHandle, "hover.hlp",
-		HELP_WM_HELP, (DWORD)s_adwHelpMap);
+		HELP_WM_HELP, (DWORD)s_adwHighScoresHelp);
 }
 
 // hover.exe:0x434030
 // FUNCTION: HOVER 0x434030
-LRESULT CSub424BD0::Sub_434030(WPARAM wParam, LPARAM lParam)
+LRESULT CHighScoresDialog::OnHelpContextMenu(WPARAM wParam, LPARAM lParam)
 {
-	::WinHelp((HWND)wParam, "hover.hlp", HELP_CONTEXTMENU, (DWORD)s_adwHelpMap);
+	::WinHelp((HWND)wParam, "hover.hlp", HELP_CONTEXTMENU, (DWORD)s_adwHighScoresHelp);
 	return 1;
 }
 
 // hover.exe:0x433C60
 // FUNCTION: HOVER 0x433c60
-void CSub424BD0::Sub_433C60()
+void CHighScoresDialog::OnClearScores()
 {
 	CString str;
 
 	if (str.LoadString(IDS_CLEARSCORES_CONFIRM)) {
 		if (AfxMessageBox(str, MB_OKCANCEL) == IDOK) {
-			Sub_433CF0(TRUE);
-			Sub_433940();
+			ResetScores(TRUE);
+			SortScores();
 		}
 	}
 }
@@ -208,7 +209,7 @@ void CSub424BD0::Sub_433C60()
 
 // hover.exe:0x433860
 // FUNCTION: HOVER 0x433860
-void CSub424BD0::Sub_433860(UINT nID, DWORD dwScore)
+void CHighScoresDialog::SetScoreText(UINT nID, DWORD dwScore)
 {
 	CString strNum;
 	CString strText;
@@ -228,7 +229,7 @@ void CSub424BD0::Sub_433860(UINT nID, DWORD dwScore)
 
 // hover.exe:0x433940
 // FUNCTION: HOVER 0x433940
-void CSub424BD0::Sub_433940()
+void CHighScoresDialog::SortScores()
 {
 	CString strTemp;
 	DWORD dwScore;
@@ -251,7 +252,7 @@ void CSub424BD0::Sub_433940()
 		m_adwScores[j + 1] = dwScore;
 		m_astrNames[j + 1] = strTemp;
 	}
-	if (m_dwUnk134 != 0)
+	if (m_bDialogUp != 0)
 	{
 		SetDlgItemText(1071, m_astrNames[0]);
 		SetDlgItemText(1070, m_astrNames[1]);
@@ -268,27 +269,27 @@ void CSub424BD0::Sub_433940()
 		SetDlgItemText(1092, m_astrNames[12]);
 		SetDlgItemText(1093, m_astrNames[13]);
 		SetDlgItemText(1094, m_astrNames[14]);
-		Sub_433860(1080, m_adwScores[0]);
-		Sub_433860(1081, m_adwScores[1]);
-		Sub_433860(1082, m_adwScores[2]);
-		Sub_433860(1083, m_adwScores[3]);
-		Sub_433860(1084, m_adwScores[4]);
-		Sub_433860(1085, m_adwScores[5]);
-		Sub_433860(1086, m_adwScores[6]);
-		Sub_433860(1087, m_adwScores[7]);
-		Sub_433860(1088, m_adwScores[8]);
-		Sub_433860(1089, m_adwScores[9]);
-		Sub_433860(1095, m_adwScores[10]);
-		Sub_433860(1096, m_adwScores[11]);
-		Sub_433860(1097, m_adwScores[12]);
-		Sub_433860(1098, m_adwScores[13]);
-		Sub_433860(1099, m_adwScores[14]);
+		SetScoreText(1080, m_adwScores[0]);
+		SetScoreText(1081, m_adwScores[1]);
+		SetScoreText(1082, m_adwScores[2]);
+		SetScoreText(1083, m_adwScores[3]);
+		SetScoreText(1084, m_adwScores[4]);
+		SetScoreText(1085, m_adwScores[5]);
+		SetScoreText(1086, m_adwScores[6]);
+		SetScoreText(1087, m_adwScores[7]);
+		SetScoreText(1088, m_adwScores[8]);
+		SetScoreText(1089, m_adwScores[9]);
+		SetScoreText(1095, m_adwScores[10]);
+		SetScoreText(1096, m_adwScores[11]);
+		SetScoreText(1097, m_adwScores[12]);
+		SetScoreText(1098, m_adwScores[13]);
+		SetScoreText(1099, m_adwScores[14]);
 	}
 }
 
 // hover.exe:0x433CF0
 // FUNCTION: HOVER 0x433cf0
-void CSub424BD0::Sub_433CF0(BOOL bReset)
+void CHighScoresDialog::ResetScores(BOOL bReset)
 {
 	DWORD dwTemp;
 	int i;
@@ -349,7 +350,7 @@ void CSub424BD0::Sub_433CF0(BOOL bReset)
 
 // hover.exe:0x433F10
 // FUNCTION: HOVER 0x433f10
-void CSub424BD0::Sub_433F10()
+void CHighScoresDialog::SaveScores()
 {
 	HKEY hKey;
 	DWORD dwDisp;
@@ -380,39 +381,39 @@ void CSub424BD0::Sub_433F10()
 		RegSetValueExA(hKey, "HighScoreNames", 0, REG_MULTI_SZ,
 			(CONST BYTE*)pNames, cb);
 		RegSetValueExA(hKey, "HighScores", 0, REG_BINARY,
-			(CONST BYTE*)m_adwScores, 0x3C);
+			(CONST BYTE*)m_adwScores, sizeof(m_adwScores));
 		RegCloseKey(hKey);
 	}
 	delete pNames;
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// CSub434170 dialog
+// CEnterHighScoreDialog dialog
 
-BEGIN_MESSAGE_MAP(CSub434170, CDialog)
-	//{{AFX_MSG_MAP(CSub434170)
+BEGIN_MESSAGE_MAP(CEnterHighScoreDialog, CDialog)
+	//{{AFX_MSG_MAP(CEnterHighScoreDialog)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
 // hover.exe:0x434170
 // FUNCTION: HOVER 0x434170
-CSub434170::CSub434170(CWnd* pParent) : CDialog(IDD_ENTERHIGHSCORE, pParent)
+CEnterHighScoreDialog::CEnterHighScoreDialog(CWnd* pParent) : CDialog(IDD_ENTERHIGHSCORE, pParent)
 {
 	m_strName = "";
 }
 
 // hover.exe:0x434100
 // FUNCTION: HOVER 0x434100
-CSub434170::~CSub434170()
+CEnterHighScoreDialog::~CEnterHighScoreDialog()
 {
 }
 
 // hover.exe:0x434200
 // FUNCTION: HOVER 0x434200
-void CSub434170::DoDataExchange(CDataExchange* pDX)
+void CEnterHighScoreDialog::DoDataExchange(CDataExchange* pDX)
 {
 	CDialog::DoDataExchange(pDX);
-	//{{AFX_DATA_MAP(CSub434170)
+	//{{AFX_DATA_MAP(CEnterHighScoreDialog)
 	DDX_Text(pDX, IDC_HIGHSCORE_NAME, m_strName);
 	DDV_MaxChars(pDX, m_strName, 26);
 	//}}AFX_DATA_MAP

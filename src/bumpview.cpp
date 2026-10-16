@@ -10,9 +10,9 @@
 #include "mazeobj.h"
 #include "texload.h"
 #include "texture.h"
-#include "texheap.h"			// renderer globals + CSub402E00/CSub403980
-#include "texmisc.h"			// Hover_sub_4262B0 (exception reporter)
-#include "mainfrm.h"			// CMainFrame::Sub_408A70 (OnSize status bar)
+#include "texheap.h"			// renderer classes and globals
+#include "texmisc.h"			// Hover_FatalException (exception reporter)
+#include "mainfrm.h"			// CMainFrame::SetPaneMessage (OnSize status bar)
 
 // MSVC 2.2 does not supply a placement-new declaration in <new.h>, so
 // provide the standard placement-new operator locally.
@@ -36,34 +36,34 @@ BEGIN_MESSAGE_MAP(CBumperView, CView)
 	ON_COMMAND(ID_CMD_34011, OnCmd34011)
 	ON_UPDATE_COMMAND_UI(ID_CMD_34011, OnUpdateCmd34011)
 	ON_WM_ERASEBKGND()
-	ON_COMMAND(ID_CMD_34014, OnCmd34014)
-	ON_COMMAND(ID_CMD_34015, OnCmd34015)
-	ON_COMMAND(ID_CMD_34013, OnCmd34013)
-	ON_COMMAND(ID_CMD_34018, OnCmd34018)
-	ON_COMMAND(ID_CMD_34019, OnCmd34019)
-	ON_COMMAND(ID_CMD_34017, OnCmd34017)
-	ON_COMMAND(ID_CMD_34016, OnCmd34016)
+	ON_COMMAND(ID_DBG_ADD_SMOKEPOD, OnDbgAddSmokePod)
+	ON_COMMAND(ID_DBG_ADD_WALLPOD, OnDbgAddWallPod)
+	ON_COMMAND(ID_DBG_ADD_JUMPPOD, OnDbgAddJumpPod)
+	ON_COMMAND(ID_DBG_APPLY_INVINCIBLE, OnDbgApplyInvincible)
+	ON_COMMAND(ID_DBG_APPLY_MAPERASER, OnDbgApplyMapEraser)
+	ON_COMMAND(ID_DBG_APPLY_SPEED, OnDbgApplySpeed)
+	ON_COMMAND(ID_DBG_APPLY_SLOW, OnDbgApplySlow)
 	ON_COMMAND(ID_GAME_PAUSE, OnGamePause)
 	ON_UPDATE_COMMAND_UI(ID_GAME_PAUSE, OnUpdateGamePause)
-	ON_COMMAND(ID_CMD_34005, OnCmd34005)
-	ON_UPDATE_COMMAND_UI(ID_CMD_34005, OnUpdateCmd34005)
+	ON_COMMAND(ID_DBG_FULLCLIENT_RENDER, OnDbgFullClientRender)
+	ON_UPDATE_COMMAND_UI(ID_DBG_FULLCLIENT_RENDER, OnUpdateDbgFullClientRender)
 	ON_WM_KEYDOWN()
-	ON_COMMAND(ID_CMD_34029, OnCmd34029)
-	ON_UPDATE_COMMAND_UI(ID_CMD_34029, OnUpdateCmd34029)
-	ON_COMMAND(ID_CMD_34030, OnCmd34030)
-	ON_UPDATE_COMMAND_UI(ID_CMD_34030, OnUpdateCmd34030)
-	ON_UPDATE_COMMAND_UI(ID_CMD_34014, OnUpdateCmd34014)
-	ON_UPDATE_COMMAND_UI(ID_CMD_34015, OnUpdateCmd34015)
-	ON_UPDATE_COMMAND_UI(ID_CMD_34013, OnUpdateCmd34013)
-	ON_UPDATE_COMMAND_UI(ID_CMD_34018, OnUpdateCmd34018)
-	ON_UPDATE_COMMAND_UI(ID_CMD_34019, OnUpdateCmd34019)
-	ON_UPDATE_COMMAND_UI(ID_CMD_34017, OnUpdateCmd34017)
-	ON_UPDATE_COMMAND_UI(ID_CMD_34016, OnUpdateCmd34016)
-	ON_COMMAND(ID_CMD_34032, OnCmd34032)
-	ON_UPDATE_COMMAND_UI(ID_CMD_34032, OnUpdateCmd34032)
+	ON_COMMAND(ID_DBG_INVINCIBLE, OnDbgInvincible)
+	ON_UPDATE_COMMAND_UI(ID_DBG_INVINCIBLE, OnUpdateDbgInvincible)
+	ON_COMMAND(ID_DBG_RESTOCK_FLAGS, OnDbgRestockFlags)
+	ON_UPDATE_COMMAND_UI(ID_DBG_RESTOCK_FLAGS, OnUpdateDbgRestockFlags)
+	ON_UPDATE_COMMAND_UI(ID_DBG_ADD_SMOKEPOD, OnUpdateDbgAddSmokePod)
+	ON_UPDATE_COMMAND_UI(ID_DBG_ADD_WALLPOD, OnUpdateDbgAddWallPod)
+	ON_UPDATE_COMMAND_UI(ID_DBG_ADD_JUMPPOD, OnUpdateDbgAddJumpPod)
+	ON_UPDATE_COMMAND_UI(ID_DBG_APPLY_INVINCIBLE, OnUpdateDbgApplyInvincible)
+	ON_UPDATE_COMMAND_UI(ID_DBG_APPLY_MAPERASER, OnUpdateDbgApplyMapEraser)
+	ON_UPDATE_COMMAND_UI(ID_DBG_APPLY_SPEED, OnUpdateDbgApplySpeed)
+	ON_UPDATE_COMMAND_UI(ID_DBG_APPLY_SLOW, OnUpdateDbgApplySlow)
+	ON_COMMAND(ID_DBG_PIXEL_DOUBLE, OnDbgPixelDouble)
+	ON_UPDATE_COMMAND_UI(ID_DBG_PIXEL_DOUBLE, OnUpdateDbgPixelDouble)
 	ON_WM_CREATE()
-	ON_COMMAND(ID_CMD_34033, OnCmd34033)
-	ON_UPDATE_COMMAND_UI(ID_CMD_34033, OnUpdateCmd34033)
+	ON_COMMAND(ID_DBG_ALT_PRESENT, OnDbgAltPresent)
+	ON_UPDATE_COMMAND_UI(ID_DBG_ALT_PRESENT, OnUpdateDbgAltPresent)
 	ON_UPDATE_COMMAND_UI(ID_DBG_POD, OnUpdateDbgFlag)
 	ON_UPDATE_COMMAND_UI(ID_DBG_FLOOR, OnUpdateDbgFlag)
 	ON_UPDATE_COMMAND_UI(ID_DBG_CAR, OnUpdateDbgFlag)
@@ -84,45 +84,45 @@ END_MESSAGE_MAP()
 
 // hover.exe:0x4C4CC8
 // GLOBAL: HOVER 0x4c4cc8
-DWORD g_adwUnk_4C4CC8[6] = { 1, 2, 4, 3, 5, 6 };
+DWORD g_adwDrawerModeForDetail[6] = { 1, 2, 4, 3, 5, 6 };
 
 // GLOBAL: HOVER 0x460998
-DWORD g_dwUnk_460998;		// hover.exe:0x460998 zone descriptor index
+DWORD g_dwCurZone;		// hover.exe:0x460998 zone descriptor index
 // GLOBAL: HOVER 0x4c4ca8
-DWORD g_dwUnk_4C4CA8;		// hover.exe:0x4C4CA8
+DWORD g_bFullFramePresent;		// hover.exe:0x4C4CA8
 
 // hover.exe:0x4C4CEC
 // GLOBAL: HOVER 0x4c4cec
-int g_nUnk_4C4CEC = 0x39;	// down-counter that paces Sub_408DF0
+int g_nStatusRefreshCountdown = 0x39;	// down-counter that paces UpdateStatusBar
 // GLOBAL: HOVER 0x4c4cf0
-DWORD g_dwUnk_4C4CF0;		// hover.exe:0x4C4CF0 previous joystick button mask
+DWORD g_dwPrevJoyButtons;		// hover.exe:0x4C4CF0 previous joystick button mask
 
 // GLOBAL: HOVER 0x4a4790
-DWORD g_dwUnk_4A4790;		// hover.exe:0x4A4790
+DWORD g_dwMapCamX;		// hover.exe:0x4A4790
 // GLOBAL: HOVER 0x4a4794
-DWORD g_dwUnk_4A4794;		// hover.exe:0x4A4794
+DWORD g_dwMapCamY;		// hover.exe:0x4A4794
 // GLOBAL: HOVER 0x4a4798
-DWORD g_dwUnk_4A4798;		// hover.exe:0x4A4798
+DWORD g_dwMapCullRight;		// hover.exe:0x4A4798
 // GLOBAL: HOVER 0x4a479c
-DWORD g_dwUnk_4A479C;		// hover.exe:0x4A479C
+DWORD g_dwMapCullBottom;		// hover.exe:0x4A479C
 // GLOBAL: HOVER 0x4a47b0
-DWORD g_dwUnk_4A47B0;		// hover.exe:0x4A47B0
+DWORD g_dwMapFaceCount;		// hover.exe:0x4A47B0
 // GLOBAL: HOVER 0x4a47b8
-DWORD g_dwUnk_4A47B8;		// hover.exe:0x4A47B8
+DWORD g_dwMapRotAngle;		// hover.exe:0x4A47B8
 // GLOBAL: HOVER 0x4a47bc
-DWORD g_dwUnk_4A47BC;		// hover.exe:0x4A47BC
+DWORD g_dwMapCullLeft;		// hover.exe:0x4A47BC
 // GLOBAL: HOVER 0x4a47d8
-DWORD g_dwUnk_4A47D8;		// hover.exe:0x4A47D8
+DWORD g_dwMapCullTop;		// hover.exe:0x4A47D8
 // GLOBAL: HOVER 0x4a47e0
-DWORD g_dwUnk_4A47E0;		// hover.exe:0x4A47E0
+DWORD g_dwMapOriginX;		// hover.exe:0x4A47E0
 // GLOBAL: HOVER 0x4a47e4
-DWORD g_dwUnk_4A47E4;		// hover.exe:0x4A47E4
+DWORD g_dwMapOriginY;		// hover.exe:0x4A47E4
 // 0x4A4844/0x4A4848 are the m_pData/m_nSize members of the beacon CObArray
-// at 0x4A4840 (g_obArrUnk_4A4840 in mazeobj.cpp), not globals of their own.
+// at 0x4A4840 (g_arrBeacons in mazeobj.cpp), not globals of their own.
 
 // hover.exe:0x4A1D50
 // GLOBAL: HOVER 0x4a1d50
-CPalette g_paletteUnk_4A1D50;	// palette selected into the paint DC
+CPalette g_palGame;	// palette selected into the paint DC
 
 /////////////////////////////////////////////////////////////////////////////
 // Free helper functions
@@ -131,7 +131,7 @@ CPalette g_paletteUnk_4A1D50;	// palette selected into the paint DC
 // returns it, or NULL when there is no such texture.
 // hover.exe:0x418A30
 // FUNCTION: HOVER 0x418a30
-CObject* Hover_sub_418A30(const char* pszName)
+CObject* Hover_LookupTexture(const char* pszName)
 {
 	CObject* pObj;
 
@@ -139,39 +139,40 @@ CObject* Hover_sub_418A30(const char* pszName)
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// CSub423030
+// CVelocityIndicator
 
 // hover.exe:0x423030
 // FUNCTION: HOVER 0x423030
-CSub423030::CSub423030()
+CVelocityIndicator::CVelocityIndicator()
 {
-	m_pUnk28 = NULL;
-	m_wUnk44 = 0;
-	m_wUnk46 = 0;
-	m_dwUnk58 = 0;
-	m_wUnk48 = 0;
-	m_wUnk4A = 0;
-	m_pUnk4C = NULL;
-	m_dwUnk50 = 0;
-	m_dwUnk54 = 0;
+	// hover.exe never initializes m_pTargetDC/m_dwCenterX/m_dwCenterY
+	// here: they are always written by CreateTile before DrawNeedle (the only
+	// reader) runs, so leaving them uninitialized cannot be observed.
+	m_pOldBitmap = NULL;
+	m_wScaleXFrac = 0;
+	m_wScaleX = 0;
+	m_pBits = 0;
+	m_wScaleYFrac = 0;
+	m_wScaleY = 0;
 }
 
 // hover.exe:0x420E60
 // FUNCTION: HOVER 0x420e60
-CSub423030::~CSub423030()
+CVelocityIndicator::~CVelocityIndicator()
 {
 	// trivial destructor in the original
 }
 
-// Recomputes the camera basis offsets from the view yaw: with
+// Recomputes the camera basis offsets from the view yaw and the human
+// player's velocity (vx, vy = m_humanPlayer.m_fxVelX/m_fxVelY): with
 // a = -yaw (quarter-circle = 0x80 table units) the offsets are
-//   m_dwUnk5C = (sin(a)*m_dwUnk8338 - sin(a-0x80)*m_dwUnk833C) * factor44
-//   m_dwUnk60 = (sin(a)*m_dwUnk833C + sin(a-0x80)*m_dwUnk8338) * factor48
+//   m_dwNeedleDX = (sin(a)*vx - sin(a-0x80)*vy) * m_fxScaleX
+//   m_dwNeedleDY = (sin(a)*vy + sin(a-0x80)*vx) * m_fxScaleY
 // all 16.16 fixed-point, keeping the integer parts.
 
 // hover.exe:0x405A10
 // FUNCTION: HOVER 0x405a10
-void CSub423030::Sub_405A10(CBumperView* pView, CBumperDoc* pDoc)
+void CVelocityIndicator::UpdateNeedle(CBumperView* pView, CBumperDoc* pDoc)
 {
 	DWORD dwA1;
 	DWORD dwT1;
@@ -187,9 +188,9 @@ void CSub423030::Sub_405A10(CBumperView* pView, CBumperDoc* pDoc)
 
 	// The two sin-table entries are kept as pointers (the original derefs
 	// ebx/edi twice each) and every product is a HOVER_FIXMULP expansion.
-	lAngle = (long)(0xFFFFFF80 - pView->m_dwUnk00DC);
-	dwCos = *(DWORD*)&pDoc->m_humanPlayer.m_awUnk01AC[0];
-	dwSin = *(DWORD*)&pDoc->m_humanPlayer.m_awUnk01AC[2];
+	lAngle = (long)(0xFFFFFF80 - pView->m_dwCamAngle);
+	dwCos = pDoc->m_humanPlayer.m_fxVelX;
+	dwSin = pDoc->m_humanPlayer.m_fxVelY;
 	pSinA = &g_adwSinTable[(((lAngle + 0x80) & 0x1FF) << 4) + 1];
 	pSinB = &g_adwSinTable[((lAngle & 0x1FF) << 4) + 1];
 
@@ -198,49 +199,49 @@ void CSub423030::Sub_405A10(CBumperView* pView, CBumperDoc* pDoc)
 	dwB1 = *pSinA;
 	HOVER_FIXMULP(dwB1, dwCos);
 	dwT1 = dwB1 - dwA1;
-	HOVER_FIXMULP(dwT1, *(DWORD*)&m_wUnk44);
-	m_dwUnk5C = (long)((short*)&dwT1)[1];
+	HOVER_FIXMULP(dwT1, m_fxScaleX);
+	m_dwNeedleDX = (long)((short*)&dwT1)[1];
 
 	dwA2 = *pSinB;
 	HOVER_FIXMULP(dwA2, dwCos);
 	dwB2 = *pSinA;
 	HOVER_FIXMULP(dwB2, dwSin);
 	dwT2 = dwB2 + dwA2;
-	HOVER_FIXMULP(dwT2, *(DWORD*)&m_wUnk48);
-	m_dwUnk60 = (long)((short*)&dwT2)[1];
+	HOVER_FIXMULP(dwT2, m_fxScaleY);
+	m_dwNeedleDY = (long)((short*)&dwT2)[1];
 }
 
-
+// Places the gauge: segments run along the rectangle's longer side, each
+// a m_dwSegments-th of it.
 // hover.exe:0x411D10
 // FUNCTION: HOVER 0x411d10
-int CSub423030::Sub_411D10(const RECT* pRect)
+int CSegmentGauge::SetLayout(const RECT* pRect)
 {
 	int nHeight;
 	int nWidth;
 	int nResult;
 
-	m_rcSource = *pRect;
+	m_rc = *pRect;
 
 	// The extents are re-read out of the stored rectangle, not out of the
 	// argument.
-	nHeight = m_rcSource.bottom - m_rcSource.top;
-	nWidth = m_rcSource.right - m_rcSource.left;
+	nHeight = m_rc.bottom - m_rc.top;
+	nWidth = m_rc.right - m_rc.left;
 
-	// +0x20 orientation flag: 1 if width is the limiting dimension, 0 if
-	// height is.
-	m_dwUnk20 = (nHeight <= nWidth) ? 1 : 0;
+	// Horizontal when the rectangle is at least as wide as it is high.
+	m_bHorizontal = (nHeight <= nWidth) ? 1 : 0;
 
-	if (m_dwUnk20 == 0)
-		nResult = nHeight / (int)m_rcDirty.bottom;
+	if (m_bHorizontal == 0)
+		nResult = nHeight / (int)m_dwSegments;
 	else
-		nResult = nWidth / (int)m_rcDirty.bottom;
+		nResult = nWidth / (int)m_dwSegments;
 
-	ScratchQuotient() = nResult;
+	m_dwSegmentSize = nResult;
 	return nResult;
 }
 
 // Computes the fixed-point x/y scaling factors stored as the dword
-// pair at +0x44 (m_wUnk44/m_wUnk46) and +0x48 (m_wUnk48/m_wUnk4A).
+// pair at +0x44 (m_wScaleXFrac/m_wScaleX) and +0x48 (m_wScaleYFrac/m_wScaleY).
 // The factors are ((0xFAE1 * half_extent) << 16) / ((doc+0x8364) *
 // (global_object+0x20) >> 16), computed independently for width and height.
 
@@ -263,11 +264,11 @@ int CSub423030::Sub_411D10(const RECT* pRect)
 		_asm mov [ecx], eax \
 	}
 
-// HOVER_FIXMULWPR(dwR, dwA, wB): dwR = dwA * (short)wB with the source
-// value, the destination pointer and the 16-bit factor each homed in a
-// temporary of their own - the shape CSub423030::Sub_4140E0's original has
-// (hover.exe:0x414122: the 0xFAE1 store is hoisted into the entry block,
-// the destination is written from that temp and only then addressed).
+// HOVER_FIXMULWPR(dwR, dwA, wB): dwR = dwA * (short)wB with the source value,
+// the destination pointer and the 16-bit factor each homed in a temporary of
+// their own - the shape CVelocityIndicator::ComputeScale's original has
+// (hover.exe:0x414122: the 0xFAE1 store is hoisted into the entry block, the
+// destination is written from that temp and only then addressed).
 #define HOVER_FIXMULWPR(dwR, dwA, wB) \
 	{ \
 		volatile DWORD _dwA; \
@@ -284,7 +285,7 @@ int CSub423030::Sub_411D10(const RECT* pRect)
 	}
 
 // FUNCTION: HOVER 0x4140e0
-void CSub423030::Sub_4140E0()
+void CVelocityIndicator::ComputeScale()
 {
 	DWORD dwNum1;
 	DWORD dwScaled1;
@@ -295,33 +296,33 @@ void CSub423030::Sub_4140E0()
 	DWORD dwGlobalFactor;
 	DWORD dwPlayerFactor;
 
-	dwGlobalFactor = *(DWORD*)((BYTE*)theApp.m_pUnk014C + 0x20);
+	dwGlobalFactor = theApp.m_pHumanParams->m_adw[8];
 	dwPlayerFactor = *(DWORD*)((BYTE*)theApp.m_pBumperDoc + 0x8364);
 	dwScaled1 = dwPlayerFactor;
 	HOVER_FIXMULP(dwScaled1, dwGlobalFactor);
-	HOVER_FIXMULWPR(dwNum1, 0xFAE1, (short)((long)m_dwUnk20 / 2));
+	HOVER_FIXMULWPR(dwNum1, 0xFAE1, (short)((long)m_dwTileWidth / 2));
 	// Volatile read: HOVER_FIXDIVPL writes its destination only through the
 	// pointer temporary, which VC 2.1 does not model, so a plain
 	// `dwQ1 = dwNum1` has its store deleted and +0x44/+0x48 receive the
 	// undivided numerator (rule 95).
 	dwQ1 = *(volatile DWORD*)&dwNum1;
 	HOVER_FIXDIVPL(dwQ1, dwScaled1);
-	*(DWORD*)&m_wUnk44 = dwQ1;
+	m_fxScaleX = dwQ1;
 
-	dwGlobalFactor = *(DWORD*)((BYTE*)theApp.m_pUnk014C + 0x20);
+	dwGlobalFactor = theApp.m_pHumanParams->m_adw[8];
 	dwPlayerFactor = *(DWORD*)((BYTE*)theApp.m_pBumperDoc + 0x8364);
 	dwScaled2 = dwPlayerFactor;
 	HOVER_FIXMULP(dwScaled2, dwGlobalFactor);
-	HOVER_FIXMULWPR(dwNum2, 0xFAE1, (short)((long)m_dwUnk24 / 2));
+	HOVER_FIXMULWPR(dwNum2, 0xFAE1, (short)((long)m_dwTileHeight / 2));
 	dwQ2 = *(volatile DWORD*)&dwNum2;
 	HOVER_FIXDIVPL(dwQ2, dwScaled2);
-	*(DWORD*)&m_wUnk48 = dwQ2;
+	m_fxScaleY = dwQ2;
 }
 
 
 // Creates an 8-bpp DIB section sized from the source rectangle, attaches it
 // to m_bitmap, selects it into m_dc and copies the zone's dashboard tile
-// into the DIB bits through Hover_sub_40E730.
+// into the DIB bits through Hover_BlitRect.
 //
 // The source rectangle is the RECT the caller passes by value in the last
 // four arguments (the original reads the whole 16-byte block through one
@@ -333,8 +334,7 @@ void CSub423030::Sub_4140E0()
 
 // hover.exe:0x411D80
 // FUNCTION: HOVER 0x411d80
-void CSub423030::Sub_411D80(CDC* pInternalDC, BYTE* pDib, int nLeft,
-	int nTop, int nRight, DWORD nBottom)
+void CVelocityIndicator::CreateTile(CDC* pInternalDC, BYTE* pDib, RECT rc)
 {
 	RECT* pSrc;
 	BITMAPINFO* pBmi;
@@ -351,24 +351,24 @@ void CSub423030::Sub_411D80(CDC* pInternalDC, BYTE* pDib, int nLeft,
 	RECT rcDest;
 
 	pSrc = &m_rcSource;
-	*pSrc = *(RECT*)&nLeft;
+	*pSrc = rc;
 
-	m_dwUnk20 = pSrc->right - pSrc->left;
-	m_dwUnk24 = pSrc->bottom - pSrc->top;
-	m_dwUnk50 = (long)m_dwUnk20 / 2 + pSrc->left;
-	m_dwUnk54 = (long)m_dwUnk24 / 2 + pSrc->top;
-	m_dwUnk5C = 0;
-	m_dwUnk60 = 0;
-	m_pUnk4C = pInternalDC;
+	m_dwTileWidth = pSrc->right - pSrc->left;
+	m_dwTileHeight = pSrc->bottom - pSrc->top;
+	m_dwCenterX = (long)m_dwTileWidth / 2 + pSrc->left;
+	m_dwCenterY = (long)m_dwTileHeight / 2 + pSrc->top;
+	m_dwNeedleDX = 0;
+	m_dwNeedleDY = 0;
+	m_pTargetDC = pInternalDC;
 
-	Sub_4140E0();
+	ComputeScale();
 
 	hScreen = ::GetDC(NULL);
 
-	pBmi = (BITMAPINFO*)::operator new(0x428);
+	pBmi = (BITMAPINFO*)::operator new(BMI8_SIZE);
 	pBmi->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-	pBmi->bmiHeader.biWidth = m_dwUnk20;
-	pBmi->bmiHeader.biHeight = -(long)m_dwUnk24;
+	pBmi->bmiHeader.biWidth = m_dwTileWidth;
+	pBmi->bmiHeader.biHeight = -(long)m_dwTileHeight;
 	pBmi->bmiHeader.biPlanes = 1;
 	pBmi->bmiHeader.biBitCount = 8;
 	pBmi->bmiHeader.biCompression = BI_RGB;
@@ -379,7 +379,7 @@ void CSub423030::Sub_411D80(CDC* pInternalDC, BYTE* pDib, int nLeft,
 	pBmi->bmiHeader.biClrImportant = 0;
 
 	::GetPaletteEntries(
-		(HPALETTE)g_paletteUnk_4A1D50.GetSafeHandle(),
+		(HPALETTE)g_palGame.GetSafeHandle(),
 		0,
 		0x100,
 		apePalette);
@@ -402,7 +402,7 @@ void CSub423030::Sub_411D80(CDC* pInternalDC, BYTE* pDib, int nLeft,
 
 	if (m_bitmap.m_hObject != NULL)
 	{
-		m_dc.SelectObject(m_pUnk28);
+		m_dc.SelectObject(m_pOldBitmap);
 		m_bitmap.DeleteObject();
 		m_bitmap.Detach();
 	}
@@ -411,7 +411,7 @@ void CSub423030::Sub_411D80(CDC* pInternalDC, BYTE* pDib, int nLeft,
 		hScreen,
 		pBmi,
 		DIB_RGB_COLORS,
-		(void**)&m_dwUnk58,
+		(void**)&m_pBits,
 		NULL,
 		0);
 	m_bitmap.Attach(hBitmap);
@@ -425,7 +425,7 @@ void CSub423030::Sub_411D80(CDC* pInternalDC, BYTE* pDib, int nLeft,
 		m_dc.Attach(hMem);
 	}
 
-	m_pUnk28 = m_dc.SelectObject(&m_bitmap);
+	m_pOldBitmap = m_dc.SelectObject(&m_bitmap);
 
 	// The blit's source size and destination rectangle are built in six
 	// stack slots before the view lookup (hover.exe:0x411F24..0x411F4A,
@@ -433,38 +433,38 @@ void CSub423030::Sub_411D80(CDC* pInternalDC, BYTE* pDib, int nLeft,
 	rcDest.left = 0;
 	rcDest.top = 0;
 	pSrcBits = pDib + ((BITMAPINFOHEADER*)pDib)->biSize + 0x400;
-	rcDest.bottom = m_dwUnk24;
-	rcDest.right = m_dwUnk20;
+	rcDest.bottom = m_dwTileHeight;
+	rcDest.right = m_dwTileWidth;
 	lSrcWidth = ((BITMAPINFOHEADER*)pDib)->biWidth;
 	lSrcHeight = ((BITMAPINFOHEADER*)pDib)->biHeight;
 
-	pView = Hover_sub_401140();
-	if (pView->m_dwUnk0544 != 0)
+	pView = Hover_GetView();
+	if (pView->m_bDoubleSize != 0)
 		nZone = 0;
 	else
-		nZone = g_dwUnk_460998;
+		nZone = g_dwCurZone;
 
-	Hover_sub_40E730(
-		(long)g_adwUnk_4609A0[nZone * (0x338 / 4) + 0x268 / 4 + 0],
-		(long)g_adwUnk_4609A0[nZone * (0x338 / 4) + 0x268 / 4 + 1],
-		(long)g_adwUnk_4609A0[nZone * (0x338 / 4) + 0x268 / 4 + 2],
-		(long)g_adwUnk_4609A0[nZone * (0x338 / 4) + 0x268 / 4 + 3],
+	Hover_BlitRect(
+		g_aZones[nZone].m_rcNeedleSrc.left,
+		g_aZones[nZone].m_rcNeedleSrc.top,
+		g_aZones[nZone].m_rcNeedleSrc.right,
+		g_aZones[nZone].m_rcNeedleSrc.bottom,
 		lSrcWidth,
 		lSrcHeight,
 		(long)rcDest.left,
 		(long)rcDest.top,
 		(long)rcDest.right,
 		(long)rcDest.bottom,
-		(long)m_dwUnk20,
-		(long)m_dwUnk24,
+		(long)m_dwTileWidth,
+		(long)m_dwTileHeight,
 		pSrcBits,
-		(BYTE*)m_dwUnk58,
+		m_pBits,
 		0);
 }
 
 // hover.exe:0x401E80
 // FUNCTION: HOVER 0x401e80
-void CSub423030::Sub_401E80(CDC* pDestDC, int bFullUpdate)
+void CVelocityIndicator::DrawNeedle(CDC* pDestDC, int bFullUpdate)
 {
 	CBumperView* pView;
 	CRect rcRaw;
@@ -475,7 +475,7 @@ void CSub423030::Sub_401E80(CDC* pDestDC, int bFullUpdate)
 	int xSrc;
 	int ySrc;
 
-	pView = Hover_sub_401140();
+	pView = Hover_GetView();
 	if (pView == NULL)
 		return;
 
@@ -486,10 +486,10 @@ void CSub423030::Sub_401E80(CDC* pDestDC, int bFullUpdate)
 	// rectangle kept at +0x10.  The original re-reads left/top out of the
 	// rectangle for the right/bottom sums instead of reusing the values it
 	// just stored, so those two reads go through a volatile lvalue.
-	rcRaw.left = (long)m_dwUnk50;
-	rcRaw.top = (long)m_dwUnk54;
-	rcRaw.right = (long)m_dwUnk5C + *(volatile long*)&rcRaw.left;
-	rcRaw.bottom = (long)m_dwUnk60 + *(volatile long*)&rcRaw.top;
+	rcRaw.left = (long)m_dwCenterX;
+	rcRaw.top = (long)m_dwCenterY;
+	rcRaw.right = (long)m_dwNeedleDX + *(volatile long*)&rcRaw.left;
+	rcRaw.bottom = (long)m_dwNeedleDY + *(volatile long*)&rcRaw.top;
 	rcUpdate = rcRaw;
 	rcUpdate.NormalizeRect();
 	rcUpdate.InflateRect(2, 2);
@@ -506,35 +506,35 @@ void CSub423030::Sub_401E80(CDC* pDestDC, int bFullUpdate)
 		// Copy the whole source bitmap from its origin to the source
 		// rectangle's position in the internal DC (the original blits
 		// from (0,0) to (left,top), not the other way round).
-		::BitBlt(m_pUnk4C->m_hDC, prcSrc->left, prcSrc->top,
+		::BitBlt(m_pTargetDC->m_hDC, prcSrc->left, prcSrc->top,
 			prcSrc->right - prcSrc->left, prcSrc->bottom - prcSrc->top,
 			m_dc.GetSafeHdc(), 0, 0, SRCCOPY);
 	}
 	else
 	{
 		// Copy only the dirty sub-rectangle to its corresponding position.
-		::BitBlt(m_pUnk4C->m_hDC, rcDirty.left, rcDirty.top,
+		::BitBlt(m_pTargetDC->m_hDC, rcDirty.left, rcDirty.top,
 			rcDirty.Width(), rcDirty.Height(),
 			m_dc.GetSafeHdc(), xSrc, ySrc, SRCCOPY);
 	}
 
 	// Draw the update-area indicator using the stored pen (the original
-	// does not test m_pUnk64 for NULL).  Every coordinate is re-read out
+	// does not test m_pPen for NULL).  Every coordinate is re-read out
 	// of rcRaw's stack slots.
-	pOldPen = m_pUnk4C->SelectObject(m_pUnk64);
-	m_pUnk4C->MoveTo(rcRaw.left, rcRaw.top);
-	m_pUnk4C->LineTo(rcRaw.right, rcRaw.bottom);
-	m_pUnk4C->MoveTo(rcRaw.left + 1, rcRaw.top);
-	m_pUnk4C->LineTo(rcRaw.right + 1, rcRaw.bottom);
-	m_pUnk4C->SelectObject(pOldPen);
+	pOldPen = m_pTargetDC->SelectObject(m_pPen);
+	m_pTargetDC->MoveTo(rcRaw.left, rcRaw.top);
+	m_pTargetDC->LineTo(rcRaw.right, rcRaw.bottom);
+	m_pTargetDC->MoveTo(rcRaw.left + 1, rcRaw.top);
+	m_pTargetDC->LineTo(rcRaw.right + 1, rcRaw.bottom);
+	m_pTargetDC->SelectObject(pOldPen);
 
 	// Present the internal bitmap to the destination DC.  pView is only
 	// tested here, and the original keeps it in its stack slot across the
 	// blit and the four GDI calls above rather than in a register.
-	if ((*(CBumperView* volatile*)&pView)->m_dwUnk0544 != 0)
+	if ((*(CBumperView* volatile*)&pView)->m_bDoubleSize != 0)
 	{
 		// The 2x present doubles the four rectangle values into locals of
-		// their own before deriving the source DC (cf. Sub_42D3E0), which
+		// their own before deriving the source DC (cf. PresentMap), which
 		// is what puts the doubled values in stack slots in the original.
 		if (bFullUpdate != 0)
 		{
@@ -550,7 +550,7 @@ void CSub423030::Sub_401E80(CDC* pDestDC, int bFullUpdate)
 			l2Top = lTop * 2;
 			l2Left = lLeft * 2;
 			::StretchBlt(pDestDC->m_hDC, l2Left, l2Top, l2Width, l2Height,
-				m_pUnk4C->GetSafeHdc(), lLeft, lTop, lWidth, lHeight,
+				m_pTargetDC->GetSafeHdc(), lLeft, lTop, lWidth, lHeight,
 				SRCCOPY);
 		}
 		else
@@ -567,7 +567,7 @@ void CSub423030::Sub_401E80(CDC* pDestDC, int bFullUpdate)
 			l2Top = lTop * 2;
 			l2Left = lLeft * 2;
 			::StretchBlt(pDestDC->m_hDC, l2Left, l2Top, l2Width, l2Height,
-				m_pUnk4C->GetSafeHdc(), lLeft, lTop, lWidth, lHeight,
+				m_pTargetDC->GetSafeHdc(), lLeft, lTop, lWidth, lHeight,
 				SRCCOPY);
 		}
 	}
@@ -582,7 +582,7 @@ void CSub423030::Sub_401E80(CDC* pDestDC, int bFullUpdate)
 			lHeight = prcSrc->bottom - lTop;
 			lWidth = prcSrc->right - lLeft;
 			::BitBlt(pDestDC->m_hDC, lLeft, lTop, lWidth, lHeight,
-				m_pUnk4C->GetSafeHdc(), lLeft, lTop, SRCCOPY);
+				m_pTargetDC->GetSafeHdc(), lLeft, lTop, SRCCOPY);
 		}
 		else
 		{
@@ -593,7 +593,7 @@ void CSub423030::Sub_401E80(CDC* pDestDC, int bFullUpdate)
 			lHeight = rcDirty.bottom - lTop;
 			lWidth = rcDirty.right - lLeft;
 			::BitBlt(pDestDC->m_hDC, lLeft, lTop, lWidth, lHeight,
-				m_pUnk4C->GetSafeHdc(), lLeft, lTop, SRCCOPY);
+				m_pTargetDC->GetSafeHdc(), lLeft, lTop, SRCCOPY);
 		}
 	}
 
@@ -602,14 +602,14 @@ void CSub423030::Sub_401E80(CDC* pDestDC, int bFullUpdate)
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// CSub422F50
+// CMapRenderer
 
-// Fixed-point multiply helper used by Sub_4055B0 (CFixed is declared in
+// Fixed-point multiply helper used by ProjectPoint (CFixed is declared in
 // hover.h): computes m_dwValue = (m_dwValue * dwB) >> 16.
 
 // hover.exe:0x4038E0
 // FUNCTION: HOVER 0x4038e0
-void CFixed::Sub_4038E0(DWORD dwB)
+void CFixed::MulEq(DWORD dwB)
 {
 	DWORD dwA = m_dwValue;
 	HOVER_FIXMUL(dwA, dwB);
@@ -617,7 +617,7 @@ void CFixed::Sub_4038E0(DWORD dwB)
 }
 
 // The 16.16 fixed-point steps of the unoptimized projection helper
-// CSub422F50::Sub_4055B0 (see the comment there). Each of these is expanded
+// CMapRenderer::ProjectPoint (see the comment there). Each of these is expanded
 // inline even inside the `#pragma optimize("g", off)` region, which is what
 // gives that function its repeated three-slot temporary blocks: a reference
 // or scalar argument folds into the expansion with no slot of its own, while
@@ -635,15 +635,15 @@ static inline POINT Hover_PtOf(const DWORD* pdw)
 	return *(const POINT*)pdw;
 }
 
-// Hover_Project: the object pass hands Sub_4055B0 a whole point, not two
+// Hover_Project: the object pass hands ProjectPoint a whole point, not two
 // coordinates - the original copies both halves into a fresh adjacent
 // 8-byte slot at every call site and pushes out of it, which is what an
 // inline forwarder with a by-value POINT parameter produces (a POINT local
 // or a plain pair of arguments does not; see rule 139).
-static inline void Hover_Project(CSub422F50* pThis, DWORD* pdwOut, POINT pt)
+static inline void Hover_Project(CMapRenderer* pThis, POINT* pptOut, POINT pt)
 {
-	pThis->Sub_4055B0(pdwOut, pt.x, pt.y, g_dwUnk_4A4790, g_dwUnk_4A4794,
-		g_dwUnk_4A47E0, g_dwUnk_4A47E4, g_dwUnk_4A47B8);
+	pThis->ProjectPoint(pptOut, pt.x, pt.y, g_dwMapCamX, g_dwMapCamY,
+		g_dwMapOriginX, g_dwMapOriginY, g_dwMapRotAngle);
 }
 
 static inline void Hover_FixSetInt(DWORD& dwFix, long lValue)
@@ -669,7 +669,7 @@ static inline void Hover_FixCosTo(DWORD& dwOut, long lAngle)
 
 static inline void Hover_FixMulTo(DWORD& dwOut, CFixed fmA, CFixed fmB)
 {
-	fmA.Sub_4038E0(fmB.m_dwValue);
+	fmA.MulEq(fmB.m_dwValue);
 	dwOut = fmA.m_dwValue;
 }
 
@@ -691,9 +691,14 @@ static inline void Hover_FixSubTo(DWORD& dwOut, CFixed fmA, CFixed fmB)
 	dwOut = fmA.m_dwValue;
 }
 
+// Rule 49's "an inline wrapper must copy its result into a local": with a
+// plain `return fm.m_dwValue;` the by-value parameter folds away and the
+// expansion is two instructions with no slot; the original's projection tail
+// reads the value out of a slot of its own before storing it.
 static inline DWORD Hover_FixValue(CFixed fm)
 {
-	return fm.m_dwValue;
+	DWORD dwR = fm.m_dwValue;
+	return dwR;
 }
 
 // The 48.16 halves of the projection: the shift and the divide are done on
@@ -711,32 +716,32 @@ static inline void Hover_FixPack(long& lOut, const __int64& llValue)
 
 // hover.exe:0x422F50
 // FUNCTION: HOVER 0x422f50
-CSub422F50::CSub422F50()
+CMapRenderer::CMapRenderer()
 {
-	m_awUnk006C[0] = 0;
-	m_awUnk006C[1] = 0;
-	m_awUnk006C[2] = 0;
-	m_awUnk006C[3] = 0;
-	m_awUnk006C[4] = 0;
-	m_awUnk006C[5] = 0;
-	m_awUnk006C[6] = 0;
-	m_awUnk006C[7] = 0;
-	m_awUnk006C[8] = 0;
-	m_awUnk006C[9] = 0;
-	m_dwUnk00AC = 0;
-	m_wUnk0080 = 0;
-	m_wUnk0082 = 0;
-	m_dwUnk00C8 = 0x40000;
+	m_wHeightFrac = 0;
+	m_wHeight = 0;
+	m_wWidthFrac = 0;
+	m_wWidth = 0;
+	m_wHalfHeightFrac = 0;
+	m_wHalfHeight = 0;
+	m_wHalfWidthFrac = 0;
+	m_wHalfWidth = 0;
+	m_wProjBaseFrac = 0;
+	m_wProjBase = 0;
+	m_dwBlinkPhase = 0;
+	m_wScaleFrac = 0;
+	m_wScale = 0;
+	m_dwZoom = 0x40000;
 }
 
 // Sets the viewport/projection globals from the human player's camera and
 // projects every object in the doc's two object lists; when
-// theApp.m_dwUnk01E0 is set, also visibility-marks and projects the tracked
-// object array (g_obArrUnk_4A4840).
+// theApp.m_bShowBeacons is set, also visibility-marks and projects the tracked
+// object array (g_arrBeacons).
 
 // hover.exe:0x407160
 // FUNCTION: HOVER 0x407160
-void CSub422F50::Sub_407160(CBumperDoc* pDoc)
+void CMapRenderer::ProjectScene(CBumperDoc* pDoc)
 {
 	CBumperView* pView;
 	DWORD dwUnk540;
@@ -754,95 +759,95 @@ void CSub422F50::Sub_407160(CBumperDoc* pDoc)
 	DWORD dwBase;
 	POSITION pos;
 	DWORD* pdwPos;
-	CPodObj* pPod;
+	CBeacon* pBeacon;
 	CPlayer* pPlayer;
 	int i;
 
-	m_dwUnk00AC++;
-	if ((long)m_dwUnk00AC >= 8)
-		m_dwUnk00AC = 0;
+	m_dwBlinkPhase++;
+	if ((long)m_dwBlinkPhase >= 8)
+		m_dwBlinkPhase = 0;
 	dwUnk540 = 0;
-	pView = Hover_sub_401140();
+	pView = Hover_GetView();
 	if (pView != NULL)
-		dwUnk540 = pView->m_dwUnk0540;
-	// The camera position is read back through Sub_403880's return value
+		dwUnk540 = pView->m_bFullMap;
+	// The camera position is read back through GetCellPos's return value
 	// (rule 39).
 	pPlayer = &pDoc->m_humanPlayer;
-	pdwPos = pPlayer->Sub_403880(adwPos);
-	g_dwUnk_4A4790 = pdwPos[0];
-	g_dwUnk_4A4794 = pdwPos[1];
-	g_dwUnk_4A47B8 = (DWORD)((long)(short)pDoc->m_humanPlayer.m_awUnk0194[5]
+	pdwPos = pPlayer->GetCellPos(adwPos);
+	g_dwMapCamX = pdwPos[0];
+	g_dwMapCamY = pdwPos[1];
+	g_dwMapRotAngle = (DWORD)((long)(short)pDoc->m_humanPlayer.m_wHeading
 		- 0x80);
-	g_dwUnk_4A47B0 = *(DWORD*)(pDoc->m_dwUnk0188 + 0x1C);
-	dwHalf = (DWORD)(long)(short)m_wUnk0088;
-	g_dwUnk_4A47BC = g_dwUnk_4A4790 - dwHalf;
-	g_dwUnk_4A47D8 = g_dwUnk_4A4794 - dwHalf;
-	g_dwUnk_4A4798 = g_dwUnk_4A4790 + dwHalf;
-	g_dwUnk_4A479C = g_dwUnk_4A4794 + dwHalf;
-	dwScale = *(DWORD*)&m_wUnk0080;
-	pdwPos = pPlayer->Sub_4038A0(adwPt);
+	g_dwMapFaceCount = pDoc->m_pWorld->m_arrStatics.GetSize();
+	dwHalf = (DWORD)(long)(short)m_wViewRadius;
+	g_dwMapCullLeft = g_dwMapCamX - dwHalf;
+	g_dwMapCullTop = g_dwMapCamY - dwHalf;
+	g_dwMapCullRight = g_dwMapCamX + dwHalf;
+	g_dwMapCullBottom = g_dwMapCamY + dwHalf;
+	dwScale = m_fxScale;
+	pdwPos = pPlayer->GetFixedPos(adwPt);
 	dwProj = pdwPos[0];
 	HOVER_FIXDIVPL(dwProj, dwScale);
-	dwBase = *(DWORD*)&m_awUnk006C[8];
+	dwBase = m_fxProjBase;
 	dwBase -= dwProj;
-	g_dwUnk_4A47E0 = dwBase - *(DWORD*)&m_awUnk006C[6];
-	dwScale = *(DWORD*)&m_wUnk0080;
-	pdwPos = pPlayer->Sub_4038A0(adwPt2);
+	g_dwMapOriginX = dwBase - m_fxHalfWidth;
+	dwScale = m_fxScale;
+	pdwPos = pPlayer->GetFixedPos(adwPt2);
 	dwProj = pdwPos[1];
 	HOVER_FIXDIVPL(dwProj, dwScale);
-	dwBase = *(DWORD*)&m_awUnk006C[8];
+	dwBase = m_fxProjBase;
 	dwBase -= dwProj;
-	g_dwUnk_4A47E4 = dwBase - *(DWORD*)&m_awUnk006C[4];
-	pos = theApp.m_pBumperDoc->m_list838C.GetHeadPosition();
+	g_dwMapOriginY = dwBase - m_fxHalfHeight;
+	pos = theApp.m_pBumperDoc->m_listMazeObjs.GetHeadPosition();
 	while (pos != NULL)
 	{
 		CGameObj* pObj;
 
-		pObj = (CGameObj*)theApp.m_pBumperDoc->m_list838C.GetNext(pos);
-		pObj->m_dwUnk3C = 0;
-		Sub_404BB0(pDoc, pObj, dwUnk540);
+		pObj = (CGameObj*)theApp.m_pBumperDoc->m_listMazeObjs.GetNext(pos);
+		pObj->m_bOnMap = 0;
+		ProjectObject(pDoc, pObj, dwUnk540);
 	}
-	pos = theApp.m_pBumperDoc->m_list83A8.GetHeadPosition();
+	pos = theApp.m_pBumperDoc->m_listActiveObjs.GetHeadPosition();
 	while (pos != NULL)
 	{
 		CGameObj* pObj;
 
-		pObj = (CGameObj*)theApp.m_pBumperDoc->m_list83A8.GetNext(pos);
-		Sub_404BB0(pDoc, pObj, dwUnk540);
+		pObj = (CGameObj*)theApp.m_pBumperDoc->m_listActiveObjs.GetNext(pos);
+		ProjectObject(pDoc, pObj, dwUnk540);
 	}
-	if (theApp.m_dwUnk01E0 == 0)
+	if (theApp.m_bShowBeacons == 0)
 		return;
-	for (i = 0; i < g_obArrUnk_4A4840.GetSize(); i++)
+	for (i = 0; i < g_arrBeacons.GetSize(); i++)
 	{
-		pPod = (CPodObj*)g_obArrUnk_4A4840[i];
-		if ((long)pPod->Sub_403880(adwA)[0] < (long)g_dwUnk_4A47BC)
-			pPod->m_dwUnk3C = 0;
-		else if ((long)pPod->Sub_403880(adwB)[0] > (long)g_dwUnk_4A4798)
-			pPod->m_dwUnk3C = 0;
-		else if ((long)pPod->Sub_403880(adwC)[1] < (long)g_dwUnk_4A47D8)
-			pPod->m_dwUnk3C = 0;
+		pBeacon = (CBeacon*)g_arrBeacons[i];
+		if ((long)pBeacon->GetCellPos(adwA)[0] < (long)g_dwMapCullLeft)
+			pBeacon->m_bOnMap = 0;
+		else if ((long)pBeacon->GetCellPos(adwB)[0] > (long)g_dwMapCullRight)
+			pBeacon->m_bOnMap = 0;
+		else if ((long)pBeacon->GetCellPos(adwC)[1] < (long)g_dwMapCullTop)
+			pBeacon->m_bOnMap = 0;
 		else
 		{
-			pPod->m_dwUnk3C = 1;
-			if ((long)pPod->Sub_403880(adwD)[1] > (long)g_dwUnk_4A479C)
-				pPod->m_dwUnk3C = 0;
+			pBeacon->m_bOnMap = 1;
+			if ((long)pBeacon->GetCellPos(adwD)[1] > (long)g_dwMapCullBottom)
+				pBeacon->m_bOnMap = 0;
 		}
-		pPod->Sub_403880(adwE);
-		Sub_4055B0(&pPod->m_dwUnk9C, adwE[0], adwE[1], g_dwUnk_4A4790,
-			g_dwUnk_4A4794, g_dwUnk_4A47E0, g_dwUnk_4A47E4, g_dwUnk_4A47B8);
-		pPod->m_dwUnk40 = m_dwUnk0098;
+		pBeacon->GetCellPos(adwE);
+		ProjectPoint(&pBeacon->m_ptMap, adwE[0], adwE[1], g_dwMapCamX,
+			g_dwMapCamY, g_dwMapOriginX, g_dwMapOriginY, g_dwMapRotAngle);
+		pBeacon->m_dwMapColor = m_dwColorYellow;
 	}
 }
 
 // Visibility-tests one object against the viewport rectangle and projects
-// its points with Sub_4055B0: wall endpoints (+0x84/+0x8C), temp-wall-pod
+// its points with ProjectPoint: wall endpoints (+0x84/+0x8C), temp-wall-pod
 // rect corners (+0xF0/+0xF8), pod center (+0xC0) or the player triangle
-// (+0x164..+0x178). Sets the object's m_dwUnk3C visible flag and the
-// m_dwUnk40 draw color.
+// (+0x164..+0x178). Sets the object's m_bOnMap visible flag and the
+// m_dwMapColor draw color.
 
 // hover.exe:0x404BB0
 // FUNCTION: HOVER 0x404bb0
-void CSub422F50::Sub_404BB0(CBumperDoc* pDoc, CGameObj* pObj, int bUnk)
+void CMapRenderer::ProjectObject(CBumperDoc* pDoc, CGameObj* pObj, int bUnk)
 {
 	DWORD* pSub;
 	DWORD* pRect;
@@ -891,115 +896,115 @@ void CSub422F50::Sub_404BB0(CBumperDoc* pDoc, CGameObj* pObj, int bUnk)
 	if (pObj->IsKindOf(RUNTIME_CLASS(CWall)))
 	{
 		pWall = (CWall*)pObj;
-		if (pObj->m_dwUnk38 != 0)
+		if (pObj->m_bHideOnMap != 0)
 			return;
 		if (bUnk == 0)
 		{
-			pSub = (DWORD*)pObj->m_dwUnk78;
+			pSub = (DWORD*)pObj->m_pMerlin;
 			if (pSub == NULL || (*(BYTE*)((DWORD)pSub + 0x24) & 8) == 0)
 			{
-				*(POINT*)&pWall->m_dwUnk84 = ptHidden;
-				*(POINT*)&pWall->m_dwUnk8C = ptHidden;
+				pWall->m_ptMap1 = ptHidden;
+				pWall->m_ptMap2 = ptHidden;
 				return;
 			}
 		}
-		if (Hover_PtOf(&pObj->m_obj04.m_dwUnk00).x < (long)g_dwUnk_4A47BC &&
-			Hover_PtOf(&pObj->m_obj04.m_dwUnk08).x < (long)g_dwUnk_4A47BC)
+		if (Hover_PtOf(&pObj->m_seg.m_dwX1).x < (long)g_dwMapCullLeft &&
+			Hover_PtOf(&pObj->m_seg.m_dwX2).x < (long)g_dwMapCullLeft)
 			return;
-		if (Hover_PtOf(&pObj->m_obj04.m_dwUnk00).x > (long)g_dwUnk_4A4798 &&
-			Hover_PtOf(&pObj->m_obj04.m_dwUnk08).x > (long)g_dwUnk_4A4798)
+		if (Hover_PtOf(&pObj->m_seg.m_dwX1).x > (long)g_dwMapCullRight &&
+			Hover_PtOf(&pObj->m_seg.m_dwX2).x > (long)g_dwMapCullRight)
 			return;
-		if (Hover_PtOf(&pObj->m_obj04.m_dwUnk00).y < (long)g_dwUnk_4A47D8 &&
-			Hover_PtOf(&pObj->m_obj04.m_dwUnk08).y < (long)g_dwUnk_4A47D8)
+		if (Hover_PtOf(&pObj->m_seg.m_dwX1).y < (long)g_dwMapCullTop &&
+			Hover_PtOf(&pObj->m_seg.m_dwX2).y < (long)g_dwMapCullTop)
 			return;
-		if (Hover_PtOf(&pObj->m_obj04.m_dwUnk00).y > (long)g_dwUnk_4A479C &&
-			(long)pObj->m_obj04.m_dwUnk0C > (long)g_dwUnk_4A479C)
+		if (Hover_PtOf(&pObj->m_seg.m_dwX1).y > (long)g_dwMapCullBottom &&
+			(long)pObj->m_seg.m_dwY2 > (long)g_dwMapCullBottom)
 			return;
-		Hover_Project(this, &pWall->m_dwUnk84,
-			Hover_PtOf(&pObj->m_obj04.m_dwUnk00));
-		Hover_Project(this, &pWall->m_dwUnk8C,
-			Hover_PtOf(&pObj->m_obj04.m_dwUnk08));
-		pObj->m_dwUnk3C = 1;
+		Hover_Project(this, &pWall->m_ptMap1,
+			Hover_PtOf(&pObj->m_seg.m_dwX1));
+		Hover_Project(this, &pWall->m_ptMap2,
+			Hover_PtOf(&pObj->m_seg.m_dwX2));
+		pObj->m_bOnMap = 1;
 		return;
 	}
-	if (pObj->IsKindOf(RUNTIME_CLASS(CTempWallPod)) && pObj->m_dwUnk28 != 0)
+	if (pObj->IsKindOf(RUNTIME_CLASS(CTempWallPod)) && pObj->m_bInUse != 0)
 	{
 		pPod = (CPodObj*)pObj;
-		pRect = (DWORD*)pPod->m_dwUnkD4;
-		if ((long)pRect[5] < (long)g_dwUnk_4A47BC &&
-			(long)pRect[7] < (long)g_dwUnk_4A47BC)
+		pRect = (DWORD*)pPod->m_pForceField;
+		if ((long)pRect[5] < (long)g_dwMapCullLeft &&
+			(long)pRect[7] < (long)g_dwMapCullLeft)
 			return;
-		if ((long)pRect[5] > (long)g_dwUnk_4A4798 &&
-			(long)pRect[7] > (long)g_dwUnk_4A4798)
+		if ((long)pRect[5] > (long)g_dwMapCullRight &&
+			(long)pRect[7] > (long)g_dwMapCullRight)
 			return;
-		if ((long)pRect[6] < (long)g_dwUnk_4A47D8 &&
-			(long)pRect[8] < (long)g_dwUnk_4A47D8)
+		if ((long)pRect[6] < (long)g_dwMapCullTop &&
+			(long)pRect[8] < (long)g_dwMapCullTop)
 			return;
-		if ((long)pRect[6] > (long)g_dwUnk_4A479C &&
-			(long)pRect[8] > (long)g_dwUnk_4A479C)
+		if ((long)pRect[6] > (long)g_dwMapCullBottom &&
+			(long)pRect[8] > (long)g_dwMapCullBottom)
 			return;
 		// Both corners go through the by-value POINT forwarder: the
 		// original fills two fresh adjacent 8-byte slot pairs
 		// (hover.exe:0x404e1e/0x404e2e and 0x404e3c/0x404e48) before the
 		// first call and reloads them for the pushes.
-		Hover_Project(this, &pPod->m_dwUnkF0, *(POINT*)&pRect[5]);
-		Hover_Project(this, &pPod->m_dwUnkF8, *(POINT*)&pRect[7]);
-		pObj->m_dwUnk3C = 1;
+		Hover_Project(this, &pPod->m_ptMapWall1, *(POINT*)&pRect[5]);
+		Hover_Project(this, &pPod->m_ptMapWall2, *(POINT*)&pRect[7]);
+		pObj->m_bOnMap = 1;
 		return;
 	}
 	if (pObj->IsKindOf(RUNTIME_CLASS(CPodObj)))
 	{
 		pPod = (CPodObj*)pObj;
-		if (pPod->m_dwUnk88 != 0)
+		if (pPod->m_pOwner != 0)
 			return;
 		if (bUnk == 0)
 		{
-			pSub = (DWORD*)pObj->m_dwUnk78;
+			pSub = (DWORD*)pObj->m_pMerlin;
 			if (pSub == NULL || (*(BYTE*)((DWORD)pSub + 0x24) & 8) == 0)
 				goto HidePod;
 		}
-		if (pObj->m_dwUnk38 != 0)
+		if (pObj->m_bHideOnMap != 0)
 		{
 			// The three "not drawn" exits share one store block in the
 			// original, placed after the projection code.
 HidePod:
-			pPod->m_dwUnkC0 = 0xFFFFFFF6;
-			pPod->m_dwUnkC4 = 0xFFFFFFF6;
+			pPod->m_ptMap.x = -10;
+			pPod->m_ptMap.y = -10;
 			return;
 		}
-		pPod->Sub_403880(adwPt);
+		pPod->GetCellPos(adwPt);
 		// The four clip tests re-read the projected centre from memory and
 		// keep the viewport bound in the register (rule 121).
 		plPt = (volatile long*)adwPt;
-		lClip = (long)g_dwUnk_4A47BC;
+		lClip = (long)g_dwMapCullLeft;
 		if (plPt[0] < lClip)
 			return;
-		lClip = (long)g_dwUnk_4A4798;
+		lClip = (long)g_dwMapCullRight;
 		if (plPt[0] > lClip)
 			return;
-		lClip = (long)g_dwUnk_4A47D8;
+		lClip = (long)g_dwMapCullTop;
 		if (plPt[1] < lClip)
 			return;
-		lClip = (long)g_dwUnk_4A479C;
+		lClip = (long)g_dwMapCullBottom;
 		if (plPt[1] > lClip)
 			return;
-		Hover_Project(this, &pPod->m_dwUnkC0, *(POINT*)adwPt);
-		pObj->m_dwUnk3C = 1;
+		Hover_Project(this, &pPod->m_ptMap, *(POINT*)adwPt);
+		pObj->m_bOnMap = 1;
 		if (pObj->IsKindOf(RUNTIME_CLASS(CFlag)))
 		{
-			if ((long)m_dwUnk00AC < 4)
+			if ((long)m_dwBlinkPhase < 4)
 			{
-				pObj->m_dwUnk3C = 0;
+				pObj->m_bOnMap = 0;
 				return;
 			}
-			if (pPod->m_dwUnkCC == 0)
-				pObj->m_dwUnk40 = m_dwUnk008C;
+			if (pPod->m_bRobotFlag == 0)
+				pObj->m_dwMapColor = m_dwColorHuman;
 			else
-				pObj->m_dwUnk40 = m_dwUnk0090;
+				pObj->m_dwMapColor = m_dwColorRobot;
 		}
 		else
 		{
-			pObj->m_dwUnk40 = m_dwUnk0098;
+			pObj->m_dwMapColor = m_dwColorYellow;
 		}
 		return;
 	}
@@ -1011,8 +1016,8 @@ HidePod:
 		// product goes through the pointer-flavour macros (rule 50).
 		((WORD*)&dwT)[0] = 0;
 		((WORD*)&dwT)[1] = 0xC8;
-		dwWide = *(DWORD*)&m_wUnk0080;
-		dwCap = *(DWORD*)&m_wUnk0080;
+		dwWide = m_fxScale;
+		dwCap = m_fxScale;
 		HOVER_FIXMULWP(dwCap, 2);
 		// The cap is max()'d through a pointer select over two copies -
 		// hover.exe:0x405071 compares once and branches twice (`jl` then
@@ -1045,38 +1050,38 @@ HidePod:
 		((short*)&dwSinCap)[1] = 0;
 		((short*)&dwNegCosCap)[1] = 0;
 		dwT = (long)dwT / 2;
-		lAngle = (short)pPlayer->m_awUnk0194[5];
+		lAngle = (short)pPlayer->m_wHeading;
 		dwP1 = g_adwSinTable[(((lAngle + 0x80) & 0x1FF) << 4) + 1];
 		HOVER_FIXMULP(dwP1, dwT);
-		g_dwUnk_4A47B8 = lAngle;
+		g_dwMapRotAngle = lAngle;
 		dwCosHalf = dwP1;
 		dwP2 = g_adwSinTable[((lAngle & 0x1FF) << 4) + 1];
 		HOVER_FIXMULP(dwP2, dwT);
-		lAngle = (short)pPlayer->m_awUnk0194[5] - 0x80;
+		lAngle = (short)pPlayer->m_wHeading - 0x80;
 		dwSinHalf = dwP2;
 		dwP3 = g_adwSinTable[(((lAngle + 0x80) & 0x1FF) << 4) + 1];
 		HOVER_FIXMULP(dwP3, dwCapMax);
-		g_dwUnk_4A47B8 = lAngle;
+		g_dwMapRotAngle = lAngle;
 		dwSinCap = dwP3;
 		dwP4 = g_adwSinTable[((lAngle & 0x1FF) << 4) + 1];
 		HOVER_FIXMULP(dwP4, dwCapMax);
 		dwNegCosCap = dwP4;
-		pdwPt = pPlayer->Sub_4038A0(adwPl);
+		pdwPt = pPlayer->GetFixedPos(adwPl);
 		// The triangle origin is one POINT copied into all three corners;
 		// hover.exe:0x405235 stores it into its own slot pair and reloads
 		// it for the second and third store.
 		ptOrg.x = ((short*)pdwPt)[1];
 		ptOrg.y = ((short*)pdwPt)[3];
-		pPt1 = (POINT*)&pPlayer->m_dwUnk0164;
-		pPt2 = (POINT*)&pPlayer->m_dwUnk016C;
-		pPt3 = (POINT*)&pPlayer->m_dwUnk0174;
+		pPt1 = &pPlayer->m_aptMapTri[0];
+		pPt2 = &pPlayer->m_aptMapTri[1];
+		pPt3 = &pPlayer->m_aptMapTri[2];
 		*pPt1 = ptOrg;
 		*pPt2 = ptOrg;
 		*pPt3 = ptOrg;
 		lHiCos = ((short*)&dwCosHalf)[1];
 		lHiSin = ((short*)&dwSinHalf)[1];
-		pPlayer->m_dwUnk0164 += lHiCos;
-		pPlayer->m_dwUnk0168 += lHiSin;
+		pPlayer->m_aptMapTri[0].x += lHiCos;
+		pPlayer->m_aptMapTri[0].y += lHiSin;
 		lSinCap = ((short*)&dwSinCap)[1];
 		lT = lSinCap;
 		lT -= lHiCos;
@@ -1085,32 +1090,32 @@ HidePod:
 		lU = lNegCos;
 		lU -= lHiSin;
 		pPt3->x -= lHiCos + lSinCap;
-		pPlayer->m_dwUnk0170 += lU;
-		pPlayer->m_dwUnk0178 -= lHiSin + lNegCos;
-		lAngle = (short)pDoc->m_humanPlayer.m_awUnk0194[5] - 0x80;
-		g_dwUnk_4A47B8 = lAngle;
+		pPlayer->m_aptMapTri[1].y += lU;
+		pPlayer->m_aptMapTri[2].y -= lHiSin + lNegCos;
+		lAngle = (short)pDoc->m_humanPlayer.m_wHeading - 0x80;
+		g_dwMapRotAngle = lAngle;
 		// The three triangle projections pass the two coordinates as
 		// scalars read back through the POINT* locals, not as a POINT by
 		// value: hover.exe:0x40530e..0x405381 pushes straight out of
 		// [esi+0x164]/[ebp]/[ebx] with no 8-byte argument temp.
-		Sub_4055B0((DWORD*)pPt1, pPt1->x, pPlayer->m_dwUnk0168,
-			g_dwUnk_4A4790, g_dwUnk_4A4794, g_dwUnk_4A47E0,
-			g_dwUnk_4A47E4, g_dwUnk_4A47B8);
-		Sub_4055B0((DWORD*)pPt2, pPt2->x, pPt2->y, g_dwUnk_4A4790,
-			g_dwUnk_4A4794, g_dwUnk_4A47E0, g_dwUnk_4A47E4,
-			g_dwUnk_4A47B8);
-		Sub_4055B0((DWORD*)pPt3, pPt3->x, pPt3->y, g_dwUnk_4A4790,
-			g_dwUnk_4A4794, g_dwUnk_4A47E0, g_dwUnk_4A47E4,
-			g_dwUnk_4A47B8);
+		ProjectPoint(pPt1, pPt1->x, pPlayer->m_aptMapTri[0].y,
+			g_dwMapCamX, g_dwMapCamY, g_dwMapOriginX,
+			g_dwMapOriginY, g_dwMapRotAngle);
+		ProjectPoint(pPt2, pPt2->x, pPt2->y, g_dwMapCamX,
+			g_dwMapCamY, g_dwMapOriginX, g_dwMapOriginY,
+			g_dwMapRotAngle);
+		ProjectPoint(pPt3, pPt3->x, pPt3->y, g_dwMapCamX,
+			g_dwMapCamY, g_dwMapOriginX, g_dwMapOriginY,
+			g_dwMapRotAngle);
 		pPlayer->m_dwUnk017C = 1;
 		return;
 	}
 }
 
 // Projects the world point (lX,lY) into pdwOut[0..1]: when
-// theApp.m_dwUnk01D4 is set the point is first rotated by -lAngle around
-// (lCX,lCY); the projection divides by the m_wUnk0080 factor and offsets
-// into the screen center (m_dwUnk5C/m_dwUnk60).
+// theApp.m_bRotateMap is set the point is first rotated by -lAngle around
+// (lCX,lCY); the projection divides by the m_wScaleFrac factor and offsets
+// into the view origin (m_rcView.left/m_rcView.top).
 //
 // The rotation is done with 16.16 fixed-point values and the sin/cos table:
 // lRX = (cos*dx + sin*dy) >> 16, lRY = (cos*dy - sin*dx) >> 16.
@@ -1119,7 +1124,7 @@ HidePod:
 // other is the robot steering pass, see rule 49 in notes/perfect-match.md):
 // it has an ebp frame, every value homed on the stack and a five-byte
 // `jmp $+5` at the end of every inline expansion, while still expanding
-// inline functions and still calling CFixed::Sub_4038E0 out of line. That
+// inline functions and still calling CFixed::MulEq out of line. That
 // combination is `#pragma optimize("g", off)` on top of our /O2 build (see
 // rule 117). Every fixed-point step is therefore visible as an expansion of
 // one of the Hover_Fix* helpers above.
@@ -1128,7 +1133,7 @@ HidePod:
 
 // hover.exe:0x4055B0
 // FUNCTION: HOVER 0x4055b0
-void CSub422F50::Sub_4055B0(DWORD* pdwOut, long lX, long lY, long lCX,
+void CMapRenderer::ProjectPoint(POINT* pptOut, long lX, long lY, long lCX,
 	long lCY, long lV1, long lV2, long lAngle)
 {
 	long lQY;
@@ -1136,61 +1141,82 @@ void CSub422F50::Sub_4055B0(DWORD* pdwOut, long lX, long lY, long lCX,
 	long lPY;
 
 	{
-		long lQX;
+		long lSX;
 		__int64 llQ;
 
 		lPX = lX;
 		lPY = lY;
-		if (theApp.m_dwUnk01D4 != 0)
+		if (theApp.m_bRotateMap != 0)
 		{
-			DWORD dwDX;
-			DWORD dwDY;
-			DWORD dwSin;
+			// dwA/dwB are the 16.16 deltas from (lCX,lCY), dwC/dwE the
+			// sine and cosine of lAngle, dwD/dwF their products with the
+			// deltas and dwG their sum (the rotated x); dwH..dwL are the
+			// same five values again for the rotated y. The one-letter
+			// names are the /Od frame (rule 195): their buckets have to
+			// ascend in declaration order to land on ebp-0x1c..ebp-0x48.
 			DWORD dwA;
-			DWORD dwCos;
 			DWORD dwB;
-			DWORD dwT;
-			DWORD dwSin2;
 			DWORD dwC;
-			DWORD dwCos2;
 			DWORD dwD;
-			DWORD dwT2;
+			DWORD dwE;
+			DWORD dwF;
+			DWORD dwG;
+			DWORD dwH;
+			DWORD dwI;
+			DWORD dwJ;
+			DWORD dwK;
+			DWORD dwL;
 
-			Hover_FixSetInt(dwDX, lPX);
-			Hover_FixSetInt(dwDY, lPY);
-			Hover_FixSubInt(dwDX, lCX);
-			Hover_FixSubInt(dwDY, lCY);
-			Hover_FixSinTo(dwSin, lAngle);
-			Hover_FixCosTo(dwCos, lAngle);
-			Hover_FixMulTo(dwA, *(CFixed*)&dwSin, *(CFixed*)&dwDY);
-			Hover_FixMulTo(dwB, *(CFixed*)&dwCos, *(CFixed*)&dwDX);
-			Hover_FixAddTo(dwT, *(CFixed*)&dwB, *(CFixed*)&dwA);
-			lPX = ((short*)&dwT)[1];
-			Hover_FixSinTo(dwSin2, lAngle);
-			Hover_FixCosTo(dwCos2, lAngle);
-			Hover_FixMulTo(dwC, *(CFixed*)&dwSin2, *(CFixed*)&dwDX);
-			Hover_FixMulTo(dwD, *(CFixed*)&dwCos2, *(CFixed*)&dwDY);
-			Hover_FixSubTo(dwT2, *(CFixed*)&dwD, *(CFixed*)&dwC);
-			lPY = ((short*)&dwT2)[1];
+			Hover_FixSetInt(dwA, lPX);
+			Hover_FixSetInt(dwB, lPY);
+			Hover_FixSubInt(dwA, lCX);
+			Hover_FixSubInt(dwB, lCY);
+			Hover_FixSinTo(dwC, lAngle);
+			Hover_FixCosTo(dwE, lAngle);
+			Hover_FixMulTo(dwD, *(CFixed*)&dwC, *(CFixed*)&dwB);
+			Hover_FixMulTo(dwF, *(CFixed*)&dwE, *(CFixed*)&dwA);
+			Hover_FixAddTo(dwG, *(CFixed*)&dwF, *(CFixed*)&dwD);
+			lPX = ((short*)&dwG)[1];
+			Hover_FixSinTo(dwH, lAngle);
+			Hover_FixCosTo(dwJ, lAngle);
+			Hover_FixMulTo(dwI, *(CFixed*)&dwH, *(CFixed*)&dwA);
+			Hover_FixMulTo(dwK, *(CFixed*)&dwJ, *(CFixed*)&dwB);
+			Hover_FixSubTo(dwL, *(CFixed*)&dwK, *(CFixed*)&dwI);
+			lPY = ((short*)&dwL)[1];
 			lPX += lCX;
 			lPY += lCY;
 		}
 		llQ = lPX;
 		Hover_Shl32(llQ);
-		llQ = llQ / (long)*(DWORD*)&m_wUnk0080;
-		Hover_FixPack(lQX, llQ);
+		llQ = llQ / (long)m_fxScale;
+		Hover_FixPack(lSX, llQ);
 		llQ = lPY;
 		Hover_Shl32(llQ);
-		llQ = llQ / (long)*(DWORD*)&m_wUnk0080;
+		llQ = llQ / (long)m_fxScale;
 		Hover_FixPack(lQY, llQ);
-		lQX = (long)Hover_FixValue(Hover_FixSub(
-			Hover_FixSub(*(CFixed*)&m_awUnk006C[8], *(CFixed*)&lQX),
-			*(CFixed*)&lV1));
-		lQY = (long)Hover_FixValue(Hover_FixSub(
-			Hover_FixSub(*(CFixed*)&m_awUnk006C[8], *(CFixed*)&lQY),
-			*(CFixed*)&lV2));
-		pdwOut[0] = m_dwUnk5C + (long)((short*)&lQX)[1];
-		pdwOut[1] = m_dwUnk60 + (long)((short*)&lQY)[1];
+		{
+			// Both subtractions go through the three-argument
+			// Hover_FixSubTo, not a nested pair of Hover_FixSub calls:
+			// only the `DWORD&` destination form gives CFixed::SubEq's
+			// argument a slot of its own (the highest of the three) and
+			// stores the two by-value copies right to left.  dwP..dwS
+			// are those destinations, at ebp-0x4c..ebp-0x58.
+			CFixed fm1;
+			CFixed fm2;
+			CFixed fm3;
+			CFixed fm4;
+
+			Hover_FixSubTo(fm1.m_dwValue,
+				*(CFixed*)&m_fxProjBase, *(CFixed*)&lSX);
+			Hover_FixSubTo(fm2.m_dwValue, fm1, *(CFixed*)&lV1);
+			lSX = (long)Hover_FixValue(fm2);
+			Hover_FixSubTo(fm3.m_dwValue,
+				*(CFixed*)&m_fxProjBase, *(CFixed*)&lQY);
+			Hover_FixSubTo(fm4.m_dwValue, fm3, *(CFixed*)&lV2);
+			lQY = (long)Hover_FixValue(fm4);
+		}
+		pptOut->x = m_rcView.left + (long)((short*)&lSX)[1];
+		pptOut->y = m_rcView.top + (long)((short*)&lQY)[1];
 	}
 }
 #pragma optimize("", on)
@@ -1201,13 +1227,13 @@ void CSub422F50::Sub_4055B0(DWORD* pdwOut, long lX, long lY, long lCX,
 
 // hover.exe:0x4053A0
 // FUNCTION: HOVER 0x4053a0
-void CSub422F50::Sub_4053A0(CBumperView* pView, CBumperDoc* pDoc)
+void CMapRenderer::DrawScene(CBumperView* pView, CBumperDoc* pDoc)
 {
 	POSITION pos;
 	CGameObj* pObj;
-	CPodObj* pPod;
-	DWORD* pSub;
-	DWORD* pPt;
+	CBeacon* pBeacon;
+	CBeacon* pLinked;
+	POINT* pPt;
 	int i;
 	int nLeft;
 	long j;
@@ -1221,69 +1247,72 @@ void CSub422F50::Sub_4053A0(CBumperView* pView, CBumperDoc* pDoc)
 	BYTE bColor;
 	WORD wColor;
 
-	pos = theApp.m_pBumperDoc->m_list838C.GetHeadPosition();
+	pos = theApp.m_pBumperDoc->m_listMazeObjs.GetHeadPosition();
 	while (pos != NULL)
 	{
-		pObj = (CGameObj*)theApp.m_pBumperDoc->m_list838C.GetNext(pos);
-		Sub_401C00(pObj, pView->m_dwUnk0540);
+		pObj = (CGameObj*)theApp.m_pBumperDoc->m_listMazeObjs.GetNext(pos);
+		DrawObject(pObj, pView->m_bFullMap);
 	}
-	pos = theApp.m_pBumperDoc->m_list83A8.GetHeadPosition();
+	pos = theApp.m_pBumperDoc->m_listActiveObjs.GetHeadPosition();
 	while (pos != NULL)
 	{
-		pObj = (CGameObj*)theApp.m_pBumperDoc->m_list83A8.GetNext(pos);
-		Sub_401C00(pObj, pView->m_dwUnk0540);
+		pObj = (CGameObj*)theApp.m_pBumperDoc->m_listActiveObjs.GetNext(pos);
+		DrawObject(pObj, pView->m_bFullMap);
 	}
-	if (theApp.m_dwUnk01E0 == 0)
+	if (theApp.m_bShowBeacons == 0)
 		return;
-	if (g_obArrUnk_4A4840.GetSize() <= 0)
+	if (g_arrBeacons.GetSize() <= 0)
 		return;
 	// The beacon walk keeps its byte offset and its remaining count in two
 	// stack slots and counts the latter down (dec [esp+0x18] / jne).
 	i = 0;
-	nLeft = g_obArrUnk_4A4840.GetSize();
+	nLeft = g_arrBeacons.GetSize();
 	do
 	{
-		pPod = (CPodObj*)g_obArrUnk_4A4840[i];
-		if (pPod->m_dwUnk3C != 0)
+		pBeacon = (CBeacon*)g_arrBeacons[i];
+		if (pBeacon->m_bOnMap != 0)
 		{
-			bColor = (BYTE)pPod->m_dwUnk40;
-			m_bUnk1C = bColor;
+			bColor = (BYTE)pBeacon->m_dwMapColor;
+			m_bColor = bColor;
 			wColor = (WORD)(bColor | ((WORD)bColor << 8));
-			m_dwUnk20 = ((DWORD)wColor << 16) | wColor;
+			m_dwColor4 = ((DWORD)wColor << 16) | wColor;
 			// The projected marker point is reached through a pointer to the
 			// +0x9C pair, as in the original (lea edi,[esi+0x9c] / [edi],
 			// [edi+4]).
-			pPt = &pPod->m_dwUnk9C;
+			pPt = &pBeacon->m_ptMap;
 			nSub = 0;
-			Sub_403910(pPt[0], pPt[1], 5);
-			if (pPod->m_dwUnkA8 != 0)
+			DrawMarker(pPt->x, pPt->y, 5);
+			if (pBeacon->m_bTargeted != 0)
 			{
 				// The selection diamond walks one mutable corner pair around
 				// the marker: the original keeps the four coordinates in stack
 				// slots and adjusts them by +-0x14 between the four calls.
 				pPtA = &ptA;
 				pPtB = &ptB;
-				lX = pPt[0];
-				lY = pPt[1];
+				lX = pPt->x;
+				lY = pPt->y;
 				pPtA->x = lX;
 				pPtB->x = lX;
 				pPtA->y = lY;
 				pPtB->y = lY;
 				pPtA->y -= 0xA;
 				pPtB->x += 0xA;
-				Sub_401980(pPtA->x, pPtA->y, pPtB->x, pPtB->y);
+				DrawLine(pPtA->x, pPtA->y, pPtB->x, pPtB->y);
 				pPtA->y += 0x14;
-				Sub_401980(pPtB->x, pPtB->y, pPtA->x, pPtA->y);
+				DrawLine(pPtB->x, pPtB->y, pPtA->x, pPtA->y);
 				pPtB->x -= 0x14;
-				Sub_401980(pPtA->x, pPtA->y, pPtB->x, pPtB->y);
+				DrawLine(pPtA->x, pPtA->y, pPtB->x, pPtB->y);
 				pPtA->y -= 0x14;
-				Sub_401980(pPtB->x, pPtB->y, pPtA->x, pPtA->y);
+				DrawLine(pPtB->x, pPtB->y, pPtA->x, pPtA->y);
 			}
-			for (j = (long)pPod->m_pUnk8C; j > 0; j--)
+			for (j = pBeacon->m_arrLinks.GetSize(); j > 0; j--)
 			{
-				pSub = ((DWORD**)pPod->m_dwUnk88)[nSub];
+				POINT* pField;
+
+				pLinked = (CBeacon*)pBeacon->m_arrLinks[nSub];
 				nSub++;
-				Sub_401980(pPt[0], pPt[1], pSub[0x27], pSub[0x28]);
+				pField = &pLinked->m_ptMap;
+				DrawLine(pPt->x, pPt->y, pField->x, pField->y);
 			}
 		}
 		i++;
@@ -1295,7 +1324,7 @@ void CSub422F50::Sub_4053A0(CBumperView* pView, CBumperDoc* pDoc)
 
 // hover.exe:0x401C00
 // FUNCTION: HOVER 0x401c00
-void CSub422F50::Sub_401C00(CGameObj* pObj, int bUnk)
+void CMapRenderer::DrawObject(CGameObj* pObj, int bUnk)
 {
 	DWORD* pSub;
 	BYTE bColor;
@@ -1310,41 +1339,41 @@ void CSub422F50::Sub_401C00(CGameObj* pObj, int bUnk)
 	if (pObj->IsKindOf(RUNTIME_CLASS(CWall)))
 	{
 		pWall = (CWall*)pObj;
-		if (pObj->m_dwUnk38 != 0)
+		if (pObj->m_bHideOnMap != 0)
 			return;
 		if (bUnk == 0)
 		{
-			pSub = (DWORD*)pObj->m_dwUnk78;
+			pSub = (DWORD*)pObj->m_pMerlin;
 			if (pSub == NULL || (*(BYTE*)((DWORD)pSub + 0x24) & 8) == 0)
 				return;
 		}
-		if (pObj->m_dwUnk3C == 0)
+		if (pObj->m_bOnMap == 0)
 			return;
-		pSub = (DWORD*)pObj->m_dwUnk78;
+		pSub = (DWORD*)pObj->m_pMerlin;
 		if (pSub[0x2F] == 0)
-			bColor = (BYTE)m_dwUnk0098;
+			bColor = (BYTE)m_dwColorYellow;
 		else if (((short*)pSub)[0x52] > 0)
-			bColor = (BYTE)m_dwUnk00A8;
+			bColor = (BYTE)m_dwColorGray;
 		else
-			bColor = (BYTE)m_dwUnk009C;
-		m_bUnk1C = bColor;
+			bColor = (BYTE)m_dwColorWhite;
+		m_bColor = bColor;
 		wColor = (WORD)(bColor | ((WORD)bColor << 8));
-		m_dwUnk20 = ((DWORD)wColor << 16) | wColor;
-		pPt2 = (POINT*)&pWall->m_dwUnk8C;
-		pPt1 = (POINT*)&pWall->m_dwUnk84;
-		Sub_401980(pPt1->x, pPt1->y, pPt2->x, pPt2->y);
+		m_dwColor4 = ((DWORD)wColor << 16) | wColor;
+		pPt2 = &pWall->m_ptMap2;
+		pPt1 = &pWall->m_ptMap1;
+		DrawLine(pPt1->x, pPt1->y, pPt2->x, pPt2->y);
 		return;
 	}
-	if (pObj->IsKindOf(RUNTIME_CLASS(CTempWallPod)) && pObj->m_dwUnk28 != 0)
+	if (pObj->IsKindOf(RUNTIME_CLASS(CTempWallPod)) && pObj->m_bInUse != 0)
 	{
 		pPod = (CPodObj*)pObj;
-		bColor = (BYTE)m_dwUnk009C;
-		m_bUnk1C = bColor;
+		bColor = (BYTE)m_dwColorWhite;
+		m_bColor = bColor;
 		wColor = (WORD)(bColor | ((WORD)bColor << 8));
-		m_dwUnk20 = ((DWORD)wColor << 16) | wColor;
-		pPt2 = (POINT*)&pPod->m_dwUnkF8;
-		pPt1 = (POINT*)&pPod->m_dwUnkF0;
-		Sub_401980(pPt1->x, pPt1->y, pPt2->x, pPt2->y);
+		m_dwColor4 = ((DWORD)wColor << 16) | wColor;
+		pPt2 = &pPod->m_ptMapWall2;
+		pPt1 = &pPod->m_ptMapWall1;
+		DrawLine(pPt1->x, pPt1->y, pPt2->x, pPt2->y);
 		return;
 	}
 	if (pObj->IsKindOf(RUNTIME_CLASS(CPodObj)))
@@ -1352,18 +1381,18 @@ void CSub422F50::Sub_401C00(CGameObj* pObj, int bUnk)
 		pPod = (CPodObj*)pObj;
 		if (bUnk == 0)
 		{
-			pSub = (DWORD*)pObj->m_dwUnk78;
+			pSub = (DWORD*)pObj->m_pMerlin;
 			if (pSub == NULL || (*(BYTE*)((DWORD)pSub + 0x24) & 8) == 0)
 				return;
 		}
-		if (pObj->m_dwUnk3C == 0)
+		if (pObj->m_bOnMap == 0)
 			return;
-		bColor = (BYTE)pObj->m_dwUnk40;
-		m_bUnk1C = bColor;
+		bColor = (BYTE)pObj->m_dwMapColor;
+		m_bColor = bColor;
 		wColor = (WORD)(bColor | ((WORD)bColor << 8));
-		m_dwUnk20 = ((DWORD)wColor << 16) | wColor;
-		pPt1 = (POINT*)&pPod->m_dwUnkC0;
-		Sub_403910(pPt1->x, pPt1->y, 5);
+		m_dwColor4 = ((DWORD)wColor << 16) | wColor;
+		pPt1 = &pPod->m_ptMap;
+		DrawMarker(pPt1->x, pPt1->y, 5);
 		return;
 	}
 	if (pObj->IsKindOf(RUNTIME_CLASS(CPlayer)))
@@ -1371,39 +1400,39 @@ void CSub422F50::Sub_401C00(CGameObj* pObj, int bUnk)
 		pPlayer = (CPlayer*)pObj;
 		if (pObj->IsKindOf(RUNTIME_CLASS(CHumanPlayer)))
 		{
-			bColor = (BYTE)m_dwUnk008C;
-			m_bUnk1C = bColor;
+			bColor = (BYTE)m_dwColorHuman;
+			m_bColor = bColor;
 			wColor = (WORD)(bColor | ((WORD)bColor << 8));
-			m_dwUnk20 = ((DWORD)wColor << 16) | wColor;
+			m_dwColor4 = ((DWORD)wColor << 16) | wColor;
 		}
 		else if (pObj->IsKindOf(RUNTIME_CLASS(CRobotPlayer)))
 		{
 			if (*(DWORD*)((BYTE*)pPlayer + 0xC0) != 0)
-				bColor = (BYTE)m_dwUnk0098;
-			else if (((CRobotPlayer*)pPlayer)->m_dwUnk021C != 0)
-				bColor = (BYTE)m_dwUnk0094;
+				bColor = (BYTE)m_dwColorYellow;
+			else if (((CRobotPlayer*)pPlayer)->m_bHunter != 0)
+				bColor = (BYTE)m_dwColorRobotAlt;
 			else
-				bColor = (BYTE)m_dwUnk0090;
-			m_bUnk1C = bColor;
+				bColor = (BYTE)m_dwColorRobot;
+			m_bColor = bColor;
 			wColor = (WORD)(bColor | ((WORD)bColor << 8));
-			m_dwUnk20 = ((DWORD)wColor << 16) | wColor;
+			m_dwColor4 = ((DWORD)wColor << 16) | wColor;
 		}
-		pPt2 = (POINT*)&pPlayer->m_dwUnk016C;
-		pPt1 = (POINT*)&pPlayer->m_dwUnk0164;
-		pPt3 = (POINT*)&pPlayer->m_dwUnk0174;
-		Sub_401980(pPt1->x, pPt1->y, pPt2->x, pPt2->y);
-		Sub_401980(pPt2->x, pPt2->y, pPt3->x, pPt3->y);
-		Sub_401980(pPt3->x, pPt3->y, pPt1->x, pPt1->y);
+		pPt2 = &pPlayer->m_aptMapTri[1];
+		pPt1 = &pPlayer->m_aptMapTri[0];
+		pPt3 = &pPlayer->m_aptMapTri[2];
+		DrawLine(pPt1->x, pPt1->y, pPt2->x, pPt2->y);
+		DrawLine(pPt2->x, pPt2->y, pPt3->x, pPt3->y);
+		DrawLine(pPt3->x, pPt3->y, pPt1->x, pPt1->y);
 		return;
 	}
 }
 
-// Bresenham line into the pixel bits, clipped by Sub_401520 and drawn in
-// the current color (m_bUnk1C); y is flipped against m_dwUnk18.
+// Bresenham line into the pixel bits, clipped by ClipEndpoint and drawn in
+// the current color (m_bColor); y is flipped against m_dwBitsHeight.
 
 // hover.exe:0x401980
 // FUNCTION: HOVER 0x401980
-void CSub422F50::Sub_401980(long lX1, long lY1, long lX2, long lY2)
+void CMapRenderer::DrawLine(long lX1, long lY1, long lX2, long lY2)
 {
 	// The two clip calls hand the argument block over as two coordinate
 	// pairs and write the clipped endpoints straight back into it, so
@@ -1426,22 +1455,22 @@ void CSub422F50::Sub_401980(long lX1, long lY1, long lX2, long lY2)
 	BYTE* pDst;
 	BYTE bColor;
 
-	m_dwUnk2C = abs(plA[0] - plB[0]);
-	m_dwUnk30 = abs(plA[1] - plB[1]);
-	if (Sub_401520(plA, plB) == 0)
+	m_dwLineDX = abs(plA[0] - plB[0]);
+	m_dwLineDY = abs(plA[1] - plB[1]);
+	if (ClipEndpoint(plA, plB) == 0)
 		return;
-	if (Sub_401520(plB, plA) == 0)
+	if (ClipEndpoint(plB, plA) == 0)
 		return;
-	plA[1] = m_dwUnk18 - plA[1] - 1;
-	plB[1] = m_dwUnk18 - plB[1] - 1;
+	plA[1] = m_dwBitsHeight - plA[1] - 1;
+	plB[1] = m_dwBitsHeight - plB[1] - 1;
 	lDX = abs(plA[0] - plB[0]);
-	m_dwUnk2C = lDX;
+	m_dwLineDX = lDX;
 	lDY = abs(plA[1] - plB[1]);
-	m_dwUnk30 = lDY;
+	m_dwLineDY = lDY;
 	if (lDX == 0 && lDY == 0)
 		return;
-	lPitch = m_dwUnk24;
-	pDst = m_pUnk10 + lPitch * plA[1] + plA[0];
+	lPitch = m_dwPitch;
+	pDst = m_pBits + lPitch * plA[1] + plA[0];
 	if (lDX > lDY)
 	{
 		lSlope = (lDY << 16) / lDX;
@@ -1449,7 +1478,7 @@ void CSub422F50::Sub_401980(long lX1, long lY1, long lX2, long lY2)
 		if (plB[1] < plA[1])
 			lPitch = -lPitch;
 		lStep = (plB[0] < plA[0]) ? -1 : 1;
-		bColor = m_bUnk1C;
+		bColor = m_bColor;
 		for (i = lDX; i > 0; i--)
 		{
 			lErr += lSlope;
@@ -1470,7 +1499,7 @@ void CSub422F50::Sub_401980(long lX1, long lY1, long lX2, long lY2)
 			lSlope = -lSlope;
 		if (plB[1] < plA[1])
 			lPitch = -lPitch;
-		bColor = m_bUnk1C;
+		bColor = m_bColor;
 		for (i = lDY; i > 0; i--)
 		{
 			lStep = lErr >> 16;
@@ -1486,7 +1515,7 @@ void CSub422F50::Sub_401980(long lX1, long lY1, long lX2, long lY2)
 
 // hover.exe:0x403910
 // FUNCTION: HOVER 0x403910
-void CSub422F50::Sub_403910(long lX, long lY, long /*lUnk*/)
+void CMapRenderer::DrawMarker(long lX, long lY, long /*lUnk*/)
 {
 	register long lYFlip;
 	register BYTE* pBits;
@@ -1496,22 +1525,22 @@ void CSub422F50::Sub_403910(long lX, long lY, long /*lUnk*/)
 	BYTE* pDown;
 	BYTE* pCenter;
 
-	if ((long)m_dwUnk04 + 1 > lY)
+	if (m_rcClip.top + 1 > lY)
 		return;
-	if ((long)m_dwUnk00 + 1 > lX)
+	if (m_rcClip.left + 1 > lX)
 		return;
-	if ((long)m_dwUnk0C - 1 < lY)
+	if (m_rcClip.bottom - 1 < lY)
 		return;
-	if ((long)m_dwUnk08 - 1 < lX)
+	if (m_rcClip.right - 1 < lX)
 		return;
 
-	lYFlip = (long)m_dwUnk18 - lY;
-	pBits = m_pUnk10;
-	lPitch = (long)m_dwUnk24;
+	lYFlip = (long)m_dwBitsHeight - lY;
+	pBits = m_pBits;
+	lPitch = (long)m_dwPitch;
 
 	pUp = pBits + (lYFlip - 2) * lPitch + lX;
 	lYFlip--;
-	bColor = m_bUnk1C;
+	bColor = m_bColor;
 	*pUp = bColor;
 	pDown = pBits + (lYFlip + 1) * lPitch + lX;
 	*pDown = bColor;
@@ -1525,17 +1554,17 @@ void CSub422F50::Sub_403910(long lX, long lY, long /*lUnk*/)
 // clip rectangle, using the other endpoint B (plB) as the reference.  Returns
 // 1 if A is now inside (or on) the rectangle, 0 if the line is completely
 // outside.  The |dx|/|dy| of the line must already be stored in m_dwUnk2C/
-// m_dwUnk30 by the caller (Sub_401980).
+// m_dwUnk30 by the caller (DrawLine).
 
 // hover.exe:0x401520
 // FUNCTION: HOVER 0x401520
-int CSub422F50::Sub_401520(long* plA, long* plB)
+int CMapRenderer::ClipEndpoint(long* plA, long* plB)
 {
 	// The clip bounds are re-read from the object at every comparison in
 	// the original (`cmp eax, [ecx]`); reading them through a volatile
 	// pointer keeps VC from CSE-ing them into two stack slots, which is
 	// what grew our frame from 4 bytes to 0x18 and spilled plB.
-	volatile DWORD* pdwClip = &m_dwUnk00;
+	volatile DWORD* pdwClip = (volatile DWORD*)&m_rcClip.left;
 	volatile long* pB = plB;
 	long lX1 = plA[0];
 	long lTemp;
@@ -1548,7 +1577,7 @@ int CSub422F50::Sub_401520(long* plA, long* plB)
 
 		if (lY1 < (long)pdwClip[1])
 		{
-			if (m_dwUnk2C == 0 || m_dwUnk30 == 0)
+			if (m_dwLineDX == 0 || m_dwLineDY == 0)
 				return 0;
 
 			// Clip A against the top edge first.
@@ -1574,7 +1603,7 @@ int CSub422F50::Sub_401520(long* plA, long* plB)
 		}
 		else if (lY1 > (long)pdwClip[3])
 		{
-			if (m_dwUnk2C == 0 || m_dwUnk30 == 0)
+			if (m_dwLineDX == 0 || m_dwLineDY == 0)
 				return 0;
 
 			// Clip A against the bottom edge first.
@@ -1600,7 +1629,7 @@ int CSub422F50::Sub_401520(long* plA, long* plB)
 		}
 		else
 		{
-			if (m_dwUnk2C == 0)
+			if (m_dwLineDX == 0)
 				return 0;
 
 			lTemp = pB[1] + ((((lY1 - pB[1]) << 16) / (lX1 - pB[0]))
@@ -1619,7 +1648,7 @@ int CSub422F50::Sub_401520(long* plA, long* plB)
 
 		if (lY1 < (long)pdwClip[1])
 		{
-			if (m_dwUnk2C == 0 || m_dwUnk30 == 0)
+			if (m_dwLineDX == 0 || m_dwLineDY == 0)
 				return 0;
 
 			// Clip A against the top edge first.
@@ -1645,7 +1674,7 @@ int CSub422F50::Sub_401520(long* plA, long* plB)
 		}
 		else if (lY1 > (long)pdwClip[3])
 		{
-			if (m_dwUnk2C == 0 || m_dwUnk30 == 0)
+			if (m_dwLineDX == 0 || m_dwLineDY == 0)
 				return 0;
 
 			// Clip A against the bottom edge first.
@@ -1671,7 +1700,7 @@ int CSub422F50::Sub_401520(long* plA, long* plB)
 		}
 		else
 		{
-			if (m_dwUnk2C == 0)
+			if (m_dwLineDX == 0)
 				return 0;
 
 			lTemp = pB[1] + ((((lY1 - pB[1]) << 16) / (lX1 - pB[0]))
@@ -1690,7 +1719,7 @@ int CSub422F50::Sub_401520(long* plA, long* plB)
 
 		if (lY1 < (long)pdwClip[1])
 		{
-			if (m_dwUnk30 == 0)
+			if (m_dwLineDY == 0)
 				return 0;
 
 			lTemp = pB[0] + ((((lX1 - pB[0]) << 16) / (lY1 - pB[1]))
@@ -1704,7 +1733,7 @@ int CSub422F50::Sub_401520(long* plA, long* plB)
 		}
 		else if (lY1 > (long)pdwClip[3])
 		{
-			if (m_dwUnk30 == 0)
+			if (m_dwLineDY == 0)
 				return 0;
 
 			lTemp = pB[0] + ((((lX1 - pB[0]) << 16) / (lY1 - pB[1]))
@@ -1723,7 +1752,7 @@ int CSub422F50::Sub_401520(long* plA, long* plB)
 
 // hover.exe:0x42D3E0
 // FUNCTION: HOVER 0x42d3e0
-void CSub422F50::Sub_42D3E0(CDC* pDC)
+void CMapRenderer::PresentMap(CDC* pDC)
 {
 	CBumperView* pView;
 	long lLeft;
@@ -1735,92 +1764,92 @@ void CSub422F50::Sub_42D3E0(CDC* pDC)
 	long l2Width;
 	long l2Height;
 
-	pView = Hover_sub_401140();
+	pView = Hover_GetView();
 	if (pView == NULL)
 		return;
-	if (pView->m_dwUnk0544 != 0)
+	if (pView->m_bDoubleSize != 0)
 	{
 		// The 2x present doubles the four rectangle values into locals of
 		// their own before deriving the source DC, which is what puts the
 		// doubled values in stack slots in the original.
-		lTop = (long)m_dwUnk60;
-		lHeight = (long)m_dwUnk68 - lTop;
-		lLeft = (long)m_dwUnk5C;
-		lWidth = (long)m_dwUnk64 - lLeft;
+		lTop = m_rcView.top;
+		lHeight = m_rcView.bottom - lTop;
+		lLeft = m_rcView.left;
+		lWidth = m_rcView.right - lLeft;
 		l2Height = lHeight * 2;
 		l2Width = lWidth * 2;
 		l2Top = lTop * 2;
 		l2Left = lLeft * 2;
 		StretchBlt(pDC->m_hDC, l2Left, l2Top, l2Width, l2Height,
-			(m_pUnk0084 == NULL) ? NULL : m_pUnk0084->m_hDC,
+			(m_pMapDC == NULL) ? NULL : m_pMapDC->m_hDC,
 			lLeft, lTop, lWidth, lHeight, SRCCOPY);
 	}
 	else
 	{
-		BitBlt(pDC->m_hDC, m_dwUnk5C, m_dwUnk60, m_dwUnk64 - m_dwUnk5C,
-			m_dwUnk68 - m_dwUnk60,
-			(m_pUnk0084 == NULL) ? NULL : m_pUnk0084->m_hDC,
-			m_dwUnk5C, m_dwUnk60, SRCCOPY);
+		BitBlt(pDC->m_hDC, m_rcView.left, m_rcView.top,
+			m_rcView.right - m_rcView.left, m_rcView.bottom - m_rcView.top,
+			(m_pMapDC == NULL) ? NULL : m_pMapDC->m_hDC,
+			m_rcView.left, m_rcView.top, SRCCOPY);
 	}
 }
 
 
 
 /////////////////////////////////////////////////////////////////////////////
-// CSub422BD0
+// CDigitDisplay
 
 // hover.exe:0x422BD0
 // FUNCTION: HOVER 0x422bd0
-CSub422BD0::CSub422BD0()
+CDigitDisplay::CDigitDisplay()
 {
-	m_dwUnk00 = 0;
-	m_dwUnk04 = 0;
-	m_dwUnk08 = 0;
-	m_pUnk1C = NULL;
-	m_dwUnk0C = 0;
-	m_dwUnk10 = 0;
+	// m_dwUnk00 is left uninitialised, as in hover.exe
+	m_dwDigits = 0;
+	m_dwDisplayValue = 0;
+	m_pStripBits = NULL;
+	m_dwStripWidth = 0;
+	m_dwStripHeight = 0;
 }
 
 // hover.exe:0x422C20
 // FUNCTION: HOVER 0x422c20
-CSub422BD0::~CSub422BD0()
+CDigitDisplay::~CDigitDisplay()
 {
-	::operator delete(m_pUnk1C);
+	::operator delete(m_pStripBits);
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// CSub422C80
+// CSegmentGauge
 
 // hover.exe:0x422C80
 // FUNCTION: HOVER 0x422c80
-CSub422C80::CSub422C80()
+CSegmentGauge::CSegmentGauge()
 {
-	m_dwUnk00 = 0;
-	m_dwUnk04 = 0;
-	m_dwUnk08 = 10;
-	m_dwUnk0C = 10;
-	m_dwUnk10 = 0;
-	m_dwUnk18 = 0;
-	m_dwUnk14 = 0;
-	m_dwUnk2C = 0;
-	m_dwUnk1C = 1;
-	m_dwUnk24 = 0;
+	m_rc.left = 0;
+	m_rc.top = 0;
+	m_rc.right = 10;
+	m_rc.bottom = 10;
+	m_pBrushFilled = 0;
+	m_pPen = 0;
+	m_pBrushEmpty = 0;
+	m_dwSegmentSize = 0;
+	m_dwSegments = 1;
+	m_dwLevel = 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// CSub422C30
+// CFlagStrip
 
 // hover.exe:0x422C30
 // FUNCTION: HOVER 0x422c30
-CSub422C30::CSub422C30()
+CFlagStrip::CFlagStrip()
 {
 	// The original only clears these eight members; m_dwUnk04/08/40/48 and
 	// both source rectangles are left uninitialized here and filled in by
-	// Sub_411BB0/Sub_411CF0 before the element is drawn.  The +0xC/+0x10
+	// LoadIcons/SetPosition before the element is drawn.  The +0xC/+0x10
 	// pair is written through a pointer local (rule 94: lea esi,[this+0xc]).
-	m_dwUnk00 = 1;
+	m_bFlagsDirty = 1;
 	m_dwUnk4C = 0;
-	m_dwUnk44 = 0;
+	m_dwFilled = 0;
 
 	{
 		POINT ptZero;
@@ -1828,32 +1857,32 @@ CSub422C30::CSub422C30()
 		ptZero.x = 0;
 		ptZero.y = 0;
 
-		m_pUnk14 = NULL;
-		m_dwUnk3C = 1;
-		m_pUnk18 = NULL;
+		m_pFullBits = NULL;
+		m_dwSlots = 1;
+		m_pEmptyBits = NULL;
 		*(POINT*)&m_pUnk0C = ptZero;
 	}
 }
 
 // hover.exe:0x422C60
 // FUNCTION: HOVER 0x422c60
-CSub422C30::~CSub422C30()
+CFlagStrip::~CFlagStrip()
 {
-	::operator delete(m_pUnk14);
-	::operator delete(m_pUnk18);
+	::operator delete(m_pFullBits);
+	::operator delete(m_pEmptyBits);
 }
 
-// Draws the dashboard sprite element into the render target.  Sub_411BB0/
-// Sub_411CF0 precompute the destination base pointer (dwDestBits) and the
-// sprite's y-coordinate/extents; this routine then draws m_dwUnk3C iterations,
+// Draws the dashboard sprite element into the render target.  LoadIcons/
+// SetPosition precompute the destination base pointer (dwDestBits) and the
+// sprite's y-coordinate/extents; this routine then draws m_dwSlots iterations,
 // tiling the sprite across the destination: the left edge advances by one
 // sprite width per iteration and the right edge stays one width ahead of it.
-// The first m_dwUnk44 iterations draw from m_pUnk14/m_rcSource1,
-// the rest from m_pUnk18/m_rcSource2.
+// The first m_dwFilled iterations draw from m_pFullBits/m_rcFull,
+// the rest from m_pEmptyBits/m_rcEmpty.
 //
 // hover.exe:0x40E9A0
 // FUNCTION: HOVER 0x40e9a0
-void CSub422C30::Sub_40E9A0(DWORD dwDestBits, DWORD dwX, DWORD dwY)
+void CFlagStrip::DrawFlags(BYTE* pDestBits, DWORD dwX, DWORD dwY)
 {
 	struct {
 		long lWidth;
@@ -1865,16 +1894,16 @@ void CSub422C30::Sub_40E9A0(DWORD dwDestBits, DWORD dwX, DWORD dwY)
 	long lW;
 	int i;
 	RECT* pRect1;
-	CSub422C30* pThis;
+	CFlagStrip* pThis;
 
-	pRect1 = &m_rcSource1;
-	s.lWidth = m_rcSource1.right - pRect1->left;
+	pRect1 = &m_rcFull;
+	s.lWidth = m_rcFull.right - pRect1->left;
 	pThis = this;
-	s.lDestY = pThis->m_dwUnk08;
-	s.lDestBottom = pThis->m_rcSource1.bottom - pThis->m_rcSource1.top
+	s.lDestY = pThis->m_dwDestY;
+	s.lDestBottom = pThis->m_rcFull.bottom - pThis->m_rcFull.top
 		+ s.lDestY;
 
-	if ((long)pThis->m_dwUnk3C <= 0)
+	if ((long)pThis->m_dwSlots <= 0)
 		goto done;
 
 	// The running left offset starts at zero and advances by one sprite
@@ -1891,46 +1920,47 @@ void CSub422C30::Sub_40E9A0(DWORD dwDestBits, DWORD dwX, DWORD dwY)
 		BYTE* pSrc;
 		RECT* pSrcRect;
 
-		lX = pThis->m_dwUnk04 + s.lOffsetX;
-		::SetRect(&s.rcDest, lX, s.lDestY, pThis->m_dwUnk04 + lW,
+		lX = pThis->m_dwDestX + s.lOffsetX;
+		::SetRect(&s.rcDest, lX, s.lDestY, pThis->m_dwDestX + lW,
 			s.lDestBottom);
 
-		if ((int)pThis->m_dwUnk44 >= i + 1)
+		if ((int)pThis->m_dwFilled >= i + 1)
 		{
-			pSrc = (BYTE*)pThis->m_pUnk14;
+			pSrc = (BYTE*)pThis->m_pFullBits;
 			pSrcRect = pRect1;
 		}
 		else
 		{
-			pSrc = (BYTE*)pThis->m_pUnk18;
-			pSrcRect = &pThis->m_rcSource2;
+			pSrc = (BYTE*)pThis->m_pEmptyBits;
+			pSrcRect = &pThis->m_rcEmpty;
 		}
 
-		Hover_sub_40E730(
+		Hover_BlitRect(
 			pSrcRect->left, pSrcRect->top, pSrcRect->right, pSrcRect->bottom,
 			(long)pThis->m_pUnk0C, (long)pThis->m_pUnk10,
 			s.rcDest.left, s.lDestY, s.rcDest.right, s.rcDest.bottom,
 			dwX, dwY,
-			pSrc, (BYTE*)dwDestBits, 1);
+			pSrc, pDestBits, 1);
 
 		i++;
 		lW += s.lWidth;
 		s.lOffsetX += s.lWidth;
 	}
-	while (i < (int)pThis->m_dwUnk3C);
+	while (i < (int)pThis->m_dwSlots);
 
 done:
-	pThis->m_dwUnk00 = 0;
+	pThis->m_bFlagsDirty = 0;
 }
 
-// Draws the decimal value stored in m_dwUnk08 as a right-aligned string of
-// m_dwUnk04 digits into the render target.  Each digit is taken from the
-// source tile bitmap at m_pUnk1C (ten tiles of size m_dwUnk14 x m_dwUnk18
-// laid out horizontally) and blitted through Hover_sub_40E730.
+// Draws the decimal value stored in m_dwDisplayValue as a right-aligned
+// string of m_dwDigits digits into the render target.  Each digit is taken
+// from the source tile bitmap at m_pStripBits (ten tiles of size
+// m_dwDigitWidth x m_dwDigitHeight laid out horizontally) and blitted
+// through Hover_BlitRect.
 
 // hover.exe:0x40FCE0
 // FUNCTION: HOVER 0x40fce0
-void CSub422BD0::Sub_40FCE0(DWORD dwUnkHdc, DWORD dwX, DWORD dwY)
+void CDigitDisplay::DrawDigits(BYTE* pDestBits, DWORD dwX, DWORD dwY)
 {
 	long lValue;
 	int nTop;
@@ -1941,45 +1971,45 @@ void CSub422BD0::Sub_40FCE0(DWORD dwUnkHdc, DWORD dwX, DWORD dwY)
 	int nDigit;
 	DWORD* pdwOrigin;
 
-	nTop = (int)m_dwUnk24;
-	nBottom = (int)m_dwUnk18 + nTop;
-	lValue = (long)m_dwUnk08;
-	nIndex = (int)m_dwUnk04 - 1;
+	nTop = (int)m_dwDestY;
+	nBottom = (int)m_dwDigitHeight + nTop;
+	lValue = (long)m_dwDisplayValue;
+	nIndex = (int)m_dwDigits - 1;
 
 	if (nIndex < 0)
 		goto Done;
 
 	// The origin pair is read through a pointer local (rule 94).
-	pdwOrigin = &m_dwUnk0C;
+	pdwOrigin = &m_dwStripWidth;
 
 	do
 	{
 		int nSrcLeft;
 
 		nDigit = (int)(lValue % 10);
-		nSrcLeft = nDigit * (int)m_dwUnk14;
+		nSrcLeft = nDigit * (int)m_dwDigitWidth;
 
 		::SetRect(&rcSrc,
 			nSrcLeft,
 			0,
-			nSrcLeft + (int)m_dwUnk14,
-			(int)m_dwUnk18);
+			nSrcLeft + (int)m_dwDigitWidth,
+			(int)m_dwDigitHeight);
 
 		::SetRect(&rcDst,
-			(int)m_dwUnk20 + nIndex * (int)m_dwUnk14,
+			(int)m_dwDestX + nIndex * (int)m_dwDigitWidth,
 			nTop,
-			(int)m_dwUnk20 + (nIndex + 1) * (int)m_dwUnk14,
+			(int)m_dwDestX + (nIndex + 1) * (int)m_dwDigitWidth,
 			nBottom);
 
-		Hover_sub_40E730(
+		Hover_BlitRect(
 			(long)rcSrc.left, (long)rcSrc.top,
 			(long)rcSrc.right, (long)rcSrc.bottom,
 			(long)pdwOrigin[0], (long)pdwOrigin[1],
 			(long)rcDst.left, (long)rcDst.top,
 			(long)rcDst.right, (long)rcDst.bottom,
 			(long)dwX, (long)dwY,
-			(BYTE*)m_pUnk1C,
-			(BYTE*)dwUnkHdc,
+			m_pStripBits,
+			pDestBits,
 			1);
 
 		lValue /= 10;
@@ -1987,22 +2017,21 @@ void CSub422BD0::Sub_40FCE0(DWORD dwUnkHdc, DWORD dwX, DWORD dwY)
 	} while (nIndex >= 0);
 
 Done:
-	m_dwUnk00 = 0;
+	m_bDigitsDirty = 0;
 }
 
 // Draws the gauge into pDC as a series of rectangles. The gauge is laid out
-// from m_dwUnk00/m_dwUnk04 with m_dwUnk08/m_dwUnk0C extents; m_dwUnk20 selects
-// horizontal (non-zero) or vertical (zero) orientation. Each segment is
-// m_dwUnk2C units wide/tall. Segments m_dwUnk24..m_dwUnk1C-1 are filled with
-// the active brush m_dwUnk14, the earlier ones with the inactive brush
-// m_dwUnk10, using the outline pen m_dwUnk18 for all segments. When bUnk is
-// zero the loop stops at max(m_dwUnk24, m_dwUnk28) to redraw only the changed
-// range. Coordinates are doubled when the view is in stretch mode and pDC is
-// not the offscreen DC.
+// in m_rc; m_bHorizontal selects horizontal (non-zero) or vertical (zero)
+// orientation. Each segment is m_dwSegmentSize units wide/tall. Segments
+// m_dwLevel..m_dwSegments-1 are filled with m_pBrushEmpty, the earlier
+// ones with m_pBrushFilled, using the outline pen m_pPen for all segments.
+// When bUnk is zero the loop stops at max(m_dwLevel, m_dwLastLevel) to
+// redraw only the changed range. Coordinates are doubled when the view is
+// in stretch mode and pDC is not the offscreen DC.
 //
 // hover.exe:0x401AD0
 // FUNCTION: HOVER 0x401ad0
-void CSub422C80::Sub_401AD0(CDC* pDC, int bUnk)
+void CSegmentGauge::DrawGauge(CDC* pDC, int bUnk)
 {
 	int nMax;
 	int nLeft;
@@ -2011,39 +2040,39 @@ void CSub422C80::Sub_401AD0(CDC* pDC, int bUnk)
 	int nRight;
 	int i;
 
-	nMax = ((int)m_dwUnk28 > (int)m_dwUnk24) ? (int)m_dwUnk28 : (int)m_dwUnk24;
-	m_dwUnk28 = m_dwUnk24;
+	nMax = ((int)m_dwLastLevel > (int)m_dwLevel) ? (int)m_dwLastLevel : (int)m_dwLevel;
+	m_dwLastLevel = m_dwLevel;
 
-	nLeft = m_dwUnk00;
-	nBottom = m_dwUnk0C;
-	nTop = m_dwUnk04;
-	nRight = m_dwUnk08;
+	nLeft = m_rc.left;
+	nBottom = m_rc.bottom;
+	nTop = m_rc.top;
+	nRight = m_rc.right;
 
 	pDC->SaveDC();
 
-	pDC->SelectObject((CPen*)m_dwUnk18);
-	pDC->SelectObject((CBrush*)m_dwUnk10);
+	pDC->SelectObject(m_pPen);
+	pDC->SelectObject(m_pBrushFilled);
 
-	for (i = 0; i < (int)m_dwUnk1C; i++)
+	for (i = 0; i < (int)m_dwSegments; i++)
 	{
 		if (bUnk == 0 && i > nMax)
 			break;
 
-		if (m_dwUnk20 != 0)
+		if (m_bHorizontal != 0)
 		{
-			nRight = nLeft + (int)m_dwUnk2C;
+			nRight = nLeft + (int)m_dwSegmentSize;
 		}
 		else
 		{
-			nTop = nBottom - (int)m_dwUnk2C;
+			nTop = nBottom - (int)m_dwSegmentSize;
 		}
 
-		pDC->SelectObject(((int)m_dwUnk24 <= i)
-			? (CBrush*)m_dwUnk14
-			: (CBrush*)m_dwUnk10);
+		pDC->SelectObject(((int)m_dwLevel <= i)
+			? m_pBrushEmpty
+			: m_pBrushFilled);
 
-		if (Hover_sub_401140()->m_dwUnk0544 != 0
-			&& pDC != &Hover_sub_401140()->m_dcUnk00B4)
+		if (Hover_GetView()->m_bDoubleSize != 0
+			&& pDC != &Hover_GetView()->m_dcOffscreen)
 		{
 			::Rectangle(pDC->m_hDC,
 				nLeft * 2, nTop * 2, nRight * 2, nBottom * 2);
@@ -2054,7 +2083,7 @@ void CSub422C80::Sub_401AD0(CDC* pDC, int bUnk)
 				nLeft, nTop, nRight, nBottom);
 		}
 
-		if (m_dwUnk20 != 0)
+		if (m_bHorizontal != 0)
 			nLeft = nRight;
 		else
 			nBottom = nTop;
@@ -2065,27 +2094,29 @@ void CSub422C80::Sub_401AD0(CDC* pDC, int bUnk)
 
 // Stores the gauge's rendering parameters: segment count, inactive brush,
 // outline pen and active brush. The original keeps these as raw DWORDs that
-// are later cast back to CGdiObject-derived pointers by Sub_401AD0.
+// are later cast back to CGdiObject-derived pointers by DrawGauge.
 // hover.exe:0x411D60
 // FUNCTION: HOVER 0x411d60
-void CSub422C80::Sub_411D60(DWORD dwA, DWORD dwB, DWORD dwC, DWORD dwD)
+void CSegmentGauge::SetStyle(DWORD dwSegments, CBrush* pBrushFilled, CPen* pPen,
+	CBrush* pBrushEmpty)
 {
-	m_dwUnk10 = dwB;
-	m_dwUnk18 = dwC;
-	m_dwUnk14 = dwD;
-	m_dwUnk1C = dwA;
+	m_pBrushFilled = pBrushFilled;
+	m_pPen = pPen;
+	m_pBrushEmpty = pBrushEmpty;
+	m_dwSegments = dwSegments;
 }
 
 // Sets up a dashboard number element. The source bitmap pBits is dwA x dwB.
 // pRect points to the first of ten contiguous RECTs that describe the digit
 // tiles 0..9 in pBits; the first rect's left/top gives the strip origin and
 // the tenth rect's right/bottom gives the far end. A buffer large enough for
-// ten tiles laid out horizontally is allocated at m_pUnk1C; m_dwUnk14/18 hold
-// the tile size and m_dwUnk0C/10 hold the buffer dimensions.
+// ten tiles laid out horizontally is allocated at m_pStripBits;
+// m_dwDigitWidth/m_dwDigitHeight hold the tile size and
+// m_dwStripWidth/m_dwStripHeight hold the buffer dimensions.
 
 // hover.exe:0x411A00
 // FUNCTION: HOVER 0x411a00
-void CSub422BD0::Sub_411A00(int nFlag, const RECT* pRect, BYTE* pBits,
+void CDigitDisplay::LoadDigits(int nFlag, const RECT* pRect, BYTE* pBits,
 	DWORD dwA, DWORD dwB)
 {
 	int nWidth;
@@ -2101,27 +2132,27 @@ void CSub422BD0::Sub_411A00(int nFlag, const RECT* pRect, BYTE* pBits,
 	volatile DWORD dwPitch;
 	volatile DWORD dwHeight;
 
-	::operator delete(m_pUnk1C);
+	::operator delete(m_pStripBits);
 
-	m_dwUnk00 = 1;
-	m_dwUnk04 = nFlag;
+	m_bDigitsDirty = 1;
+	m_dwDigits = nFlag;
 
 	nWidth = pRect->right - pRect->left;
 	nHeight = pRect->bottom - pRect->top;
 
-	pUnk0C = &m_dwUnk0C;
+	pUnk0C = &m_dwStripWidth;
 
-	m_dwUnk14 = nWidth;
-	m_dwUnk18 = nHeight;
+	m_dwDigitWidth = nWidth;
+	m_dwDigitHeight = nHeight;
 
 	nPitch = nWidth * 10;
 	*pUnk0C = nPitch;
 	if (nPitch % 2 != 0)
 		nPitch++;
 	*pUnk0C = nPitch;
-	m_dwUnk10 = nHeight;
+	m_dwStripHeight = nHeight;
 
-	m_pUnk1C = ::operator new((*pUnk0C) * nHeight);
+	m_pStripBits = (BYTE*)::operator new((*pUnk0C) * nHeight);
 
 	dwLeft = pRect->left;
 	dwTop = pRect->top;
@@ -2130,9 +2161,9 @@ void CSub422BD0::Sub_411A00(int nFlag, const RECT* pRect, BYTE* pBits,
 	dwZero1 = 0;
 	dwZero2 = 0;
 	dwPitch = pUnk0C[0];
-	dwHeight = m_dwUnk10;
+	dwHeight = m_dwStripHeight;
 
-	Hover_sub_40E730(
+	Hover_BlitRect(
 		(long)dwLeft,
 		(long)dwTop,
 		(long)dwRight9,
@@ -2146,42 +2177,41 @@ void CSub422BD0::Sub_411A00(int nFlag, const RECT* pRect, BYTE* pBits,
 		(long)pUnk0C[0],
 		(long)pUnk0C[1],
 		pBits,
-		(BYTE*)m_pUnk1C,
+		m_pStripBits,
 		1);
 
-	m_dwUnk20 = 0;
-	m_dwUnk24 = 0;
+	m_dwDestX = 0;
+	m_dwDestY = 0;
 }
 
-// Copies the first two fields of pRect (left/top) into the destination
-// point stored at +0x20.  The right/bottom fields are not used.
+// Copies pPoint into the destination point stored at +0x20.
 // hover.exe:0x411920
 // FUNCTION: HOVER 0x411920
-void CSub422BD0::Sub_411920(const RECT* pRect)
+void CDigitDisplay::SetPosition(const POINT* pPoint)
 {
-	m_dwUnk20 = pRect->left;
-	m_dwUnk24 = pRect->top;
+	m_dwDestX = pPoint->x;
+	m_dwDestY = pPoint->y;
 }
 
 // hover.exe:0x411BB0
 // FUNCTION: HOVER 0x411bb0
-void CSub422C30::Sub_411BB0(DWORD dwUnk, DWORD dwLeft1, DWORD dwTop1,
+void CFlagStrip::LoadIcons(DWORD dwUnk, DWORD dwLeft1, DWORD dwTop1,
 	DWORD dwRight1, DWORD dwBottom1, DWORD dwLeft2, DWORD dwTop2,
 	DWORD dwRight2, DWORD dwBottom2, BYTE* pBits, DWORD dwWidth, DWORD dwHeight)
 {
-	RECT* pSource1 = &m_rcSource1;
+	RECT* pSource1 = &m_rcFull;
 	DWORD* pUnk0C = (DWORD*)&m_pUnk0C;
 	long nRounded;
 
-	m_dwUnk3C = dwUnk;
+	m_dwSlots = dwUnk;
 	*pUnk0C = dwRight1 - dwLeft1;
 	m_pUnk10 = (void*)(dwBottom1 - dwTop1);
 
 	::SetRect(pSource1, 0, 0, (int)*pUnk0C, (int)m_pUnk10);
-	::SetRect(&m_rcSource2, 0, 0, (int)*pUnk0C, (int)m_pUnk10);
+	::SetRect(&m_rcEmpty, 0, 0, (int)*pUnk0C, (int)m_pUnk10);
 
-	::operator delete(m_pUnk14);
-	::operator delete(m_pUnk18);
+	::operator delete(m_pFullBits);
+	::operator delete(m_pEmptyBits);
 
 	// The tile pitch is rounded up to an even number with the signed
 	// remainder idiom (cdq / xor / sub / and 1 / xor / sub).
@@ -2189,99 +2219,99 @@ void CSub422C30::Sub_411BB0(DWORD dwUnk, DWORD dwLeft1, DWORD dwTop1,
 	if (nRounded % 2 != 0)
 		nRounded++;
 
-	m_pUnk14 = ::operator new((DWORD)m_pUnk10 * nRounded);
-	m_pUnk18 = ::operator new((DWORD)m_pUnk10 * nRounded);
+	m_pFullBits = ::operator new((DWORD)m_pUnk10 * nRounded);
+	m_pEmptyBits = ::operator new((DWORD)m_pUnk10 * nRounded);
 
-	Hover_sub_40E730(
+	Hover_BlitRect(
 		(long)dwLeft1, (long)dwTop1, (long)dwRight1, (long)dwBottom1,
 		(long)dwWidth, (long)dwHeight,
 		(long)pSource1->left, (long)pSource1->top,
 		(long)pSource1->right, (long)pSource1->bottom,
 		(long)pUnk0C[0], (long)pUnk0C[1],
-		pBits, (BYTE*)m_pUnk14, 1);
+		pBits, (BYTE*)m_pFullBits, 1);
 
 	{
-		RECT* pSource2 = &m_rcSource2;
+		RECT* pSource2 = &m_rcEmpty;
 
-		Hover_sub_40E730(
+		Hover_BlitRect(
 			(long)dwLeft2, (long)dwTop2, (long)dwRight2, (long)dwBottom2,
 			(long)dwWidth, (long)dwHeight,
 			(long)pSource2->left, (long)pSource2->top,
 			(long)pSource2->right, (long)pSource2->bottom,
 			(long)pUnk0C[0], (long)pUnk0C[1],
-			pBits, (BYTE*)m_pUnk18, 1);
+			pBits, (BYTE*)m_pEmptyBits, 1);
 	}
 
 	{
-		DWORD* pUnk04 = &m_dwUnk04;
+		DWORD* pUnk04 = &m_dwDestX;
 
 		pUnk04[0] = 0;
 		pUnk04[1] = 0;
 	}
 }
 
-// Stores the top-left corner of pRect in the destination position fields
-// (+0x04 and +0x08) used by Sub_40E9A0.
+// Stores pPoint in the destination position fields (+0x04 and +0x08)
+// used by DrawFlags.
 //
 // hover.exe:0x411CF0
 // FUNCTION: HOVER 0x411cf0
-void CSub422C30::Sub_411CF0(const RECT* pRect)
+void CFlagStrip::SetPosition(const POINT* pPoint)
 {
-	m_dwUnk04 = pRect->left;
-	m_dwUnk08 = pRect->top;
+	m_dwDestX = pPoint->x;
+	m_dwDestY = pPoint->y;
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// CSub406C90
+// CFlatRunHeap
 
-// FUNCTION: CSub406C90::~CSub406C90
+// FUNCTION: CFlatRunHeap::~CFlatRunHeap
 // hover.exe:0x41B8C0
 // FUNCTION: HOVER 0x41b8c0
-CSub406C90::~CSub406C90()
+CFlatRunHeap::~CFlatRunHeap()
 {
-	::operator delete(m_pUnk18);
+	::operator delete(m_pHeapBase);
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// CSub406090
+// CSpanRasterizer
 
-// FUNCTION: CSub406090::CSub406090
+// FUNCTION: CSpanRasterizer::CSpanRasterizer
 // hover.exe:0x4191B0
 // FUNCTION: HOVER 0x4191b0
-CSub406090::CSub406090(int nWidth, int nHeight, DWORD dwPalArg)
+CSpanRasterizer::CSpanRasterizer(int nWidth, int nHeight, CMerlinWorld* pWorld)
 {
 	m_dwWidth = (DWORD)nWidth & ~3;
 	m_dwHeight = (DWORD)nHeight;
-	Sub_419440(&g_paletteUnk_4A1D50);
+	CreateTargetDIB(&g_palGame);
 	m_dwNegWidth = (DWORD)-(long)m_dwWidth;
-	m_dwUnk1C = (DWORD)-1;
-	m_dwUnk24 = 1;
-	m_pUnk00 = new CSub406C90(this);
-	m_pUnk3C = NULL;
-	m_pUnk40 = NULL;
-	m_pUnk44 = NULL;
-	Sub_4192F0(dwPalArg);
+	m_dwRowDir = (DWORD)-1;
+	m_bMipMapping = 1;
+	m_pRunHeap = new CFlatRunHeap(this);
+	m_pLinkPool = NULL;
+	m_pColumnLists = NULL;
+	m_pRenderObjPool = NULL;
+	AllocBuffers(pWorld);
 }
 
-// FUNCTION: CSub406090::~CSub406090
+// FUNCTION: CSpanRasterizer::~CSpanRasterizer
 // hover.exe:0x4193A0
 // FUNCTION: HOVER 0x4193a0
-CSub406090::~CSub406090()
+CSpanRasterizer::~CSpanRasterizer()
 {
-	delete m_pUnk00;
-	::operator delete(m_pUnk3C);
-	::operator delete(m_pUnk40);
-	::operator delete(m_pUnk44);
+	delete m_pRunHeap;
+	::operator delete(m_pLinkPool);
+	::operator delete(m_pColumnLists);
+	::operator delete(m_pRenderObjPool);
 }
 
 // Creates an 8-bpp bottom-up DIB section sized to m_dwWidth/m_dwHeight,
 // attaches it to m_bitmap and stores the pixel bits pointer in m_dwUnk04.
 // The palette is copied into the BITMAPINFO color table in the same shifted
-// RGBA order used by CSub423030::Sub_411D80.
+// RGBA order used by CVelocityIndicator::CreateTile.
 
 // hover.exe:0x419440
 // FUNCTION: HOVER 0x419440
-void CSub406090::Sub_419440(CPalette* pPalette)
+void CSpanRasterizer::CreateTargetDIB(CPalette* pPalette)
 {
 	BITMAPINFO* pBmi;
 	PALETTEENTRY apePalette[256];
@@ -2292,7 +2322,7 @@ void CSub406090::Sub_419440(CPalette* pPalette)
 
 	hScreenDC = ::GetDC(NULL);
 
-	pBmi = (BITMAPINFO*)::operator new(0x428);
+	pBmi = (BITMAPINFO*)::operator new(BMI8_SIZE);
 	pBmi->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
 	pBmi->bmiHeader.biPlanes = 1;
 	pBmi->bmiHeader.biWidth = m_dwWidth;
@@ -2331,7 +2361,7 @@ void CSub406090::Sub_419440(CPalette* pPalette)
 		hScreenDC,
 		pBmi,
 		DIB_RGB_COLORS,
-		(void**)&m_dwUnk04,
+		(void**)&m_pBits,
 		NULL,
 		0);
 	m_bitmap.Attach(hBitmap);
@@ -2340,40 +2370,41 @@ void CSub406090::Sub_419440(CPalette* pPalette)
 	::operator delete(pBmi);
 }
 
-// Trivial constructor for the 0xC0-byte span entries allocated by
-// CSub406090::Sub_4192F0. The original calls this once per entry in a loop.
+// Empty constructor for the render objects allocated by
+// CSpanRasterizer::AllocBuffers. The original calls it once per object in a
+// loop.
 
 // hover.exe:0x419520
 // FUNCTION: HOVER 0x419520
-CSub419520::CSub419520()
+tagRENDEROBJ::tagRENDEROBJ()
 {
 }
 
 // Allocate (or reallocate) the three span buffers owned by the render target.
-// dwPalArg is the doc's CMerlinWorld world manager; the count of 0xC0-byte
+// pWorld is the doc's CMerlinWorld; the count of 0xC0-byte
 // entries is taken from the DWORD at offset 0x58 of that object.
 
 // hover.exe:0x4192F0
 // FUNCTION: HOVER 0x4192f0
-void CSub406090::Sub_4192F0(DWORD dwPalArg)
+void CSpanRasterizer::AllocBuffers(CMerlinWorld* pWorld)
 {
 	DWORD dwCount;
 	DWORD dwSize;
-	CSub419520* pEntry;
-	CSub419520* pAllocated;
+	RENDEROBJ* pEntry;
+	RENDEROBJ* pAllocated;
 
-	::operator delete(m_pUnk3C);
-	::operator delete(m_pUnk40);
-	::operator delete(m_pUnk44);
+	::operator delete(m_pLinkPool);
+	::operator delete(m_pColumnLists);
+	::operator delete(m_pRenderObjPool);
 
-	dwSize = ((((DWORD*)dwPalArg)[0x58 / 4] + 0x64) << 4) * 3;
-	m_pUnk3C = (DWORD*)::operator new(dwSize);
+	dwSize = (((DWORD)pWorld->m_arrNodes.GetSize() + 0x64) << 4) * 3;
+	m_pLinkPool = (SPANLINK*)::operator new(dwSize);
 
-	m_pUnk40 = (DWORD*)::operator new(m_dwWidth * 4);
+	m_pColumnLists = (SPANLINK**)::operator new(m_dwWidth * sizeof(SPANLINK*));
 
-	dwCount = ((DWORD*)dwPalArg)[0x58 / 4] + 0x64;
+	dwCount = (DWORD)pWorld->m_arrNodes.GetSize() + 0x64;
 	dwSize = (dwCount << 6) * 3;
-	pAllocated = (CSub419520*)::operator new(dwSize);
+	pAllocated = (RENDEROBJ*)::operator new(dwSize);
 
 	if (pAllocated != NULL)
 	{
@@ -2387,75 +2418,76 @@ void CSub406090::Sub_4192F0(DWORD dwPalArg)
 			{
 				// An explicit constructor call, not placement new: the
 				// original has no null test around it.
-				pEntry->CSub419520::CSub419520();
-				pEntry = (CSub419520*)((BYTE*)pEntry + 0xC0);
+				pEntry->tagRENDEROBJ::tagRENDEROBJ();
+				pEntry++;
 				lCount--;
 			} while (lCount >= 0);
 		}
-		m_pUnk44 = (DWORD*)pAllocated;
+		m_pRenderObjPool = pAllocated;
 	}
 	else
 	{
-		m_pUnk44 = NULL;
+		m_pRenderObjPool = NULL;
 	}
 }
 
-// FUNCTION: CSub406C90::CSub406C90
+// FUNCTION: CFlatRunHeap::CFlatRunHeap
 // hover.exe:0x41B870
 // FUNCTION: HOVER 0x41B870
-CSub406C90::CSub406C90(CSub406090* pParent)
+CFlatRunHeap::CFlatRunHeap(CSpanRasterizer* pParent)
 {
-	m_pUnk18 = (DWORD*)operator new((pParent->m_dwHeight * 4 + 0x280) * 3 * 5);
-	m_dwUnk00 = pParent->m_dwHeight;
-	m_dwUnk04 = 0;
-	m_dwUnk08 = 0;
-	m_dwUnk0C = 0;
-	m_dwUnk10 = 0;
-	m_dwUnk14 = 0;
-	m_dwUnk1C = (DWORD)m_pUnk18;
+	m_pHeapBase = (BYTE*)operator new((pParent->m_dwHeight * 4 + 0x280) * 3 * 5);
+	m_dwRows = pParent->m_dwHeight;
+	// m_pScratchRuns is left uninitialised, as in hover.exe (ResetHeap sets it)
+	m_pSkyNode = NULL;
+	m_pFlatHead = NULL;
+	m_pFlatTail = NULL;
+	m_dwFlatNodes = 0;
+	m_pHeapCursor = m_pHeapBase;
 }
 
-// Initialize the span-heap header chain in the m_pUnk18 arena: the header
-// node at +0xA0 links the three sub-arenas (+0xCC, +0x16C, +0x20C) and the
-// chain cursor m_dwUnk1C ends past the last one plus m_dwUnk00 word pairs.
+// Reset the arena: the merge scratch buffer sits at its start, the first
+// FLATNODE after it, followed by the node's two word-pair buffers and its
+// m_dwRows-word index array; the cursor ends past them. Every word-pair
+// buffer is 0xA0 bytes (40 pairs).
 // hover.exe:0x406C90
 // FUNCTION: HOVER 0x406c90
-void CSub406C90::Sub_406C90()
+void CFlatRunHeap::ResetHeap()
 {
-	DWORD* pBase = (DWORD*)m_pUnk18;
-	DWORD* pHdr;
-	DWORD* pCursor;
+	BYTE* pBase = m_pHeapBase;
+	FLATNODE* pNode;
+	BYTE* pCursor;
 
-	m_dwUnk1C = (DWORD)pBase;
-	m_dwUnk04 = (DWORD)pBase;
-	m_dwUnk10 = 0;
+	m_pHeapCursor = pBase;
+	m_pScratchRuns = (WORD*)pBase;
+	m_pFlatTail = NULL;
 
-	pCursor = pBase + 0xCC / 4;
-	pHdr = pBase + 0xA0 / 4;
+	pCursor = pBase + 0xA0 + sizeof(FLATNODE);
+	pNode = (FLATNODE*)(pBase + 0xA0);
 
-	m_dwUnk1C = (DWORD)pHdr;
-	m_dwUnk0C = 0;
-	m_dwUnk14 = 0;
-	m_dwUnk08 = (DWORD)pHdr;
+	m_pHeapCursor = (BYTE*)pNode;
+	m_pFlatHead = NULL;
+	m_dwFlatNodes = 0;
+	m_pSkyNode = pNode;
 
-	m_dwUnk1C = (DWORD)pCursor;
-	pHdr[0] = (DWORD)pCursor;
+	m_pHeapCursor = pCursor;
+	pNode->m_pRunsA = (WORD*)pCursor;
 
-	pCursor += 0xA0 / 4;
-	m_dwUnk1C = (DWORD)pCursor;
-	pHdr[1] = (DWORD)pCursor;
-	pHdr[0x28 / 4] = 0;
+	pCursor += 0xA0;
+	m_pHeapCursor = pCursor;
+	pNode->m_pRunsB = (WORD*)pCursor;
+	pNode->m_pNext = NULL;
 
-	pCursor += 0xA0 / 4;
-	pHdr[0x14 / 4] = 0;
-	m_dwUnk1C = (DWORD)pCursor;
-	pHdr[0x10 / 4] = (DWORD)pCursor;
+	pCursor += 0xA0;
+	pNode->m_dwCurRuns = 0;
+	m_pHeapCursor = pCursor;
+	pNode->m_pRowStartCol = (WORD*)pCursor;
 
-	pCursor = (DWORD*)((BYTE*)pCursor + m_dwUnk00 * 2);
-	pHdr[0x18 / 4] = 0;
-	m_dwUnk1C = (DWORD)pCursor;
-	pHdr[2] = (DWORD)pHdr;
-	pHdr[3] = (DWORD)(pHdr + 1);
+	pCursor += m_dwRows * 2;
+	pNode->m_dwPrevRuns = 0;
+	m_pHeapCursor = pCursor;
+	pNode->m_ppPrevRuns = &pNode->m_pRunsA;
+	pNode->m_ppCurRuns = &pNode->m_pRunsB;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -2477,9 +2509,11 @@ typedef union tagBUMPFIXED
 
 // Remaps an 8-bpp bitmap's indices to the nearest entries in pPalette and
 // overwrites the bitmap's color table with the palette entries.
+// Original bug: biClrUsed is not clamped, so a header claiming more than
+// 256 colors overruns aRemap (and pColors/pEntries) on the stack.
 // hover.exe:0x410CE0
 // FUNCTION: HOVER 0x410ce0
-BOOL Hover_sub_410CE0(BYTE* pCopy, BYTE* pBits, CPalette* pPalette)
+BOOL Hover_RemapDibToPalette(BYTE* pCopy, BYTE* pBits, CPalette* pPalette)
 {
 	CPalette palUnused;
 	LOGPALETTE* pLogPal;
@@ -2495,7 +2529,7 @@ BOOL Hover_sub_410CE0(BYTE* pCopy, BYTE* pBits, CPalette* pPalette)
 	if (((BITMAPINFOHEADER*)pCopy)->biCompression != 0)
 		return FALSE;
 
-	pLogPal = (LOGPALETTE*)::operator new(0x408);
+	pLogPal = (LOGPALETTE*)::operator new(LOGPAL256_SIZE);
 	pLogPal->palVersion = 0x300;
 	pLogPal->palNumEntries = 0x100;
 
@@ -2512,7 +2546,7 @@ BOOL Hover_sub_410CE0(BYTE* pCopy, BYTE* pBits, CPalette* pPalette)
 	{
 		dwColor = RGB(pColors[i].rgbRed, pColors[i].rgbGreen,
 			pColors[i].rgbBlue);
-		aRemap[i] = (BYTE)Hover_sub_413730(dwColor, (BYTE*)pEntries);
+		aRemap[i] = (BYTE)Hover_NearestPaletteIndex(dwColor, (BYTE*)pEntries);
 	}
 
 	{
@@ -2567,7 +2601,7 @@ BOOL Hover_sub_410CE0(BYTE* pCopy, BYTE* pBits, CPalette* pPalette)
 // positive.  See notes/perfect-match.md rule 13.
 // hover.exe:0x411770
 // FUNCTION: HOVER 0x411770
-void Hover_sub_411770(int nSrcLeft, int nSrcTop, int nSrcRight,
+void Hover_TransparentBlt8(int nSrcLeft, int nSrcTop, int nSrcRight,
 	int nSrcBottom, int nSrcWidth, int nSrcHeight, int nDstLeft, int nDstTop,
 	int nDstRight, int nDstBottom, int nDstWidth, int nDstHeight,
 	BYTE* pSrcBits, BYTE* pDstBits, int nTransparent)
@@ -2640,11 +2674,22 @@ void Hover_sub_411770(int nSrcLeft, int nSrcTop, int nSrcRight,
 
 // MFC-style FindResource wrapper used by the dashboard bitmap loader.
 // hover.exe:0x453352
+// MFC's internal afxData (AFXIMPL.H AUX_DATA); only nWinVer (+0x74) and
+// bWin32s (+0x78) are read here, so the type stays incomplete.
+struct AUX_DATA;
+extern AUX_DATA afxData;
+
+// This is MFC 3.1's AfxFindResource (WINUTIL.CPP): Windows NT 3.1 could
+// return a handle with the high bit set, which MFC treats as "not found".
 // FUNCTION: HOVER 0x453352
-HRSRC __stdcall Hover_sub_453352(HINSTANCE hInst, LPCSTR lpName,
+HRSRC __stdcall Hover_FindResource(HINSTANCE hInst, LPCSTR lpName,
 	LPCSTR lpType)
 {
-	return ::FindResourceA(hInst, lpName, lpType);
+	HRSRC hResource = ::FindResourceA(hInst, lpName, lpType);
+	if (((BOOL*)&afxData)[0x78 / 4] == 0 && ((UINT*)&afxData)[0x74 / 4] < 0x332 &&
+		((DWORD)hResource & 0x80000000) != 0)
+		hResource = NULL;
+	return hResource;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -2654,48 +2699,48 @@ HRSRC __stdcall Hover_sub_453352(HINSTANCE hInst, LPCSTR lpName,
 // FUNCTION: HOVER 0x41e730
 CBumperView::CBumperView()
 {
-	// m_dwUnk00A4/m_dwUnk00A8 are zeroed by the original before the
-	// embedded object constructors run (member initializer list)
-	m_dwUnk00A4 = 0;
-	m_dwUnk00A8 = 0;
-	m_dwUnk003C = 0;
-	m_dwUnk0048 = 0;
-	m_pUnk00C8 = 0;
-	m_pUnk00CC = 0;
-	m_pUnk00D0 = 0;
-	m_dwUnk0040 = 0;
+	// m_dwRequestedWidth/m_dwRequestedHeight are zeroed by the original
+	// before the embedded object constructors run (member initializer list)
+	m_dwRequestedWidth = 0;
+	m_dwRequestedHeight = 0;
+	m_dwKeySeqPos = 0;
+	m_hEvtCommand = 0;
+	m_pViewCtx = 0;
+	m_pMirrorCtx = 0;
+	m_pRasterizer = 0;
+	m_pRenderThread = 0;
 	m_dwUnk0044 = 0;
-	m_dwUnk0034 = 1;
-	m_dwUnk00E4 = g_adwUnk_4C4CC8[theApp.m_dwUnk01C4];
+	m_bCursorShown = 1;
+	m_dwDrawerMode = g_adwDrawerModeForDetail[theApp.m_dwSpeedDetail];
 	m_dwUnk0518 = 0;
 	m_dwUnk051C = 0;
 	m_dwUnk0520 = 0;
 	m_dwUnk0524 = 0;
-	m_dwUnk021C = 0;
-	m_dwUnk0080 = 0;
-	Hover_sub_41F540();
-	m_dwUnk0540 = 0;
-	m_dwUnk0544 = 0;
-	m_dwUnk0084 = 0;
+	m_bSmokeBlind = 0;
+	m_bNeedRepaint = 0;
+	Hover_InitZones();
+	m_bFullMap = 0;
+	m_bDoubleSize = 0;
+	m_bInitialized = 0;
 	m_dwUnk0064 = 0;
 	m_dwUnk0068 = 0;
-	m_dwUnk006C = 0;
-	m_dwUnk0070 = 0;
-	m_dwUnk0074 = 0;
-	m_dwUnk0078 = 0;
-	m_dwUnk0504 = 0;
-	m_dwUnk0508 = 0;
-	m_dwUnk050C = 0;
-	m_dwUnk0510 = 0;
-	m_dwUnk0514 = 0;
-	m_dwUnk0500 = 2;
-	m_dwUnk0060 = 0;
-	m_dwUnk00AC = 4;
+	m_bInputLeft = 0;
+	m_bInputRight = 0;
+	m_bInputUp = 0;
+	m_bInputDown = 0;
+	m_dwFlagsLeft = 0;
+	m_dwPointsPerFlag = 0;
+	m_dwFlagBonus = 0;
+	m_dwNextLevel = 0;
+	m_dwLevelBonus = 0;
+	m_dwMessageState = 2;
+	m_dwTimerID = 0;
+	m_dwWorkerCmd = 4;
 }
 
 // Only the renderer's frame-ready event is closed by hand; the render
 // contexts, the offscreen target and the worker thread are released by
-// Sub_41F350 when the window is destroyed. Everything else CBumperView
+// DestroyRenderer when the window is destroyed. Everything else CBumperView
 // owns (the CDC, the offscreen target, the four gauges, the two dials, the
 // two pens, the four brushes and the CView base) is destroyed by the
 // compiler generated member/base destructor calls that follow this body.
@@ -2704,37 +2749,37 @@ CBumperView::CBumperView()
 // FUNCTION: HOVER 0x41e3f0
 CBumperView::~CBumperView()
 {
-	if (m_dwUnk0048 != 0)
-		::CloseHandle((HANDLE)m_dwUnk0048);
+	if (m_hEvtCommand != 0)
+		::CloseHandle(m_hEvtCommand);
 }
 
 // Creates the pens and brushes the dashboard, the message boxes and the
 // map overlay draw with. Any MFC exception raised on the way is reported
-// through Hover_sub_4262B0 (which aborts), so the function still returns
+// through Hover_FatalException (which aborts), so the function still returns
 // TRUE on that path.
 
 // hover.exe:0x41F1C0
 // FUNCTION: HOVER 0x41f1c0
-BOOL CBumperView::Sub_41F1C0()
+BOOL CBumperView::CreateGdiObjects()
 {
 	try
 	{
-		if (!m_pen04D0.CreatePen(PS_SOLID, 1, RGB(0, 0, 0)))
+		if (!m_penBlack.CreatePen(PS_SOLID, 1, RGB(0, 0, 0)))
 			return FALSE;
-		if (!m_pen04D8.CreatePen(PS_SOLID, 1, RGB(255, 255, 0)))
+		if (!m_penYellow.CreatePen(PS_SOLID, 1, RGB(255, 255, 0)))
 			return FALSE;
-		if (!m_brush04E8.CreateSolidBrush(RGB(255, 255, 0)))
+		if (!m_brushYellow.CreateSolidBrush(RGB(255, 255, 0)))
 			return FALSE;
-		if (!m_brush04E0.CreateSolidBrush(RGB(0, 0, 0)))
+		if (!m_brushBlack.CreateSolidBrush(RGB(0, 0, 0)))
 			return FALSE;
-		if (!m_brush04F0.CreateSolidBrush(RGB(0, 255, 114)))
+		if (!m_brushGreen.CreateSolidBrush(RGB(0, 255, 114)))
 			return FALSE;
-		if (!m_brush04F8.CreateSolidBrush(RGB(255, 0, 0)))
+		if (!m_brushRed.CreateSolidBrush(RGB(255, 0, 0)))
 			return FALSE;
 	}
 	catch (CException* e)
 	{
-		Hover_sub_4262B0(e);
+		Hover_FatalException(e);
 	}
 	return TRUE;
 }
@@ -2748,7 +2793,7 @@ BOOL CBumperView::Create(LPCTSTR lpszClassName, LPCTSTR lpszWindowName,
 	DWORD dwStyle, const RECT& rect, CWnd* pParentWnd, UINT nID,
 	CCreateContext* pContext)
 {
-	if (!Sub_41F1C0())
+	if (!CreateGdiObjects())
 		return FALSE;
 	return CWnd::Create(lpszClassName, lpszWindowName, dwStyle, rect,
 		pParentWnd, nID, pContext);
@@ -2765,7 +2810,7 @@ void CBumperView::OnActivateView(BOOL bActivate, CView* pActivateView,
 {
 	CView::OnActivateView(bActivate, pActivateView, pDeactiveView);
 	if (bActivate)
-		((CMainFrame*)AfxGetApp()->m_pMainWnd)->Sub_426CF0();
+		((CMainFrame*)AfxGetApp()->m_pMainWnd)->RealizeGamePalette();
 }
 
 // Per-frame render step: update the camera state from the human player,
@@ -2775,40 +2820,40 @@ void CBumperView::OnActivateView(BOOL bActivate, CView* pActivateView,
 
 // hover.exe:0x402250
 // FUNCTION: HOVER 0x402250
-void CBumperView::Sub_402250()
+void CBumperView::RenderFrame()
 {
 	CBumperDoc* pDoc;
 	DWORD* pdwCam;
 	DWORD* pdwDest;
-	CSub422F50* pScene;
+	CMapRenderer* pScene;
 	DWORD adwCam[2];
 	RECT rc;
 
-	if (m_pUnk00D0 == NULL)
+	if (m_pRasterizer == NULL)
 		return;
 
 	pDoc = (CBumperDoc*)m_pDocument;
 
-	EnterCriticalSection(&theApp.m_csUnk00D4);
-	Hover_sub_406C60();
+	EnterCriticalSection(&theApp.m_csScene);
+	Hover_ReleaseDrawList();
 
-	m_dwUnk00DC = *(DWORD*)((BYTE*)&pDoc->m_humanPlayer + 0x88);
-	pdwCam = pDoc->m_humanPlayer.Sub_406C40(adwCam);
+	m_dwCamAngle = *(DWORD*)((BYTE*)&pDoc->m_humanPlayer + 0x88);
+	pdwCam = pDoc->m_humanPlayer.GetPrevPos(adwCam);
 
 	// The camera pair is written through a pointer local (rule 94).
-	pdwDest = &m_dwUnk00D4;
+	pdwDest = &m_dwCamX;
 	pdwDest[0] = pdwCam[0];
 	pdwDest[1] = pdwCam[1];
 
-	m_dwUnk00E0 = *(DWORD*)((BYTE*)&pDoc->m_humanPlayer + 0x8C) + 0x28;
+	m_dwCamZ = *(DWORD*)((BYTE*)&pDoc->m_humanPlayer + 0x8C) + 0x28;
 
-	pScene = &m_obj0150;
-	pScene->Sub_407160(pDoc);
+	pScene = &m_map;
+	pScene->ProjectScene(pDoc);
 
 	// Gauge/dashboard scaling derived from player +0x1A4 and the gauge
-	// object's m_dwUnk1C. The original forms a signed integer quotient
+	// object's m_dwSegments. The original forms a signed integer quotient
 	// from the word difference, adds 0x288, multiplies by the gauge extent,
-	// and clamps the high word of the product to [0, m_dwUnk1C].
+	// and clamps the high word of the product to [0, m_dwSegments].
 	{
 		BUMPFIXED fx;
 		BUMPFIXED fxOffset;
@@ -2820,10 +2865,10 @@ void CBumperView::Sub_402250()
 
 		fx.s.wFrac = 0;
 		fx.s.sInt = (short)((WORD)(*(DWORD*)((BYTE*)&pDoc->m_humanPlayer
-			+ 0x1A4)) - (WORD)pDoc->m_dwUnk83C4);
-		fx.dw = (DWORD)((long)fx.dw / (long)(short)pDoc->m_dwUnk83CC);
+			+ 0x1A4)) - (WORD)pDoc->m_dwFloorHeight);
+		fx.dw = (DWORD)((long)fx.dw / (long)(short)pDoc->m_dwHeightRange);
 
-		nMax = (long)m_obj03A0.m_dwUnk1C;
+		nMax = (long)m_gaugeAltitude.m_dwSegments;
 
 		fxArg.dw = fx.dw;
 		fxArg.dw += fxOffset.dw;
@@ -2834,62 +2879,62 @@ void CBumperView::Sub_402250()
 			nValue = nMax;
 		if (nMax > nValue)
 		{
-			m_obj03A0.m_dwUnk24 = 0;
+			m_gaugeAltitude.m_dwLevel = 0;
 			if (nValue > 0)
-				m_obj03A0.m_dwUnk24 = (DWORD)nValue;
+				m_gaugeAltitude.m_dwLevel = (DWORD)nValue;
 		}
 		else
-			m_obj03A0.m_dwUnk24 = (DWORD)nMax;
+			m_gaugeAltitude.m_dwLevel = (DWORD)nMax;
 	}
 
-	LeaveCriticalSection(&theApp.m_csUnk00D4);
-	EnterCriticalSection(&theApp.m_csUnk00EC);
+	LeaveCriticalSection(&theApp.m_csScene);
+	EnterCriticalSection(&theApp.m_csOffscreen);
 
-	if (m_dwUnk021C != 0)
+	if (m_bSmokeBlind != 0)
 	{
-		if (m_pUnk00CC != NULL)
-			m_pUnk00CC->m_dwUnk60 = (DWORD)((BYTE*)pDoc + 0x418C);
-		m_pUnk00C8->m_dwUnk60 = (DWORD)((BYTE*)pDoc + 0x18C);
+		if (m_pMirrorCtx != NULL)
+			m_pMirrorCtx->m_pShade = (DWORD*)pDoc->m_aShade[1].m_abTable;
+		m_pViewCtx->m_pShade = (DWORD*)pDoc->m_aShade[1].m_abTable;
 	}
 	else
 	{
-		if (m_pUnk00CC != NULL)
-			m_pUnk00CC->m_dwUnk60 = (DWORD)((BYTE*)pDoc + 0x18C);
-		m_pUnk00C8->m_dwUnk60 = (DWORD)((BYTE*)pDoc + 0x18C);
+		if (m_pMirrorCtx != NULL)
+			m_pMirrorCtx->m_pShade = (DWORD*)pDoc->m_aShade[0].m_abTable;
+		m_pViewCtx->m_pShade = (DWORD*)pDoc->m_aShade[0].m_abTable;
 	}
 
-	if (m_dwUnk0540 == 0)
+	if (m_bFullMap == 0)
 	{
-		m_pUnk00C8->Sub_406C00(m_dwUnk00D4, m_dwUnk00D8, m_dwUnk00E0,
-			m_dwUnk00DC);
-		m_pUnk00D0->Sub_406090(pDoc->m_dwUnk0188, m_pUnk00C8);
+		m_pViewCtx->SetCamera(m_dwCamX, m_dwCamY, m_dwCamZ,
+			m_dwCamAngle);
+		m_pRasterizer->RenderWorld(pDoc->m_pWorld, m_pViewCtx);
 
-		if (theApp.m_dwUnk01D0 != 0 && m_pUnk00CC != NULL)
+		if (theApp.m_bRearView != 0 && m_pMirrorCtx != NULL)
 		{
-			m_pUnk00CC->Sub_406C00(m_dwUnk00D4, m_dwUnk00D8,
-				m_dwUnk00E0, (m_dwUnk00DC + 0x100) & 0x1FF);
-			m_pUnk00D0->Sub_406090(pDoc->m_dwUnk0188, m_pUnk00CC);
+			m_pMirrorCtx->SetCamera(m_dwCamX, m_dwCamY,
+				m_dwCamZ, (m_dwCamAngle + 0x100) & 0x1FF);
+			m_pRasterizer->RenderWorld(pDoc->m_pWorld, m_pMirrorCtx);
 		}
 
-		m_obj00E8.Sub_405A10(this, pDoc);
+		m_needle.UpdateNeedle(this, pDoc);
 	}
 
-	rc.left = m_obj0150.m_dwUnk5C;
-	rc.top = m_obj0150.m_dwUnk60;
-	rc.right = m_obj0150.m_dwUnk64;
-	rc.bottom = m_obj0150.m_dwUnk68;
-	::PatBlt(m_dcUnk00B4.m_hDC, rc.left, rc.top, rc.right - rc.left,
+	rc.left = m_map.m_rcView.left;
+	rc.top = m_map.m_rcView.top;
+	rc.right = m_map.m_rcView.right;
+	rc.bottom = m_map.m_rcView.bottom;
+	::PatBlt(m_dcOffscreen.m_hDC, rc.left, rc.top, rc.right - rc.left,
 		rc.bottom - rc.top, BLACKNESS);
 	// hover.exe:0x4024e3 flushes the GDI batch here: everything after this
 	// writes to the DIB bits directly, so the fill has to have landed.
 	::GdiFlush();
 
-	m_obj0150.Sub_4053A0(this, pDoc);
+	m_map.DrawScene(this, pDoc);
 
-	switch (m_dwUnk0500)
+	switch (m_dwMessageState)
 	{
 	case 1:
-		Sub_40D340();
+		DrawPausedMessage();
 		break;
 	case 2:
 		{
@@ -2897,39 +2942,39 @@ void CBumperView::Sub_402250()
 			CString strB;
 			strA.LoadString(0xEF3F);
 			strB.LoadString(0xEF53);
-			Sub_40CCE0(strA, strB, 0, 0);
+			DrawMessageBox(strA, strB, 0, 0);
 		}
 		break;
 	case 3:
-		Sub_4283F0();
+		DrawBonusMessage();
 		break;
 	}
 
-	if (m_dwUnk0080 != 0 && m_dwUnk0084 != 0)
+	if (m_bNeedRepaint != 0 && m_bInitialized != 0)
 	{
 		::InvalidateRect(m_hWnd, NULL, TRUE);
-		m_dwUnk0080 = 0;
+		m_bNeedRepaint = 0;
 	}
 	else
-		Sub_407430();
+		PresentFrame();
 
-	LeaveCriticalSection(&theApp.m_csUnk00EC);
-	m_dwUnk052C = GetTickCount();
-	m_dwUnk0530++;
+	LeaveCriticalSection(&theApp.m_csOffscreen);
+	m_dwLastPresentTick = GetTickCount();
+	m_dwPresentCount++;
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// CSub406090::Sub_406090 and its helper functions (stubs for now).
+// CSpanRasterizer::RenderWorld and its helper functions (stubs for now).
 
 // Visibility test for one sprite: side-classify both endpoints of its
 // camera-facing segment against the left/right view-edge lines
-// (g_lineUnk_4A4498 / g_lineUnk_4A44E0).  The sprite is submitted when an
+// (g_lineFrustumLeft / g_lineFrustumRight).  The sprite is submitted when an
 // endpoint sits past the left edge but inside the right one, or when the
 // segment straddles the whole view wedge and the camera origin lies on the
 // matching side of the segment.
 // hover.exe:0x405B90
 // FUNCTION: HOVER 0x405b90
-int CSub406090::Sub_405B90(CMerlinLine* pSprite)
+int CSpanRasterizer::IsSegmentVisible(CMerlinLine* pSprite)
 {
 	DWORD dwY1 = pSprite->m_dwY1;
 	int bMinA;
@@ -2938,33 +2983,33 @@ int CSub406090::Sub_405B90(CMerlinLine* pSprite)
 	int bMaxB;
 	int nSide;
 
-	bMinA = ((int)g_lineUnk_4A4498.m_dwY1 - (int)dwY1) *
-			(int)g_lineUnk_4A4498.m_dwDeltaX +
-		((int)pSprite->m_dwX1 - (int)g_lineUnk_4A4498.m_dwX1) *
-			(int)g_lineUnk_4A4498.m_dwDeltaY >= 0;
-	bMinB = ((int)pSprite->m_dwX1 - (int)g_lineUnk_4A44E0.m_dwX1) *
-			(int)g_lineUnk_4A44E0.m_dwDeltaY +
-		((int)g_lineUnk_4A44E0.m_dwY1 - (int)dwY1) *
-			(int)g_lineUnk_4A44E0.m_dwDeltaX >= 0;
+	bMinA = ((int)g_lineFrustumLeft.m_dwY1 - (int)dwY1) *
+			(int)g_lineFrustumLeft.m_dwDeltaX +
+		((int)pSprite->m_dwX1 - (int)g_lineFrustumLeft.m_dwX1) *
+			(int)g_lineFrustumLeft.m_dwDeltaY >= 0;
+	bMinB = ((int)pSprite->m_dwX1 - (int)g_lineFrustumRight.m_dwX1) *
+			(int)g_lineFrustumRight.m_dwDeltaY +
+		((int)g_lineFrustumRight.m_dwY1 - (int)dwY1) *
+			(int)g_lineFrustumRight.m_dwDeltaX >= 0;
 
 	if (bMinA == 0 && bMinB != 0)
 		return 1;
 
-	bMaxA = ((int)g_lineUnk_4A4498.m_dwY1 - (int)pSprite->m_dwY2) *
-			(int)g_lineUnk_4A4498.m_dwDeltaX +
-		((int)pSprite->m_dwX2 - (int)g_lineUnk_4A4498.m_dwX1) *
-			(int)g_lineUnk_4A4498.m_dwDeltaY >= 0;
-	bMaxB = ((int)pSprite->m_dwX2 - (int)g_lineUnk_4A44E0.m_dwX1) *
-			(int)g_lineUnk_4A44E0.m_dwDeltaY +
-		((int)g_lineUnk_4A44E0.m_dwY1 - (int)pSprite->m_dwY2) *
-			(int)g_lineUnk_4A44E0.m_dwDeltaX >= 0;
+	bMaxA = ((int)g_lineFrustumLeft.m_dwY1 - (int)pSprite->m_dwY2) *
+			(int)g_lineFrustumLeft.m_dwDeltaX +
+		((int)pSprite->m_dwX2 - (int)g_lineFrustumLeft.m_dwX1) *
+			(int)g_lineFrustumLeft.m_dwDeltaY >= 0;
+	bMaxB = ((int)pSprite->m_dwX2 - (int)g_lineFrustumRight.m_dwX1) *
+			(int)g_lineFrustumRight.m_dwDeltaY +
+		((int)g_lineFrustumRight.m_dwY1 - (int)pSprite->m_dwY2) *
+			(int)g_lineFrustumRight.m_dwDeltaX >= 0;
 
 	if (bMaxA == 0 && bMaxB != 0)
 		return 1;
 
-	nSide = ((int)dwY1 - (int)g_lineUnk_4A4498.m_dwY1) *
+	nSide = ((int)dwY1 - (int)g_lineFrustumLeft.m_dwY1) *
 		(int)pSprite->m_dwDeltaX;
-	nSide += ((int)g_lineUnk_4A4498.m_dwX1 - (int)pSprite->m_dwX1) *
+	nSide += ((int)g_lineFrustumLeft.m_dwX1 - (int)pSprite->m_dwX1) *
 		(int)pSprite->m_dwDeltaY;
 
 	if (nSide >= 0)
@@ -2984,16 +3029,17 @@ int CSub406090::Sub_405B90(CMerlinLine* pSprite)
 
 // Submits one sprite's span pair to the column lists: compute the
 // camera-relative angles of the facing segment's two endpoints with
-// Hover_sub_4385F0, swap them when the sweep would take the long arc,
-// scale the wrapped angles to screen columns by m_dwUnk30 and clamp the
-// resulting column window to the screen. One SPANLINK node is linked into
-// each edge column's list (m_pUnk40) from the g_pdwUnk_4A4550 buffer, then
-// the sprite's span links are advanced past the consumed entries. Returns
-// 1 when the nodes were submitted, 0 when the sprite is off-screen.
+// Hover_FixAngle, swap them when the sweep would take the long arc,
+// scale the wrapped angles to screen columns by m_dwColumnsPerAngle and
+// clamp the resulting column window to the screen. One SPANLINK node is
+// linked into each edge column's list (m_pColumnLists) from the
+// g_pSpanLinkCursor buffer, then the sprite's span links are advanced past
+// the consumed entries. Returns 1 when the nodes were submitted, 0 when the
+// sprite is off-screen.
 
 // hover.exe:0x405CE0
 // FUNCTION: HOVER 0x405ce0
-int CSub406090::Sub_405CE0(CMerlinLine* pA, CMerlinLine* pB, int nC,
+int CSpanRasterizer::SubmitSegment(CMerlinLine* pA, CMerlinLine* pB, int nC,
 	WORD wOrd)
 {
 	long lAng1;
@@ -3009,17 +3055,17 @@ int CSub406090::Sub_405CE0(CMerlinLine* pA, CMerlinLine* pB, int nC,
 	SPANLINK* pNode;
 	CMerlinDynamic* pObj;
 	CMerlinStatic* pFace;
-	DWORD* pLink;
-	CSub410F20* pCam;
+	SPANLINK** pLink;
+	CRenderContext* pCam;
 
-	pCam = (CSub410F20*)g_pUnk_4A1D68;
-	lAng1 = (long)Hover_sub_4385F0(
-		(long)(pB->m_dwY1 - pCam->m_dwUnk4C),
-		(long)(pB->m_dwX1 - pCam->m_dwUnk48));
-	pCam = (CSub410F20*)g_pUnk_4A1D68;
-	lAng2 = (long)Hover_sub_4385F0(
-		(long)(pB->m_dwY2 - pCam->m_dwUnk4C),
-		(long)(pB->m_dwX2 - pCam->m_dwUnk48));
+	pCam = g_pRenderCtx;
+	lAng1 = (long)Hover_FixAngle(
+		(long)(pB->m_dwY1 - pCam->m_dwCamY),
+		(long)(pB->m_dwX1 - pCam->m_dwCamX));
+	pCam = g_pRenderCtx;
+	lAng2 = (long)Hover_FixAngle(
+		(long)(pB->m_dwY2 - pCam->m_dwCamY),
+		(long)(pB->m_dwX2 - pCam->m_dwCamX));
 
 	// Order the endpoints so the sweep from lAng1 to lAng2 takes the short
 	// arc: skip the swap only when lAng2 already lies within the half
@@ -3035,10 +3081,10 @@ int CSub406090::Sub_405CE0(CMerlinLine* pA, CMerlinLine* pB, int nC,
 
 	// Wrap both angles to [-half circle, half circle] around the camera
 	// yaw, then force the sweep forward across the circle boundary.
-	lStart = (lAng1 - (long)m_dwUnk34) & 0x1FFFFFF;
+	lStart = (lAng1 - (long)m_dwLeftEdgeAngle) & 0x1FFFFFF;
 	if (lStart > 0x1000000)
 		lStart -= 0x2000000;
-	lEnd = (lAng2 - (long)m_dwUnk34) & 0x1FFFFFF;
+	lEnd = (lAng2 - (long)m_dwLeftEdgeAngle) & 0x1FFFFFF;
 	if (lEnd > 0x1000000)
 		lEnd -= 0x2000000;
 	if (lEnd < lStart)
@@ -3046,100 +3092,102 @@ int CSub406090::Sub_405CE0(CMerlinLine* pA, CMerlinLine* pB, int nC,
 
 	// Scale the angles to screen columns (24.8 result) and derive the
 	// inclusive column window with a three-column margin on each side.
-	HOVER_FIXMULR(lScaledStart, lStart, m_dwUnk30);
-	HOVER_FIXMULR(lScaledEnd, lEnd, m_dwUnk30);
+	HOVER_FIXMULR(lScaledStart, lStart, m_dwColumnsPerAngle);
+	HOVER_FIXMULR(lScaledEnd, lEnd, m_dwColumnsPerAngle);
 	nStart = (int)(lScaledStart / 0x10000) - 3;
 	nEnd = (int)(lScaledEnd / 0x10000) + 3;
 
 	// Clamp the window to the screen; bail out when it falls off an edge
 	// or collapses to a single column.
 	if (nStart < 0)
-		nStart = 0;
-	if (nEnd < 0)
-		return 0;
-	if (nStart > (int)g_dwUnk_4A454C - 1)
 	{
-		nStart = (int)g_dwUnk_4A454C - 1;
-		if (nEnd > (int)g_dwUnk_4A454C - 1)
+		nStart = 0;
+		if (nEnd < 0)
+			return 0;
+	}
+	if (nStart > (int)g_dwViewWidth - 1)
+	{
+		nStart = (int)g_dwViewWidth - 1;
+		if (nEnd > (int)g_dwViewWidth - 1)
 			return 0;
 	}
 	if (nEnd < 0)
 		nEnd = 0;
-	if (nEnd > (int)g_dwUnk_4A454C - 1)
-		nEnd = (int)g_dwUnk_4A454C - 1;
+	if (nEnd > (int)g_dwViewWidth - 1)
+		nEnd = (int)g_dwViewWidth - 1;
 	if (nEnd == nStart)
 		return 0;
 
 	// Emit the opening node (m_dwUnk04 = 1: textured drawer) at the start
 	// column and the closing node (m_dwUnk04 = 0: flat drawer) at the end
 	// column.
-	pNode = (SPANLINK*)g_pdwUnk_4A4550;
-	pNode->m_wUnk00 = wOrd;
-	pNode->m_dwUnk08 = nC;
-	pNode->m_dwUnk04 = 1;
+	pNode = g_pSpanLinkCursor;
+	pNode->m_wOrder = wOrd;
+	pNode->m_bSprite = nC;
+	pNode->m_bOpen = 1;
 	if (nC != 0)
 	{
-		pNode->m_dwUnk10 = 0;
+		pNode->m_pSegment = 0;
 		pObj = (CMerlinDynamic*)pA;
 	}
 	else
-		pNode->m_dwUnk10 = (DWORD)pB;
-	pNode->m_dwUnk0C = (DWORD)pA;
-	pLink = &m_pUnk40[nStart];
-	pNode->m_pUnk14 = (SPANLINK*)*pLink;
-	*pLink = (DWORD)pNode;
+		pNode->m_pSegment = pB;
+	pNode->m_pObj = pA;
+	pLink = &m_pColumnLists[nStart];
+	pNode->m_pNext = *pLink;
+	*pLink = pNode;
 
 	pNode++;
-	pNode->m_wUnk00 = wOrd;
-	pNode->m_dwUnk04 = 0;
-	pNode->m_dwUnk08 = nC;
-	pNode->m_dwUnk0C = (DWORD)pA;
+	pNode->m_wOrder = wOrd;
+	pNode->m_bOpen = 0;
+	pNode->m_bSprite = nC;
+	pNode->m_pObj = pA;
 	if (nC != 0)
-		pNode->m_dwUnk10 = 0;
+		pNode->m_pSegment = 0;
 	else
-		pNode->m_dwUnk10 = (DWORD)pB;
-	pLink = &m_pUnk40[nEnd];
-	pNode->m_pUnk14 = (SPANLINK*)*pLink;
-	*pLink = (DWORD)pNode;
+		pNode->m_pSegment = pB;
+	pLink = &m_pColumnLists[nEnd];
+	pNode->m_pNext = *pLink;
+	*pLink = pNode;
 	pNode++;
-	g_pdwUnk_4A4550 = (DWORD*)pNode;
+	g_pSpanLinkCursor = pNode;
 
 	// Advance the consumed animation frames to their next entries: the
 	// sprite's single texture for nC != 0, the face's six texture slots
-	// otherwise (CMerlinTexture::m_pUnk38 is the next frame).
+	// otherwise (CMerlinTexture::m_pNextFrame is the next frame).
 	if (nC != 0)
 	{
-		if (pObj->m_pUnk50 != NULL && pObj->m_pUnk50->m_pUnk38 != NULL)
-			pObj->m_pUnk50 = pObj->m_pUnk50->m_pUnk38;
+		if (pObj->m_pTexture != NULL && pObj->m_pTexture->m_pNextFrame != NULL)
+			pObj->m_pTexture = pObj->m_pTexture->m_pNextFrame;
 	}
 	else
 	{
 		pFace = (CMerlinStatic*)pA;
-		if (pFace->m_pUnk8C != NULL && pFace->m_pUnk8C->m_pUnk38 != NULL)
-			pFace->m_pUnk8C = pFace->m_pUnk8C->m_pUnk38;
-		if (pFace->m_pUnk90 != NULL && pFace->m_pUnk90->m_pUnk38 != NULL)
-			pFace->m_pUnk90 = pFace->m_pUnk90->m_pUnk38;
-		if (pFace->m_pUnk94 != NULL && pFace->m_pUnk94->m_pUnk38 != NULL)
-			pFace->m_pUnk94 = pFace->m_pUnk94->m_pUnk38;
-		if (pFace->m_pUnk98 != NULL && pFace->m_pUnk98->m_pUnk38 != NULL)
-			pFace->m_pUnk98 = pFace->m_pUnk98->m_pUnk38;
-		if (pFace->m_pUnk9C != NULL && pFace->m_pUnk9C->m_pUnk38 != NULL)
-			pFace->m_pUnk9C = pFace->m_pUnk9C->m_pUnk38;
-		if (pFace->m_pUnkA0 != NULL && pFace->m_pUnkA0->m_pUnk38 != NULL)
-			pFace->m_pUnkA0 = pFace->m_pUnkA0->m_pUnk38;
+		if (pFace->m_pFrontTopTex != NULL && pFace->m_pFrontTopTex->m_pNextFrame != NULL)
+			pFace->m_pFrontTopTex = pFace->m_pFrontTopTex->m_pNextFrame;
+		if (pFace->m_pBackTopTex != NULL && pFace->m_pBackTopTex->m_pNextFrame != NULL)
+			pFace->m_pBackTopTex = pFace->m_pBackTopTex->m_pNextFrame;
+		if (pFace->m_pFrontTex != NULL && pFace->m_pFrontTex->m_pNextFrame != NULL)
+			pFace->m_pFrontTex = pFace->m_pFrontTex->m_pNextFrame;
+		if (pFace->m_pBackTex != NULL && pFace->m_pBackTex->m_pNextFrame != NULL)
+			pFace->m_pBackTex = pFace->m_pBackTex->m_pNextFrame;
+		if (pFace->m_pFrontBottomTex != NULL && pFace->m_pFrontBottomTex->m_pNextFrame != NULL)
+			pFace->m_pFrontBottomTex = pFace->m_pFrontBottomTex->m_pNextFrame;
+		if (pFace->m_pBackBottomTex != NULL && pFace->m_pBackBottomTex->m_pNextFrame != NULL)
+			pFace->m_pBackBottomTex = pFace->m_pBackBottomTex->m_pNextFrame;
 	}
 	return 1;
 }
 
-// Walk the maze BSP tree (m_pUnk20->m_arrUnk50, root index 0) back-to-front
-// from the camera (g_lineUnk_4A4498.m_dwX1 / g_lineUnk_4A44E0.m_dwY1): test
+// Walk the maze BSP tree (m_pWorld->m_arrNodes, root index 0) back-to-front
+// from the camera (g_lineFrustumLeft.m_dwX1 / g_lineFrustumRight.m_dwY1): test
 // which side of the node's facing segment the camera sits on, recurse into
 // the far child, submit the node sprite if it survives the view test, then
-// continue down the near child (tail recursion as a loop). g_wUnk_4A4528 is
-// passed to Sub_405CE0 as the span key and counts accepted submissions.
+// continue down the near child (tail recursion as a loop). g_wBspOrder is
+// passed to SubmitSegment as the span key and counts accepted submissions.
 // hover.exe:0x405FA0
 // FUNCTION: HOVER 0x405fa0
-void CSub406090::Sub_405FA0(short nNode)
+void CSpanRasterizer::WalkBSP(short nNode)
 {
 	CMerlinBSP* pSprite;
 	CMerlinStatic* pPartner;
@@ -3151,133 +3199,134 @@ void CSub406090::Sub_405FA0(short nNode)
 
 	do
 	{
-		pSprite = m_pUnk20->GetNode(nNode);
-		if (((long)g_lineUnk_4A4498.m_dwX1 - (long)pSprite->m_dwX1) *
+		pSprite = m_pWorld->GetNode(nNode);
+		if (((long)g_lineFrustumLeft.m_dwX1 - (long)pSprite->m_dwX1) *
 				(long)pSprite->m_dwDeltaY +
-			((long)pSprite->m_dwY1 - (long)g_lineUnk_4A44E0.m_dwY1) *
+			((long)pSprite->m_dwY1 - (long)g_lineFrustumRight.m_dwY1) *
 				(long)pSprite->m_dwDeltaX < 0)
 		{
-			Sub_405FA0(pSprite->m_wUnk48);
-			nVisible = Sub_405B90(pSprite);
-			wOrd = g_wUnk_4A4528;
+			WalkBSP(pSprite->m_wFront);
+			nVisible = IsSegmentVisible(pSprite);
+			wOrd = g_wBspOrder;
 			if (nVisible != 0)
 			{
-				pPartner = m_pUnk20->GetStatic((short)pSprite->m_wUnk44);
-				if (Sub_405CE0(pPartner, pSprite, 0, wOrd) != 0)
+				pPartner = m_pWorld->GetStatic((short)pSprite->m_wFace);
+				if (SubmitSegment(pPartner, pSprite, 0, wOrd) != 0)
 				{
-					g_wUnk_4A4528++;
+					g_wBspOrder++;
 				}
 			}
-			nNode = pSprite->m_wUnk4A;
+			nNode = pSprite->m_wBack;
 		}
 		else
 		{
-			Sub_405FA0(pSprite->m_wUnk4A);
-			nVisible = Sub_405B90(pSprite);
-			wOrd = g_wUnk_4A4528;
+			WalkBSP(pSprite->m_wBack);
+			nVisible = IsSegmentVisible(pSprite);
+			wOrd = g_wBspOrder;
 			if (nVisible != 0)
 			{
-				pPartner = m_pUnk20->GetStatic((short)pSprite->m_wUnk44);
-				if (Sub_405CE0(pPartner, pSprite, 0, wOrd) != 0)
+				pPartner = m_pWorld->GetStatic((short)pSprite->m_wFace);
+				if (SubmitSegment(pPartner, pSprite, 0, wOrd) != 0)
 				{
-					g_wUnk_4A4528++;
+					g_wBspOrder++;
 				}
 			}
-			nNode = pSprite->m_wUnk48;
+			nNode = pSprite->m_wFront;
 		}
 	} while (nNode != -1);
 }
 
-// Allocate one render object from the span-buffer arena at g_pdwUnk_4A4718
-// (bumped by sizeof(RENDEROBJ)) and link it into the g_pUnk_4A4714 list.
+// Allocate one render object from the span-buffer arena at g_pObjArenaCursor
+// (bumped by sizeof(RENDEROBJ)) and link it into the g_pObjPool list.
 // Wall segments (dwA != 0) are linked in behind the first wall object of the
 // list (appended at the end when the list holds only floor/ceiling objects);
 // floor/ceiling segments (dwA == 0) are inserted into the leading
-// floor/ceiling run sorted by descending m_wUnk1C, ahead of any wall.
+// floor/ceiling run sorted by descending m_wBspOrder, ahead of any wall.
 // hover.exe:0x4044A0
 // FUNCTION: HOVER 0x4044a0
-void Hover_sub_4044A0(DWORD dwA, DWORD dwB, WORD wC, DWORD dwD)
+void Hover_InsertRenderObj(DWORD dwA, CMerlinLine* pSource, WORD wC,
+	CMerlinLine* pSegment)
 {
 	RENDEROBJ* pNew;
 	RENDEROBJ* pCur;
 	RENDEROBJ* pNext;
 
-	pNew = (RENDEROBJ*)g_pdwUnk_4A4718;
-	pCur = g_pUnk_4A4714;
-	pNew->m_wUnk1C = wC;
-	pNew->m_dwUnk0C = dwA;
-	pNew->m_dwUnk24 = dwD;
-	pNew->m_dwUnk18 = 1;
-	pNew->m_pUnk10 = (CMerlinLine*)dwB;
+	pNew = g_pObjArenaCursor;
+	pCur = g_pObjPool;
+	pNew->m_wBspOrder = wC;
+	pNew->m_bSprite = dwA;
+	pNew->m_pSegment = pSegment;
+	pNew->m_bHidden = 1;
+	pNew->m_pSource = pSource;
 	pNext = NULL;
 
 	if (dwA == 0)
 	{
 		if (pCur != NULL)
 		{
-			if ((short)pCur->m_wUnk1C >= (short)wC)
+			if ((short)pCur->m_wBspOrder >= (short)wC)
 			{
-				while (pCur->m_dwUnk0C == 0)
+				while (pCur->m_bSprite == 0)
 				{
-					pNext = pCur->m_pUnk2C;
+					pNext = pCur->m_pPoolNext;
 					if (pNext == NULL)
 					{
-						pCur->m_pUnk2C = pNew;
-						pNew->m_pUnk28 = pCur;
-						pNew->m_pUnk2C = NULL;
+						pCur->m_pPoolNext = pNew;
+						pNew->m_pPoolPrev = pCur;
+						pNew->m_pPoolNext = NULL;
 						goto L_done;
 					}
 					pCur = pNext;
-					if ((short)pNext->m_wUnk1C < (short)wC)
+					if ((short)pNext->m_wBspOrder < (short)wC)
 						break;
 				}
 			}
-			pNext = pCur->m_pUnk28;
-			pCur->m_pUnk28 = pNew;
+			pNext = pCur->m_pPoolPrev;
+			pCur->m_pPoolPrev = pNew;
 			if (pNext != NULL)
 			{
-				pNext->m_pUnk2C = pNew;
-				pNew->m_pUnk28 = pNext;
-				pNew->m_pUnk2C = pCur;
+				pNext->m_pPoolNext = pNew;
+				pNew->m_pPoolPrev = pNext;
+				pNew->m_pPoolNext = pCur;
 			}
 			else
 			{
-				g_pUnk_4A4714 = pNew;
-				pNew->m_pUnk2C = pCur;
-				pNew->m_pUnk28 = pNext;
+				g_pObjPool = pNew;
+				pNew->m_pPoolNext = pCur;
+				pNew->m_pPoolPrev = pNext;
 			}
 			goto L_done;
 		}
 	}
 	else
 	{
-		while (pCur != NULL && pCur->m_dwUnk0C == 0 &&
-			pCur->m_pUnk2C != NULL)
-			pCur = pCur->m_pUnk2C;
+		while (pCur != NULL && pCur->m_bSprite == 0 &&
+			pCur->m_pPoolNext != NULL)
+			pCur = pCur->m_pPoolNext;
 		if (pCur != NULL)
 		{
-			pNext = pCur->m_pUnk2C;
-			pCur->m_pUnk2C = pNew;
+			pNext = pCur->m_pPoolNext;
+			pCur->m_pPoolNext = pNew;
 			if (pNext != NULL)
-				pNext->m_pUnk28 = pNew;
-			pNew->m_pUnk2C = pNext;
-			pNew->m_pUnk28 = pCur;
+				pNext->m_pPoolPrev = pNew;
+			pNew->m_pPoolNext = pNext;
+			pNew->m_pPoolPrev = pCur;
 			goto L_done;
 		}
 	}
-	pNew->m_pUnk2C = pNext;
-	pNew->m_pUnk28 = pNext;
-	g_pUnk_4A4714 = pNew;
+	pNew->m_pPoolNext = pNext;
+	pNew->m_pPoolPrev = pNext;
+	g_pObjPool = pNew;
 
 L_done:
-	g_pdwUnk_4A4718 = (DWORD*)(pNew + 1);
+	g_pObjArenaCursor = pNew + 1;
 }
 
 // Find the render object keyed by (dwA, dwB) and unlink it from the
-// g_pUnk_4A4714 list; returns 1 if it was not yet visible.
+// g_pObjPool list; returns 1 if it was not yet visible.
 // hover.exe:0x404580
 // FUNCTION: HOVER 0x404580
-DWORD Hover_sub_404580(DWORD dwA, DWORD dwB)
+DWORD Hover_RemoveRenderObj(CMerlinLine* pSource, CMerlinLine* pSegment)
 {
 	RENDEROBJ* pScan;
 	RENDEROBJ* pHead;
@@ -3286,54 +3335,54 @@ DWORD Hover_sub_404580(DWORD dwA, DWORD dwB)
 	DWORD dwRet;
 
 	dwRet = 0;
-	pHead = g_pUnk_4A4714;
+	pHead = g_pObjPool;
 	pScan = pHead;
 	while (pScan != NULL)
 	{
-		if ((DWORD)pScan->m_pUnk10 == dwA && pScan->m_dwUnk24 == dwB)
+		if (pScan->m_pSource == pSource && pScan->m_pSegment == pSegment)
 			break;
-		pScan = pScan->m_pUnk2C;
+		pScan = pScan->m_pPoolNext;
 	}
 	if (pScan != NULL)
 	{
-		if (pScan->m_dwUnk18 == 0)
+		if (pScan->m_bHidden == 0)
 			dwRet = 1;
-		pPrev = pScan->m_pUnk28;
-		pNext = pScan->m_pUnk2C;
+		pPrev = pScan->m_pPoolPrev;
+		pNext = pScan->m_pPoolNext;
 		if (pPrev != NULL)
-			pPrev->m_pUnk2C = pNext;
+			pPrev->m_pPoolNext = pNext;
 		if (pNext != NULL)
-			pNext->m_pUnk28 = pPrev;
+			pNext->m_pPoolPrev = pPrev;
 		if (pScan == pHead)
-			g_pUnk_4A4714 = pNext;
+			g_pObjPool = pNext;
 	}
 	return dwRet;
 }
 
 // Turn the render objects collected for the current column bundle into
-// spans against one phase camera line. The g_pUnk_4A4714 list is walked
-// twice: first over its leading floor/ceiling run (m_dwUnk0C == 0), then
+// spans against one phase camera line. The g_pObjPool list is walked
+// twice: first over its leading floor/ceiling run (m_bSprite == 0), then
 // over the wall objects behind it.
 //
-// Floor/ceiling pass: objects whose height range [m_wUnkA4, m_wUnkA6] is
-// already inside the covered range are marked done (m_dwUnk18/m_dwUnk20)
+// Floor/ceiling pass: objects whose height range [m_wBottom, m_wTop] is
+// already inside the covered range are marked done (m_bHidden/m_bCovered)
 // and skipped; the rest are intersected with pLine. A crossing yields the
-// camera distance (m_wUnk08) and the texture u coordinate (m_wUnk0A,
-// biased by the face's u origin at m_wUnkB8/m_wUnkBA), and, for a face
-// that is not flagged in m_dwUnkB0/m_dwUnkB4, grows the covered height
-// range [sLo, sHi] (seeded from dwSeed). The objects are appended to the
-// g_pUnk_4A471C list in list order.
+// camera distance (m_wDistance) and the texture u coordinate (m_wTexU,
+// biased by the face's u origin at m_wFrontUOrg/m_wBackUOrg), and, for a face
+// that is not flagged in m_bFrontTransparent/m_bBackTransparent, grows
+// the covered height range [sLo, sHi] (seeded from dwSeed). The objects
+// are appended to the g_pColumnObjs list in list order.
 //
 // Wall pass: the same intersection, but the face select can be flipped by
-// the object's m_dwUnk68, and each object is inserted into the
-// g_pUnk_4A471C list sorted by ascending m_wUnk08 (invisible objects go
+// the source's m_bMirror, and each object is inserted into the
+// g_pColumnObjs list sorted by ascending m_wDistance (invisible objects go
 // to the end of the run).
 //
-// The return value is always 1 (the caller ORs it into m_dwUnk28 to force
+// The return value is always 1 (the caller ORs it into m_bRelink to force
 // a span rebuild).
 // hover.exe:0x4045E0
 // FUNCTION: HOVER 0x4045e0
-DWORD Hover_sub_4045E0(DWORD dwSeed, CMerlinLine* pLine)
+DWORD Hover_BuildDepthList(DWORD dwSeed, CMerlinLine* pLine)
 {
 	DWORD adwHit[2];
 	DWORD bSel;
@@ -3356,168 +3405,169 @@ DWORD Hover_sub_4045E0(DWORD dwSeed, CMerlinLine* pLine)
 	sHi = (short)dwSeed;
 	sLo = (short)dwSeed;
 	pPrev = NULL;
-	pObj = g_pUnk_4A4714;
-	g_pUnk_4A471C = NULL;
+	pObj = g_pObjPool;
+	g_pColumnObjs = NULL;
 
-	while (pObj != NULL && pObj->m_dwUnk0C == 0)
+	while (pObj != NULL && pObj->m_bSprite == 0)
 	{
-		pSrcA = (CMerlinStatic*)pObj->m_pUnk10;
-		pObj->m_dwUnk20 = 0;
-		if ((short)pSrcA->m_wUnkA6 <= sHi &&
-			(short)pSrcA->m_wUnkA4 >= sLo)
+		pSrcA = (CMerlinStatic*)pObj->m_pSource;
+		pObj->m_bCovered = 0;
+		if ((short)pSrcA->m_wTop <= sHi &&
+			(short)pSrcA->m_wBottom >= sLo)
 		{
-			pObj->m_dwUnk18 = 1;
-			pObj->m_dwUnk20 = 1;
+			pObj->m_bHidden = 1;
+			pObj->m_bCovered = 1;
 		}
 		else
 		{
-			wRet = pSrcA->Sub_401260(pLine, adwHit);
-			pObj->m_dwUnk14 = (wRet == 1);
-			if (g_pUnk_4A471C == NULL)
-				g_pUnk_4A471C = pObj;
+			wRet = pSrcA->IntersectSegment(pLine, adwHit);
+			pObj->m_bFrontFace = (wRet == 1);
+			if (g_pColumnObjs == NULL)
+				g_pColumnObjs = pObj;
 			if (wRet != 0)
 			{
-				pObj->m_wUnk08 = Hover_Distance(pLine->m_dwX1,
+				pObj->m_wDistance = Hover_Distance(pLine->m_dwX1,
 					pLine->m_dwY1, adwHit[0], adwHit[1]);
-				if (pObj->m_dwUnk14 != 0)
+				if (pObj->m_bFrontFace != 0)
 				{
 					wU = Hover_Distance(pSrcA->m_dwX2,
 						pSrcA->m_dwY2, adwHit[0], adwHit[1]);
-					wOrg = pSrcA->m_wUnkB8;
+					wOrg = pSrcA->m_wFrontUOrg;
 				}
 				else
 				{
 					wU = Hover_Distance(pSrcA->m_dwX1,
 						pSrcA->m_dwY1, adwHit[0], adwHit[1]);
-					wOrg = pSrcA->m_wUnkBA;
+					wOrg = pSrcA->m_wBackUOrg;
 				}
 				// The raw distance is stored first and immediately
 				// overwritten by the biased one; the original does
 				// the same (dead store).
-				pObj->m_wUnk0A = wU;
-				pObj->m_wUnk0A = wOrg + wU;
+				pObj->m_wTexU = wU;
+				pObj->m_wTexU = wOrg + wU;
 
-				if (pObj->m_dwUnk14 != 0)
-					bGrow = (pSrcA->m_dwUnkB0 == 0);
+				if (pObj->m_bFrontFace != 0)
+					bGrow = (pSrcA->m_bFrontTransparent == 0);
 				else
-					bGrow = (pSrcA->m_dwUnkB4 == 0);
+					bGrow = (pSrcA->m_bBackTransparent == 0);
 				if (bGrow != 0)
 				{
-					if (sHi >= (short)pSrcA->m_wUnkA4 &&
-						sHi < (short)pSrcA->m_wUnkA6)
-						sHi = (short)pSrcA->m_wUnkA6;
-					if (sLo <= (short)pSrcA->m_wUnkA6 &&
-						sLo > (short)pSrcA->m_wUnkA4)
-						sLo = (short)pSrcA->m_wUnkA4;
+					if (sHi >= (short)pSrcA->m_wBottom &&
+						sHi < (short)pSrcA->m_wTop)
+						sHi = (short)pSrcA->m_wTop;
+					if (sLo <= (short)pSrcA->m_wTop &&
+						sLo > (short)pSrcA->m_wBottom)
+						sLo = (short)pSrcA->m_wBottom;
 				}
-				pObj->m_dwUnk18 = 0;
+				pObj->m_bHidden = 0;
 			}
 			else
 			{
-				pObj->m_dwUnk18 = 1;
+				pObj->m_bHidden = 1;
 			}
 
 			if (pPrev != NULL)
-				pPrev->m_pUnk34 = pObj;
-			pObj->m_pUnk34 = NULL;
-			pObj->m_pUnk30 = pPrev;
+				pPrev->m_pColNext = pObj;
+			pObj->m_pColNext = NULL;
+			pObj->m_pColPrev = pPrev;
 			pPrev = pObj;
 		}
-		pObj = pObj->m_pUnk2C;
+		pObj = pObj->m_pPoolNext;
 	}
 
 	while (pObj != NULL)
 	{
-		pSrcB = (CMerlinDynamic*)pObj->m_pUnk10;
-		wRet = pSrcB->Sub_401260(pLine, adwHit);
-		pObj->m_dwUnk20 = 0;
+		pSrcB = (CMerlinDynamic*)pObj->m_pSource;
+		wRet = pSrcB->IntersectSegment(pLine, adwHit);
+		pObj->m_bCovered = 0;
 		bFace = (wRet == 1);
-		pObj->m_dwUnk14 = bFace;
+		pObj->m_bFrontFace = bFace;
 		bSel = bFace;
 		if (wRet != 0)
 		{
-			pObj->m_wUnk08 = Hover_Distance(pLine->m_dwX1,
+			pObj->m_wDistance = Hover_Distance(pLine->m_dwX1,
 				pLine->m_dwY1, adwHit[0], adwHit[1]);
-			if (pSrcB->m_dwUnk68 != 0)
+			if (pSrcB->m_bMirror != 0)
 				bSel = (bFace == 0);
 			if (bSel != 0)
 			{
-				pObj->m_wUnk0A = Hover_Distance(pSrcB->m_dwX2,
+				pObj->m_wTexU = Hover_Distance(pSrcB->m_dwX2,
 					pSrcB->m_dwY2, adwHit[0], adwHit[1]);
 			}
 			else
 			{
-				pObj->m_wUnk0A = Hover_Distance(pSrcB->m_dwX1,
+				pObj->m_wTexU = Hover_Distance(pSrcB->m_dwX1,
 					pSrcB->m_dwY1, adwHit[0], adwHit[1]);
 			}
-			pdwVis = &pObj->m_dwUnk18;
+			pdwVis = &pObj->m_bHidden;
 			*pdwVis = 0;
 		}
 		else
 		{
-			pdwVis = &pObj->m_dwUnk18;
+			pdwVis = &pObj->m_bHidden;
 			*pdwVis = 1;
 		}
 
-		pScan = g_pUnk_4A471C;
+		pScan = g_pColumnObjs;
 		if (pScan == NULL)
 		{
-			pObj->m_pUnk34 = NULL;
-			pObj->m_pUnk30 = NULL;
-			g_pUnk_4A471C = pObj;
+			pObj->m_pColNext = NULL;
+			pObj->m_pColPrev = NULL;
+			g_pColumnObjs = pObj;
 		}
 		else
 		{
 			for (;;)
 			{
-				if (pScan->m_dwUnk18 == 0 &&
-					(short)pScan->m_wUnk08 > (short)pObj->m_wUnk08)
+				if (pScan->m_bHidden == 0 &&
+					(short)pScan->m_wDistance > (short)pObj->m_wDistance)
 					break;
 				if (*pdwVis != 0)
 					break;
-				if (pScan->m_pUnk34 == NULL)
+				if (pScan->m_pColNext == NULL)
 				{
-					pScan->m_pUnk34 = pObj;
-					pObj->m_pUnk30 = pScan;
-					pObj->m_pUnk34 = NULL;
+					pScan->m_pColNext = pObj;
+					pObj->m_pColPrev = pScan;
+					pObj->m_pColNext = NULL;
 					goto L_next;
 				}
-				pScan = pScan->m_pUnk34;
+				pScan = pScan->m_pColNext;
 			}
-			pBefore = pScan->m_pUnk30;
-			pScan->m_pUnk30 = pObj;
+			pBefore = pScan->m_pColPrev;
+			pScan->m_pColPrev = pObj;
 			if (pBefore != NULL)
-				pBefore->m_pUnk34 = pObj;
+				pBefore->m_pColNext = pObj;
 			else
-				g_pUnk_4A471C = pObj;
-			pObj->m_pUnk34 = pScan;
-			pObj->m_pUnk30 = pBefore;
+				g_pColumnObjs = pObj;
+			pObj->m_pColNext = pScan;
+			pObj->m_pColPrev = pBefore;
 		}
 
 L_next:
-		pObj = pObj->m_pUnk2C;
+		pObj = pObj->m_pPoolNext;
 	}
 	return 1;
 }
 
 // Second and later passes of the phase-line walk (the first pass is
-// Hover_sub_4045E0): re-intersect every render object still on the
-// g_pUnk_4A471C list with the new phase line, refresh its two depth keys
-// and move it back into depth order. m_wUnk08 is the distance from the
-// camera to the crossing point, m_wUnk0A the distance from the crossing
+// Hover_BuildDepthList): re-intersect every render object still on the
+// g_pColumnObjs list with the new phase line, refresh its two depth keys
+// and move it back into depth order. m_wDistance is the distance from the
+// camera to the crossing point, m_wTexU the distance from the crossing
 // point to the wall segment's own endpoint (which endpoint depends on the
-// side the line crosses from, inverted again for m_dwUnk68 sources).
-// Wall objects (m_dwUnk0C != 0) are re-sorted by m_wUnk08: an object that
-// became visible is unlinked and re-inserted from the head, an already
-// linked one is only walked backwards to its new place. Floor/ceiling
-// objects instead bias m_wUnk0A by the source's per-face bias and then
-// bubble any wall predecessor that now sorts behind them past themselves.
+// side the line crosses from, inverted again for m_bMirror sources).
+// Wall objects (m_bSprite != 0) are re-sorted by m_wDistance: an object
+// that became visible is unlinked and re-inserted from the head, an
+// already linked one is only walked backwards to its new place.
+// Floor/ceiling objects instead bias m_wTexU by the source's per-face bias
+// and then bubble any wall predecessor that now sorts behind them past
+// themselves.
 // Returns 1 when the list order changed (the caller rebuilds the span
 // lists); an object that no longer meets the phase line at all restarts
-// the whole phase through Hover_sub_4045E0.
+// the whole phase through Hover_BuildDepthList.
 // hover.exe:0x406D30
 // FUNCTION: HOVER 0x406d30
-DWORD Hover_sub_406D30(DWORD dwZ, CMerlinLine* pLine)
+DWORD Hover_UpdateDepthList(DWORD dwZ, CMerlinLine* pLine)
 {
 	DWORD adwPt[2];
 	CMerlinLine* pSrc;
@@ -3533,180 +3583,180 @@ DWORD Hover_sub_406D30(DWORD dwZ, CMerlinLine* pLine)
 	WORD wRes;
 
 	dwRet = 0;
-	pObj = g_pUnk_4A471C;
+	pObj = g_pColumnObjs;
 	while (pObj != NULL)
 	{
-		pNext = pObj->m_pUnk34;
-		pSrc = pObj->m_pUnk10;
-		wRes = pSrc->Sub_401260(pLine, adwPt);
+		pNext = pObj->m_pColNext;
+		pSrc = pObj->m_pSource;
+		wRes = pSrc->IntersectSegment(pLine, adwPt);
 		dwFace = (wRes == 1);
-		pObj->m_dwUnk14 = dwFace;
+		pObj->m_bFrontFace = dwFace;
 		dwFaceB = dwFace;
 
 		if (wRes != 0)
 		{
-			pObj->m_wUnk08 = Hover_Distance(pLine->m_dwX1, pLine->m_dwY1,
+			pObj->m_wDistance = Hover_Distance(pLine->m_dwX1, pLine->m_dwY1,
 				adwPt[0], adwPt[1]);
 
 			// A sprite flagged at +0x68 keys off the opposite endpoint.
-			if (pObj->m_dwUnk0C != 0 &&
-				((CMerlinDynamic*)pSrc)->m_dwUnk68 != 0)
+			if (pObj->m_bSprite != 0 &&
+				((CMerlinDynamic*)pSrc)->m_bMirror != 0)
 				dwFaceB = (dwFace == 0);
 
 			if (dwFaceB != 0)
-				pObj->m_wUnk0A = Hover_Distance(pSrc->m_dwX2,
+				pObj->m_wTexU = Hover_Distance(pSrc->m_dwX2,
 					pSrc->m_dwY2, adwPt[0], adwPt[1]);
 			else
-				pObj->m_wUnk0A = Hover_Distance(pSrc->m_dwX1,
+				pObj->m_wTexU = Hover_Distance(pSrc->m_dwX1,
 					pSrc->m_dwY1, adwPt[0], adwPt[1]);
 
-			if (pObj->m_dwUnk0C != 0)
+			if (pObj->m_bSprite != 0)
 			{
-				if (pObj->m_dwUnk18 != 0)
+				if (pObj->m_bHidden != 0)
 				{
 					// Newly visible: unlink and re-insert from the head.
 					dwRet = 1;
-					pObj->m_dwUnk18 = 0;
-					pPrev = pObj->m_pUnk30;
+					pObj->m_bHidden = 0;
+					pPrev = pObj->m_pColPrev;
 					if (pPrev != NULL)
-						pPrev->m_pUnk34 = pObj->m_pUnk34;
-					pLink = pObj->m_pUnk34;
+						pPrev->m_pColNext = pObj->m_pColNext;
+					pLink = pObj->m_pColNext;
 					if (pLink != NULL)
-						pLink->m_pUnk30 = pPrev;
-					if (g_pUnk_4A471C == pObj)
-						g_pUnk_4A471C = pLink;
+						pLink->m_pColPrev = pPrev;
+					if (g_pColumnObjs == pObj)
+						g_pColumnObjs = pLink;
 
-					pScan = g_pUnk_4A471C;
+					pScan = g_pColumnObjs;
 					if (pScan == NULL)
 					{
-						pObj->m_pUnk34 = NULL;
-						pObj->m_pUnk30 = NULL;
-						g_pUnk_4A471C = pObj;
+						pObj->m_pColNext = NULL;
+						pObj->m_pColPrev = NULL;
+						g_pColumnObjs = pObj;
 					}
 					else
 					{
-						while (pScan->m_dwUnk18 != 0 ||
-							(short)pScan->m_wUnk08 <=
-								(short)pObj->m_wUnk08)
+						while (pScan->m_bHidden != 0 ||
+							(short)pScan->m_wDistance <=
+								(short)pObj->m_wDistance)
 						{
-							pLink = pScan->m_pUnk34;
+							pLink = pScan->m_pColNext;
 							if (pLink == NULL)
 							{
-								pScan->m_pUnk34 = pObj;
-								pObj->m_pUnk30 = pScan;
-								pObj->m_pUnk34 = NULL;
+								pScan->m_pColNext = pObj;
+								pObj->m_pColPrev = pScan;
+								pObj->m_pColNext = NULL;
 								goto L_next;
 							}
 							pScan = pLink;
 						}
-						pPrev = pScan->m_pUnk30;
-						pScan->m_pUnk30 = pObj;
+						pPrev = pScan->m_pColPrev;
+						pScan->m_pColPrev = pObj;
 						if (pPrev != NULL)
 						{
-							pPrev->m_pUnk34 = pObj;
-							pObj->m_pUnk30 = pPrev;
-							pObj->m_pUnk34 = pScan;
+							pPrev->m_pColNext = pObj;
+							pObj->m_pColPrev = pPrev;
+							pObj->m_pColNext = pScan;
 						}
 						else
 						{
-							g_pUnk_4A471C = pObj;
-							pObj->m_pUnk34 = pScan;
-							pObj->m_pUnk30 = pPrev;
+							g_pColumnObjs = pObj;
+							pObj->m_pColNext = pScan;
+							pObj->m_pColPrev = pPrev;
 						}
 					}
 				}
 				else
 				{
 					// Already linked: walk back to the new position.
-					pPrev = pObj->m_pUnk30;
+					pPrev = pObj->m_pColPrev;
 					if (pPrev == NULL)
 						goto L_next;
 					// Reloaded rather than copied from pPrev: the
 					// original's walk keeps its own null test.
-					pScan = pObj->m_pUnk30;
-					while (pScan != NULL && (pScan->m_dwUnk18 != 0 ||
-						(short)pScan->m_wUnk08 >= (short)pObj->m_wUnk08))
-						pScan = pScan->m_pUnk30;
+					pScan = pObj->m_pColPrev;
+					while (pScan != NULL && (pScan->m_bHidden != 0 ||
+						(short)pScan->m_wDistance >= (short)pObj->m_wDistance))
+						pScan = pScan->m_pColPrev;
 					if (pScan == pPrev)
 						goto L_next;
 
 					dwRet = 1;
 					if (pPrev != NULL)
-						pPrev->m_pUnk34 = pObj->m_pUnk34;
-					pLink = pObj->m_pUnk34;
+						pPrev->m_pColNext = pObj->m_pColNext;
+					pLink = pObj->m_pColNext;
 					if (pLink != NULL)
-						pLink->m_pUnk30 = pPrev;
-					if (g_pUnk_4A471C == pObj)
-						g_pUnk_4A471C = pLink;
+						pLink->m_pColPrev = pPrev;
+					if (g_pColumnObjs == pObj)
+						g_pColumnObjs = pLink;
 
 					if (pScan != NULL)
 					{
-						pLink = pScan->m_pUnk34;
-						pScan->m_pUnk34 = pObj;
+						pLink = pScan->m_pColNext;
+						pScan->m_pColNext = pObj;
 						if (pLink != NULL)
-							pLink->m_pUnk30 = pObj;
-						pObj->m_pUnk34 = pLink;
-						pObj->m_pUnk30 = pScan;
+							pLink->m_pColPrev = pObj;
+						pObj->m_pColNext = pLink;
+						pObj->m_pColPrev = pScan;
 					}
 					else
 					{
-						pObj->m_pUnk30 = NULL;
-						pLink = g_pUnk_4A471C;
-						pObj->m_pUnk34 = pLink;
+						pObj->m_pColPrev = NULL;
+						pLink = g_pColumnObjs;
+						pObj->m_pColNext = pLink;
 						if (pLink != NULL)
-							pLink->m_pUnk30 = pObj;
-						g_pUnk_4A471C = pObj;
+							pLink->m_pColPrev = pObj;
+						g_pColumnObjs = pObj;
 					}
 				}
 			}
 			else
 			{
-				if (pObj->m_dwUnk18 != 0)
+				if (pObj->m_bHidden != 0)
 				{
 					dwRet = 1;
-					pObj->m_dwUnk18 = 0;
+					pObj->m_bHidden = 0;
 				}
 
-				if (pObj->m_dwUnk14 != 0)
-					pObj->m_wUnk0A += ((CMerlinStatic*)pSrc)->m_wUnkB8;
+				if (pObj->m_bFrontFace != 0)
+					pObj->m_wTexU += ((CMerlinStatic*)pSrc)->m_wFrontUOrg;
 				else
-					pObj->m_wUnk0A += ((CMerlinStatic*)pSrc)->m_wUnkBA;
+					pObj->m_wTexU += ((CMerlinStatic*)pSrc)->m_wBackUOrg;
 
 				// Pull every wall predecessor that now sorts behind this
 				// floor/ceiling object past it, one at a time.
 				do
 				{
 					dwMoved = 0;
-					pPrev = pObj->m_pUnk30;
-					if (pPrev != NULL && pPrev->m_dwUnk0C != 0 &&
-						pPrev->m_dwUnk18 == 0 &&
-						(short)pPrev->m_wUnk08 > (short)pObj->m_wUnk08)
+					pPrev = pObj->m_pColPrev;
+					if (pPrev != NULL && pPrev->m_bSprite != 0 &&
+						pPrev->m_bHidden == 0 &&
+						(short)pPrev->m_wDistance > (short)pObj->m_wDistance)
 					{
 						dwRet = 1;
-						pLink = pPrev->m_pUnk30;
+						pLink = pPrev->m_pColPrev;
 						if (pLink != NULL)
-							pLink->m_pUnk34 = pPrev->m_pUnk34;
-						pScan = pPrev->m_pUnk34;
+							pLink->m_pColNext = pPrev->m_pColNext;
+						pScan = pPrev->m_pColNext;
 						if (pScan != NULL)
-							pScan->m_pUnk30 = pLink;
-						if (g_pUnk_4A471C == pPrev)
-							g_pUnk_4A471C = pScan;
+							pScan->m_pColPrev = pLink;
+						if (g_pColumnObjs == pPrev)
+							g_pColumnObjs = pScan;
 
-						pScan = pObj->m_pUnk34;
-						pObj->m_pUnk34 = pPrev;
+						pScan = pObj->m_pColNext;
+						pObj->m_pColNext = pPrev;
 						if (pScan != NULL)
-							pScan->m_pUnk30 = pPrev;
-						pPrev->m_pUnk34 = pScan;
-						pPrev->m_pUnk30 = pObj;
+							pScan->m_pColPrev = pPrev;
+						pPrev->m_pColNext = pScan;
+						pPrev->m_pColPrev = pObj;
 						dwMoved = 1;
 					}
 				} while (dwMoved != 0);
 			}
 		}
-		else if (pObj->m_dwUnk18 == 0)
+		else if (pObj->m_bHidden == 0)
 		{
 			// The object dropped off the phase line: redo the whole phase.
-			Hover_sub_4045E0(dwZ, pLine);
+			Hover_BuildDepthList(dwZ, pLine);
 			return 1;
 		}
 
@@ -3722,13 +3772,13 @@ L_next:
 // then walk the span columns phase by phase.
 // hover.exe:0x406090
 // FUNCTION: HOVER 0x406090
-void CSub406090::Sub_406090(DWORD dwUnk, CSub410F20* pCtx)
+void CSpanRasterizer::RenderWorld(CMerlinWorld* pWorld, CRenderContext* pCtx)
 {
 	CMerlinLine line;	// phase line: camera -> current column-bundle edge
-	CSub410F20* pCam;
+	CRenderContext* pCam;
 	CMerlinDynamic* pSprite;
 	SPANLINK* pNode;
-	DWORD* pCursor;
+	SINCOSENTRY* pCursor;
 	long lWide;
 	long lTall;
 	DWORD dwMask;
@@ -3740,18 +3790,18 @@ void CSub406090::Sub_406090(DWORD dwUnk, CSub410F20* pCtx)
 	int bFirst;
 	int i;
 
-	m_pUnk20 = (CMerlinWorld*)dwUnk;
-	g_pUnk_4A1D68 = (CSub403850*)pCtx;
+	m_pWorld = pWorld;
+	g_pRenderCtx = pCtx;
 
-	lWide = (long)pCtx->m_dwUnk40;
-	lTall = (long)pCtx->m_dwUnk3C;
-	g_pbUnk_4A4548 = pCtx->m_pUnk14;
-	g_dwUnk_4A453C = lWide;
-	g_dwUnk_4A455C = lTall;
-	g_dwUnk_4A1D70 = pCtx->m_dwUnk2C;
-	g_pdwUnk_4A452C = pCtx->m_pUnk5C;
-	g_dwUnk_4A454C = pCtx->m_dwUnk20;
-	g_dwUnk_4A4544 = pCtx->m_dwUnk50;
+	lWide = (long)pCtx->m_dwPixelH;
+	lTall = (long)pCtx->m_dwPixelW;
+	g_pbMipLut = pCtx->m_pMipShift;
+	g_dwRowStep = lWide;
+	g_dwColStep = lTall;
+	g_dwHorizonY = pCtx->m_dwHorizon;
+	g_pdwDistTable = pCtx->m_pRowDistance;
+	g_dwViewWidth = pCtx->m_dwViewW;
+	g_dwEyeZ = pCtx->m_dwCamZ;
 
 	lWide >>= 1;
 	nLogWide = 0;
@@ -3761,7 +3811,7 @@ void CSub406090::Sub_406090(DWORD dwUnk, CSub410F20* pCtx)
 		nLogWide++;
 	}
 
-	g_dwUnk_4A455C = lTall;
+	g_dwColStep = lTall;
 
 	lTall >>= 1;
 	nLogTall = 0;
@@ -3771,60 +3821,56 @@ void CSub406090::Sub_406090(DWORD dwUnk, CSub410F20* pCtx)
 		nLogTall++;
 	}
 
-	g_dwUnk_4A4538 = nLogWide;
-	g_dwUnk_4A4554 = nLogTall;
+	g_dwLogRowStep = nLogWide;
+	g_dwLogColStep = nLogTall;
 
-	g_dwUnk_4A1D78 = m_dwUnk24;
-	g_dwUnk_4A4A34 = m_dwNegWidth;
-	g_dwUnk_4A4A30 = pCtx->m_dwUnk7C;
+	g_bWallMipMapping = m_bMipMapping;
+	g_dwRowPitch = m_dwNegWidth;
+	g_dwDstRowStride = pCtx->m_dwRowStride;
 
-	m_pUnk00->Sub_406C90();
+	m_pRunHeap->ResetHeap();
 
 	// The renderer's camera context is cached in a register across the
 	// whole setup block and re-read after every call, exactly as the
 	// original does (ebx at hover.exe:0x406161, reloaded at 0x40620D).
-	pCam = (CSub410F20*)g_pUnk_4A1D68;
+	pCam = g_pRenderCtx;
 
-	m_dwUnk30 = ((int)g_dwUnk_4A454C << 16) / 0x55;
-	m_dwUnk34 = (pCam->m_dwUnk54 << 16) - 0x2AAAAB;
-	m_dwUnk34 &= 0x1FFFFFF;
-	memset(m_pUnk40, 0, g_dwUnk_4A454C * 4);
+	m_dwColumnsPerAngle = ((int)g_dwViewWidth << 16) / 0x55;
+	m_dwLeftEdgeAngle = (pCam->m_dwCamAngle << 16) - 0x2AAAAB;
+	m_dwLeftEdgeAngle &= 0x1FFFFFF;
+	memset(m_pColumnLists, 0, g_dwViewWidth * sizeof(SPANLINK*));
 
-	line.m_dwX1 = pCam->m_dwUnk48;
-	line.m_dwY1 = pCam->m_dwUnk4C;
-	pCursor = pCam->m_pUnk64 +
-		(((int)pCam->m_dwUnk88 *
-			((int)pCam->m_dwUnk54 & 0x1FF) * 6) /
-			512) * 2;
+	line.m_dwX1 = pCam->m_dwCamX;
+	line.m_dwY1 = pCam->m_dwCamY;
+	pCursor = pCam->m_pRayDirs +
+		((int)pCam->m_dwColumns *
+			((int)pCam->m_dwCamAngle & 0x1FF) * 6) /
+			512;
 
-	g_lineUnk_4A4498.m_dwX1 = pCam->m_dwUnk48;
-	g_lineUnk_4A4498.m_dwY1 = pCam->m_dwUnk4C;
-	g_lineUnk_4A4498.m_dwX2 = pCam->m_dwUnk48 +
-		pCursor[0];
-	g_lineUnk_4A4498.m_dwY2 = pCam->m_dwUnk4C +
-		pCursor[1];
-	g_lineUnk_4A4498.Sub_4010C0();
+	g_lineFrustumLeft.m_dwX1 = pCam->m_dwCamX;
+	g_lineFrustumLeft.m_dwY1 = pCam->m_dwCamY;
+	g_lineFrustumLeft.m_dwX2 = pCam->m_dwCamX + pCursor->nCos;
+	g_lineFrustumLeft.m_dwY2 = pCam->m_dwCamY + pCursor->nSin;
+	g_lineFrustumLeft.Recalc();
 
-	pCursor += g_dwUnk_4A454C * 2;
-	pCam = (CSub410F20*)g_pUnk_4A1D68;
-	g_lineUnk_4A44E0.m_dwX1 = pCam->m_dwUnk48;
-	g_lineUnk_4A44E0.m_dwY1 = pCam->m_dwUnk4C;
-	g_lineUnk_4A44E0.m_dwX2 = pCam->m_dwUnk48 +
-		pCursor[0];
-	g_lineUnk_4A44E0.m_dwY2 = pCursor[1] +
-		pCam->m_dwUnk4C;
-	g_lineUnk_4A44E0.Sub_4010C0();
-	pCursor -= g_dwUnk_4A454C * 2;
+	pCursor += g_dwViewWidth;
+	pCam = g_pRenderCtx;
+	g_lineFrustumRight.m_dwX1 = pCam->m_dwCamX;
+	g_lineFrustumRight.m_dwY1 = pCam->m_dwCamY;
+	g_lineFrustumRight.m_dwX2 = pCam->m_dwCamX + pCursor->nCos;
+	g_lineFrustumRight.m_dwY2 = pCursor->nSin + pCam->m_dwCamY;
+	g_lineFrustumRight.Recalc();
+	pCursor -= g_dwViewWidth;
 
-	g_pdwUnk_4A4550 = m_pUnk3C;
+	g_pSpanLinkCursor = m_pLinkPool;
 
 	// Rebuild every sprite's camera-facing segment (the perpendicular of
 	// the view direction at the sprite's position, scaled by its size) and
 	// submit the visible ones.
-	for (i = m_pUnk20->m_arrUnk28.GetSize() - 1; i >= 0; i--)
+	for (i = m_pWorld->m_arrSprites.GetSize() - 1; i >= 0; i--)
 	{
-		pSprite = (CMerlinDynamic*)m_pUnk20->m_arrUnk28.GetAt(i);
-		if (pSprite->m_dwUnk64 != 0)
+		pSprite = (CMerlinDynamic*)m_pWorld->m_arrSprites.GetAt(i);
+		if (pSprite->m_bBillboard != 0)
 		{
 			int nDX;
 			int nDY;
@@ -3833,65 +3879,63 @@ void CSub406090::Sub_406090(DWORD dwUnk, CSub410F20* pCtx)
 			int nScale;
 			double fDist;
 
-			dx = (short)pSprite->m_wUnk5A;
-			dy = (short)pSprite->m_wUnk5C;
-			pCam = (CSub410F20*)g_pUnk_4A1D68;
-			nScale = (short)pSprite->m_wUnk58;
-			dx -= (int)pCam->m_dwUnk48;
-			dy -= (int)pCam->m_dwUnk4C;
+			dx = (short)pSprite->m_wX;
+			dy = (short)pSprite->m_wY;
+			pCam = g_pRenderCtx;
+			nScale = (short)pSprite->m_wHalfWidth;
+			dx -= (int)pCam->m_dwCamX;
+			dy -= (int)pCam->m_dwCamY;
 			fDist = sqrt(fabs((double)(dy * dy + dx * dx)));
 
 			nDX = (int)(dx * nScale / fDist);
 			nDY = (int)(dy * nScale / fDist);
-			pCam = (CSub410F20*)g_pUnk_4A1D68;
-			dx += (int)pCam->m_dwUnk48;
-			dy += (int)pCam->m_dwUnk4C;
+			pCam = g_pRenderCtx;
+			dx += (int)pCam->m_dwCamX;
+			dy += (int)pCam->m_dwCamY;
 			pSprite->m_dwX1 = dx + nDY;
 			pSprite->m_dwY1 = dy - nDX;
 			pSprite->m_dwX2 = dx - nDY;
 			pSprite->m_dwY2 = nDX + dy;
-			pSprite->Sub_4010C0();
+			pSprite->Recalc();
 		}
-		if (Sub_405B90(pSprite) != 0)
-			Sub_405CE0(pSprite, pSprite, 1, 0);
+		if (IsSegmentVisible(pSprite) != 0)
+			SubmitSegment(pSprite, pSprite, 1, 0);
 	}
 
-	g_wUnk_4A4528 = 0;
-	Sub_405FA0(0);
+	g_wBspOrder = 0;
+	WalkBSP(0);
 
-	g_pdwUnk_4A4718 = m_pUnk44;
-	g_pUnk_4A4714 = NULL;
-	g_pUnk_4A471C = NULL;
+	g_pObjArenaCursor = m_pRenderObjPool;
+	g_pObjPool = NULL;
+	g_pColumnObjs = NULL;
 	bFirst = 1;
-	m_dwUnk28 = 0;
-	dwMask = g_dwUnk_4A455C - 1;
+	m_bRelink = 0;
+	dwMask = g_dwColStep - 1;
 
-	for (g_dwUnk_4A4534 = 0; (int)g_dwUnk_4A4534 < (int)g_dwUnk_4A454C;
-		g_dwUnk_4A4534++)
+	for (g_dwCurColumn = 0; (int)g_dwCurColumn < (int)g_dwViewWidth;
+		g_dwCurColumn++)
 	{
-		if ((g_dwUnk_4A4534 & dwMask) == 0)
+		if ((g_dwCurColumn & dwMask) == 0)
 		{
-			line.m_dwX2 = ((CSub410F20*)g_pUnk_4A1D68)->m_dwUnk48 +
-				pCursor[0];
-			line.m_dwY2 = ((CSub410F20*)g_pUnk_4A1D68)->m_dwUnk4C +
-				pCursor[1];
-			pCursor += g_dwUnk_4A455C * 2;
-			line.Sub_4010C0();
+			line.m_dwX2 = g_pRenderCtx->m_dwCamX + pCursor->nCos;
+			line.m_dwY2 = g_pRenderCtx->m_dwCamY + pCursor->nSin;
+			pCursor += g_dwColStep;
+			line.Recalc();
 		}
 
-		pNode = (SPANLINK*)m_pUnk40[g_dwUnk_4A4534];
+		pNode = m_pColumnLists[g_dwCurColumn];
 		if (pNode == NULL)
 		{
-			if ((g_dwUnk_4A4534 & dwMask) == 0)
+			if ((g_dwCurColumn & dwMask) == 0)
 			{
 				if (bFirst != 0)
 				{
-					m_dwUnk28 |= Hover_sub_4045E0(g_dwUnk_4A4544, &line);
+					m_bRelink |= Hover_BuildDepthList(g_dwEyeZ, &line);
 					bFirst = 0;
 				}
 				else
 				{
-					m_dwUnk28 |= Hover_sub_406D30(g_dwUnk_4A4544, &line);
+					m_bRelink |= Hover_UpdateDepthList(g_dwEyeZ, &line);
 				}
 			}
 		}
@@ -3899,18 +3943,18 @@ void CSub406090::Sub_406090(DWORD dwUnk, CSub410F20* pCtx)
 		{
 			while (pNode != NULL)
 			{
-				if (pNode->m_dwUnk04 != 0)
-					Hover_sub_4044A0(pNode->m_dwUnk08, pNode->m_dwUnk0C,
-						pNode->m_wUnk00, pNode->m_dwUnk10);
+				if (pNode->m_bOpen != 0)
+					Hover_InsertRenderObj(pNode->m_bSprite, pNode->m_pObj,
+						pNode->m_wOrder, pNode->m_pSegment);
 				else
-					m_dwUnk28 |= Hover_sub_404580(pNode->m_dwUnk0C,
-						pNode->m_dwUnk10);
-				pNode = pNode->m_pUnk14;
+					m_bRelink |= Hover_RemoveRenderObj(pNode->m_pObj,
+						pNode->m_pSegment);
+				pNode = pNode->m_pNext;
 			}
-			if ((g_dwUnk_4A4534 & dwMask) == 0)
+			if ((g_dwCurColumn & dwMask) == 0)
 			{
 				bFirst = 0;
-				m_dwUnk28 |= Hover_sub_4045E0(g_dwUnk_4A4544, &line);
+				m_bRelink |= Hover_BuildDepthList(g_dwEyeZ, &line);
 			}
 			else
 			{
@@ -3918,43 +3962,43 @@ void CSub406090::Sub_406090(DWORD dwUnk, CSub410F20* pCtx)
 			}
 		}
 
-		if ((g_dwUnk_4A4534 & dwMask) == 0)
+		if ((g_dwCurColumn & dwMask) == 0)
 		{
-			dwNegStep = 0 - g_dwUnk_4A453C;
-			dwTop = ((CSub410F20*)g_pUnk_4A1D68)->m_pUnk34[
-				g_dwUnk_4A4534] & dwNegStep;
-			g_dwUnk_4A1D64 = dwTop;
-			dwBottom = ((CSub410F20*)g_pUnk_4A1D68)->m_pUnk38[
-				g_dwUnk_4A4534] & dwNegStep;
-			g_dwUnk_4A4568 = g_dwUnk_4A1D64 - g_dwUnk_4A453C - 1;
-			g_dwUnk_4A4530 = g_dwUnk_4A453C + dwBottom + 1;
-			g_dwUnk_4A1D6C = ((CSub410F20*)g_pUnk_4A1D68)->m_pUnk30[
-				g_dwUnk_4A4534] << 10;
-			if (((CSub410F20*)g_pUnk_4A1D68)->m_dwUnk68 != 0)
-				g_dwUnk_4A4540 = ((CSub410F20*)g_pUnk_4A1D68)->m_dwUnk28 -
-					g_dwUnk_4A455C - g_dwUnk_4A4534 + g_dwUnk_4A454C - 1;
+			dwNegStep = 0 - g_dwRowStep;
+			dwTop = g_pRenderCtx->m_pClipTop[
+				g_dwCurColumn] & dwNegStep;
+			g_dwColTopY = dwTop;
+			dwBottom = g_pRenderCtx->m_pClipBottom[
+				g_dwCurColumn] & dwNegStep;
+			g_dwAboveClipY = g_dwColTopY - g_dwRowStep - 1;
+			g_dwBelowClipY = g_dwRowStep + dwBottom + 1;
+			g_dwColProjScale = g_pRenderCtx->m_pColumnScale[
+				g_dwCurColumn] << 10;
+			if (g_pRenderCtx->m_bMirror != 0)
+				g_dwColumnOrigin = (DWORD)g_pRenderCtx->m_pScanOrigin -
+					g_dwColStep - g_dwCurColumn + g_dwViewWidth - 1;
 			else
-				g_dwUnk_4A4540 = ((CSub410F20*)g_pUnk_4A1D68)->m_dwUnk28 +
-					g_dwUnk_4A4534;
-			g_dwUnk_4A456C = dwBottom;
+				g_dwColumnOrigin = (DWORD)g_pRenderCtx->m_pScanOrigin +
+					g_dwCurColumn;
+			g_dwColBottomY = dwBottom;
 
-			if (g_pUnk_4A471C != NULL)
+			if (g_pColumnObjs != NULL)
 			{
-				((CSub402E00*)this)->Sub_402E00((DWORD)g_pUnk_4A471C);
+				RenderColumn((DWORD)g_pColumnObjs);
 			}
 			else
 			{
-				g_dwUnk_4A456C = dwBottom;
-				m_dwUnk28 |= 1;
-				if ((int)(g_dwUnk_4A454C - 1) > (int)g_dwUnk_4A4534)
-					((CSub403980*)m_pUnk00)->Sub_406D00(g_dwUnk_4A1D64,
+				g_dwColBottomY = dwBottom;
+				m_bRelink |= 1;
+				if ((int)(g_dwViewWidth - 1) > (int)g_dwCurColumn)
+					m_pRunHeap->AddSkyRun(g_dwColTopY,
 						dwBottom);
-				((CSub403980*)m_pUnk00)->Sub_403A60((CSub402E00*)this);
+				m_pRunHeap->FlushRuns(this);
 			}
 		}
 	}
 
-	((CSub403980*)m_pUnk00)->Sub_403A60((CSub402E00*)this);
+	m_pRunHeap->FlushRuns(this);
 }
 
 // Three-slot flavours of the pointer-destination fixed-point macros
@@ -4017,6 +4061,11 @@ inline HOVER_ZONESIZE Hover_ZoneSize(const DWORD* pdw)
 	return *(const HOVER_ZONESIZE*)pdw;
 }
 
+inline HOVER_ZONESIZE Hover_ZoneSize(const SIZE* pSize)
+{
+	return *(const HOVER_ZONESIZE*)pSize;
+}
+
 // Present one rectangle of the offscreen render target into the client DC,
 // doubling the destination geometry when the view runs at 2x. CDC::BitBlt
 // and CDC::StretchBlt are inline in MFC 3.1 (AFXWIN1.INL), so each use
@@ -4024,12 +4073,12 @@ inline HOVER_ZONESIZE Hover_ZoneSize(const DWORD* pdw)
 // DC, and each expansion homes its computed arguments in stack temporaries
 // of its own (notes/perfect-match.md rule 91).
 #define HOVER_PRESENT_BLIT(dcDest, xDst, yDst, cxDst, cyDst)		\
-	if (m_dwUnk0544 != 0)											\
+	if (m_bDoubleSize != 0)											\
 		(dcDest).StretchBlt((xDst) * 2, (yDst) * 2, (cxDst) * 2,	\
-			(cyDst) * 2, &m_dcUnk00B4, xDst, yDst, cxDst, cyDst,	\
+			(cyDst) * 2, &m_dcOffscreen, xDst, yDst, cxDst, cyDst,	\
 			SRCCOPY);												\
 	else															\
-		(dcDest).BitBlt(xDst, yDst, cxDst, cyDst, &m_dcUnk00B4,		\
+		(dcDest).BitBlt(xDst, yDst, cxDst, cyDst, &m_dcOffscreen,		\
 			xDst, yDst, SRCCOPY);
 
 // Composite/present the offscreen render target into the view's client
@@ -4044,7 +4093,7 @@ inline HOVER_ZONESIZE Hover_ZoneSize(const DWORD* pdw)
 
 // hover.exe:0x407430
 // FUNCTION: HOVER 0x407430
-void CBumperView::Sub_407430()
+void CBumperView::PresentFrame()
 {
 	DWORD dwFlag;
 	CBumperDoc* pDoc;
@@ -4059,9 +4108,10 @@ void CBumperView::Sub_407430()
 	long nMax;
 	long nValue;
 
-	// Determine the present-path flag; theApp.m_dwUnk03E8 forces it to 1.
-	dwFlag = g_dwUnk_4C4CA8;
-	if (theApp.m_dwUnk03E8 != 0)
+	// Determine the present-path flag; theApp.m_bDisplayDibActive forces it
+	// to 1.
+	dwFlag = g_bFullFramePresent;
+	if (theApp.m_bDisplayDibActive != 0)
 		dwFlag = 1;
 
 	pDoc = (CBumperDoc*)m_pDocument;
@@ -4069,163 +4119,163 @@ void CBumperView::Sub_407430()
 	// Choose the zone descriptor. When the view is in 2x mode the base
 	// descriptor (zone 0) is used; otherwise the current zone index selects
 	// one of the six 0x338-byte blocks.
-	pZone = (ZONE_DESCRIPTOR*)g_adwUnk_4609A0;
-	if (m_dwUnk0544 == 0)
-		pZone += g_dwUnk_460998;
+	pZone = g_aZones;
+	if (m_bDoubleSize == 0)
+		pZone += g_dwCurZone;
 
 	CClientDC dc(this);
 
 	// Select the global palette into the client DC.
-	pOldPal = dc.SelectPalette(&g_paletteUnk_4A1D50, TRUE);
+	pOldPal = dc.SelectPalette(&g_palGame, TRUE);
 
-	if (m_dwUnk0540 == 0)
+	if (m_bFullMap == 0)
 	{
 		// Early-out: the view is inactive.
-		if (m_dwUnk0080 != 0)
+		if (m_bNeedRepaint != 0)
 		{
 			dc.SelectPalette(pOldPal, TRUE);
 			return;
 		}
 
-		// Background rect-1 from m_rcUnk0220.
+		// Background rect-1 from m_rc3DView.
 		if (dwFlag == 0)
 		{
-			HOVER_PRESENT_BLIT(dc, m_rcUnk0220.left, m_rcUnk0220.top,
-				m_rcUnk0220.Width(), m_rcUnk0220.Height());
+			HOVER_PRESENT_BLIT(dc, m_rc3DView.left, m_rc3DView.top,
+				m_rc3DView.Width(), m_rc3DView.Height());
 
-			// Background rect-2 from m_rcUnk0230 when the alternate
+			// Background rect-2 from m_rcMirrorView when the alternate
 			// renderer is active.
-			if (theApp.m_dwUnk01D0 != 0)
+			if (theApp.m_bRearView != 0)
 			{
-				HOVER_PRESENT_BLIT(dc, m_rcUnk0230.left, m_rcUnk0230.top,
-					m_rcUnk0230.Width(), m_rcUnk0230.Height());
+				HOVER_PRESENT_BLIT(dc, m_rcMirrorView.left, m_rcMirrorView.top,
+					m_rcMirrorView.Width(), m_rcMirrorView.Height());
 			}
 		}
 
-		// m_obj00E8 present helper: draw into the offscreen DC when dwFlag
+		// m_needle present helper: draw into the offscreen DC when dwFlag
 		// is set, otherwise draw into the client DC.
-		m_obj00E8.Sub_401E80((dwFlag != 0) ? &m_dcUnk00B4 : &dc, 0);
+		m_needle.DrawNeedle((dwFlag != 0) ? &m_dcOffscreen : &dc, 0);
 
-		// Dashboard CSub422C30 elements.
-		if (m_obj0430.m_dwUnk00 != 0)
+		// Dashboard CFlagStrip elements.
+		if (m_flagsPlayer.m_bFlagsDirty != 0)
 		{
 			{
-				HOVER_ZONESIZE size = Hover_ZoneSize(&pZone->m_dwWidth);
+				HOVER_ZONESIZE size = Hover_ZoneSize(&pZone->m_size);
 
-				m_obj0430.Sub_40E9A0(m_pUnk00D0->m_dwUnk04, size.cx, size.cy);
+				m_flagsPlayer.DrawFlags(m_pRasterizer->m_pBits, size.cx, size.cy);
 			}
 
 			if (dwFlag == 0)
 			{
-				HOVER_PRESENT_BLIT(dc, pZone->m_rcUnk228.left,
-					pZone->m_rcUnk228.top, 6 * pZone->m_dwUnk28,
-					pZone->m_dwUnk2C);
+				HOVER_PRESENT_BLIT(dc, pZone->m_ptPlayerFlags.x,
+					pZone->m_ptPlayerFlags.y, 6 * pZone->m_sizeFlagIcon.cx,
+					pZone->m_sizeFlagIcon.cy);
 			}
 		}
 
-		if (m_obj0480.m_dwUnk00 != 0)
+		if (m_flagsRobot.m_bFlagsDirty != 0)
 		{
 			{
-				HOVER_ZONESIZE size = Hover_ZoneSize(&pZone->m_dwWidth);
+				HOVER_ZONESIZE size = Hover_ZoneSize(&pZone->m_size);
 
-				m_obj0480.Sub_40E9A0(m_pUnk00D0->m_dwUnk04, size.cx, size.cy);
+				m_flagsRobot.DrawFlags(m_pRasterizer->m_pBits, size.cx, size.cy);
 			}
 
 			if (dwFlag == 0)
 			{
-				HOVER_PRESENT_BLIT(dc, pZone->m_rcUnk230.left,
-					pZone->m_rcUnk230.top, 6 * pZone->m_dwUnk28,
-					pZone->m_dwUnk2C);
+				HOVER_PRESENT_BLIT(dc, pZone->m_ptRobotFlags.x,
+					pZone->m_ptRobotFlags.y, 6 * pZone->m_sizeFlagIcon.cx,
+					pZone->m_sizeFlagIcon.cy);
 			}
 		}
 
-		// Dashboard CSub422BD0 elements. Each of the four waypoint markers
+		// Dashboard CDigitDisplay elements. Each of the four waypoint markers
 		// reads its origin and size into locals first: the original holds
 		// all four in registers across the blit expansion instead of
 		// re-reading the descriptor for the source rectangle.
-		if (m_obj0240.m_dwUnk00 != 0)
+		if (m_ctrJumpPods.m_bDigitsDirty != 0)
 		{
 			{
-				HOVER_ZONESIZE size = Hover_ZoneSize(&pZone->m_dwWidth);
+				HOVER_ZONESIZE size = Hover_ZoneSize(&pZone->m_size);
 
-				m_obj0240.Sub_40FCE0(m_pUnk00D0->m_dwUnk04, size.cx, size.cy);
+				m_ctrJumpPods.DrawDigits(m_pRasterizer->m_pBits, size.cx, size.cy);
 			}
 
 			if (dwFlag == 0)
 			{
-				DWORD x = pZone->m_adwWaypointMarkers[0];
-				DWORD y = pZone->m_adwWaypointMarkers[1];
-				DWORD cx = pZone->m_dwUnk20;
-				DWORD cy = pZone->m_dwUnk24;
+				DWORD x = pZone->m_aptPodCounters[0].x;
+				DWORD y = pZone->m_aptPodCounters[0].y;
+				DWORD cx = pZone->m_sizePodDigit.cx;
+				DWORD cy = pZone->m_sizePodDigit.cy;
 
 				HOVER_PRESENT_BLIT(dc, x, y, cx, cy);
 			}
 		}
 
-		if (m_obj0268.m_dwUnk00 != 0)
+		if (m_ctrSmokeBombs.m_bDigitsDirty != 0)
 		{
 			{
-				HOVER_ZONESIZE size = Hover_ZoneSize(&pZone->m_dwWidth);
+				HOVER_ZONESIZE size = Hover_ZoneSize(&pZone->m_size);
 
-				m_obj0268.Sub_40FCE0(m_pUnk00D0->m_dwUnk04, size.cx, size.cy);
+				m_ctrSmokeBombs.DrawDigits(m_pRasterizer->m_pBits, size.cx, size.cy);
 			}
 
 			if (dwFlag == 0)
 			{
-				DWORD x = pZone->m_adwWaypointMarkers[4];
-				DWORD y = pZone->m_adwWaypointMarkers[5];
-				DWORD cx = pZone->m_dwUnk20;
-				DWORD cy = pZone->m_dwUnk24;
+				DWORD x = pZone->m_aptPodCounters[2].x;
+				DWORD y = pZone->m_aptPodCounters[2].y;
+				DWORD cx = pZone->m_sizePodDigit.cx;
+				DWORD cy = pZone->m_sizePodDigit.cy;
 
 				HOVER_PRESENT_BLIT(dc, x, y, cx, cy);
 			}
 		}
 
-		if (m_obj0290.m_dwUnk00 != 0)
+		if (m_ctrTempWalls.m_bDigitsDirty != 0)
 		{
 			{
-				HOVER_ZONESIZE size = Hover_ZoneSize(&pZone->m_dwWidth);
+				HOVER_ZONESIZE size = Hover_ZoneSize(&pZone->m_size);
 
-				m_obj0290.Sub_40FCE0(m_pUnk00D0->m_dwUnk04, size.cx, size.cy);
+				m_ctrTempWalls.DrawDigits(m_pRasterizer->m_pBits, size.cx, size.cy);
 			}
 
 			if (dwFlag == 0)
 			{
-				DWORD x = pZone->m_adwWaypointMarkers[2];
-				DWORD y = pZone->m_adwWaypointMarkers[3];
-				DWORD cx = pZone->m_dwUnk20;
-				DWORD cy = pZone->m_dwUnk24;
+				DWORD x = pZone->m_aptPodCounters[1].x;
+				DWORD y = pZone->m_aptPodCounters[1].y;
+				DWORD cx = pZone->m_sizePodDigit.cx;
+				DWORD cy = pZone->m_sizePodDigit.cy;
 
 				HOVER_PRESENT_BLIT(dc, x, y, cx, cy);
 			}
 		}
 
-		if (m_obj02B8.m_dwUnk00 != 0)
+		if (m_score.m_bDigitsDirty != 0)
 		{
 			{
-				HOVER_ZONESIZE size = Hover_ZoneSize(&pZone->m_dwWidth);
+				HOVER_ZONESIZE size = Hover_ZoneSize(&pZone->m_size);
 
-				m_obj02B8.Sub_40FCE0(m_pUnk00D0->m_dwUnk04, size.cx, size.cy);
+				m_score.DrawDigits(m_pRasterizer->m_pBits, size.cx, size.cy);
 			}
 
 			if (dwFlag == 0)
 			{
-				HOVER_PRESENT_BLIT(dc, pZone->m_rcUnk220.left,
-					pZone->m_rcUnk220.top, 7 * pZone->m_dwUnk18,
-					pZone->m_dwUnk1C);
+				HOVER_PRESENT_BLIT(dc, pZone->m_ptScore.x,
+					pZone->m_ptScore.y, 7 * pZone->m_sizeScoreDigit.cx,
+					pZone->m_sizeScoreDigit.cy);
 			}
 		}
 
 		// Speed gauge. |velocity| is built in 16.16 from the document's two
 		// velocity components, divided by the ship's scaled top speed and
-		// fed to the first gauge object; CSub422C80::Sub_42A9F0 (0x42A9F0)
-		// and the CSub42AE90(double) constructor (0x42A9D0) are expanded
+		// fed to the first gauge object; CSegmentGauge::SetFraction (0x42A9F0)
+		// and the CGaugeFraction(double) constructor (0x42A9D0) are expanded
 		// inline here.
 		//
-		// theApp.m_pUnk014C points to the active ship params block, whose
-		// +0x20 field scales the document's top-speed reading.
+		// theApp.m_pHumanParams points to the active ship params block,
+		// whose [8] scales the document's top-speed reading.
 		dwScale = *(DWORD*)((BYTE*)pDoc + 0x8364);
-		HOVER_FIXMULP3(dwScale, *(DWORD*)((BYTE*)theApp.m_pUnk014C + 0x20));
+		HOVER_FIXMULP3(dwScale, theApp.m_pHumanParams->m_adw[8]);
 
 		dwX = *(DWORD*)((BYTE*)pDoc + 0x8338);
 		HOVER_FIXMULP3(dwX, dwX);
@@ -4239,7 +4289,7 @@ void CBumperView::Sub_407430()
 			+ fx.s.sInt) * 65536.0);
 		HOVER_FIXDIVLP(dwFix, dwScale);
 
-		nMax = (long)m_obj02E0.m_dwUnk1C;
+		nMax = (long)m_gaugeSpeed.m_dwSegments;
 		fxArg.dw = dwFix;
 		fxArg.dw += 0x288;
 		HOVER_FIXMULWP3(fxArg.dw, nMax);
@@ -4248,36 +4298,36 @@ void CBumperView::Sub_407430()
 		if (nValue > nMax)
 			nValue = nMax;
 		if (nValue >= nMax)
-			m_obj02E0.m_dwUnk24 = (DWORD)nMax;
+			m_gaugeSpeed.m_dwLevel = (DWORD)nMax;
 		else
 		{
-			m_obj02E0.m_dwUnk24 = 0;
+			m_gaugeSpeed.m_dwLevel = 0;
 			if (nValue > 0)
-				m_obj02E0.m_dwUnk24 = (DWORD)nValue;
+				m_gaugeSpeed.m_dwLevel = (DWORD)nValue;
 		}
 
 		// Gauge calls. Each gauge is drawn into the offscreen DC (bUnk=1).
 		// When dwFlag is clear and the gauge's value has changed it is also
 		// drawn into the client DC (bUnk=0); the first gauge uses bUnk=1
 		// even for the client draw in the original.
-		CDC* pOffscreenDC = &m_dcUnk00B4;
+		CDC* pOffscreenDC = &m_dcOffscreen;
 
 		if (dwFlag == 0)
-			m_obj02E0.Sub_401AD0(&dc, 1);
-		m_obj02E0.Sub_401AD0(pOffscreenDC, 1);
+			m_gaugeSpeed.DrawGauge(&dc, 1);
+		m_gaugeSpeed.DrawGauge(pOffscreenDC, 1);
 
 		if (*(DWORD*)((BYTE*)pDoc + 0x82B0) != 0)
 		{
-			if (dwFlag == 0 && m_obj0310.m_dwUnk24 != m_obj0310.m_dwUnk28)
-				m_obj0310.Sub_401AD0(&dc, 0);
-			m_obj0310.Sub_401AD0(pOffscreenDC, 1);
+			if (dwFlag == 0 && m_gaugeInvincible.m_dwLevel != m_gaugeInvincible.m_dwLastLevel)
+				m_gaugeInvincible.DrawGauge(&dc, 0);
+			m_gaugeInvincible.DrawGauge(pOffscreenDC, 1);
 		}
 
 		if (*(DWORD*)((BYTE*)pDoc + 0x82B4) != 0)
 		{
-			if (dwFlag == 0 && m_obj0370.m_dwUnk24 != m_obj0370.m_dwUnk28)
-				m_obj0370.Sub_401AD0(&dc, 0);
-			m_obj0370.Sub_401AD0(pOffscreenDC, 1);
+			if (dwFlag == 0 && m_gaugeSpeedPod.m_dwLevel != m_gaugeSpeedPod.m_dwLastLevel)
+				m_gaugeSpeedPod.DrawGauge(&dc, 0);
+			m_gaugeSpeedPod.DrawGauge(pOffscreenDC, 1);
 		}
 
 		// hover.exe:0x408217 falls into this block when +0x82B8 is set and
@@ -4286,27 +4336,27 @@ void CBumperView::Sub_407430()
 		if (*(DWORD*)((BYTE*)pDoc + 0x82B8) != 0 ||
 			*(DWORD*)((BYTE*)pDoc + 0x82B4) == 0)
 		{
-			if (dwFlag == 0 && m_obj0340.m_dwUnk24 != m_obj0340.m_dwUnk28)
-				m_obj0340.Sub_401AD0(&dc, 0);
-			m_obj0340.Sub_401AD0(pOffscreenDC, 1);
+			if (dwFlag == 0 && m_gaugeSlow.m_dwLevel != m_gaugeSlow.m_dwLastLevel)
+				m_gaugeSlow.DrawGauge(&dc, 0);
+			m_gaugeSlow.DrawGauge(pOffscreenDC, 1);
 		}
 
-		if (dwFlag == 0 && m_obj03A0.m_dwUnk24 != m_obj03A0.m_dwUnk28)
-			m_obj03A0.Sub_401AD0(&dc, 0);
-		m_obj03A0.Sub_401AD0(pOffscreenDC, 1);
+		if (dwFlag == 0 && m_gaugeAltitude.m_dwLevel != m_gaugeAltitude.m_dwLastLevel)
+			m_gaugeAltitude.DrawGauge(&dc, 0);
+		m_gaugeAltitude.DrawGauge(pOffscreenDC, 1);
 
 		if (*(DWORD*)((BYTE*)pDoc + 0x82C0) != 0)
 		{
-			if (dwFlag == 0 && m_obj03D0.m_dwUnk24 != m_obj03D0.m_dwUnk28)
-				m_obj03D0.Sub_401AD0(&dc, 0);
-			m_obj03D0.Sub_401AD0(pOffscreenDC, 1);
+			if (dwFlag == 0 && m_gaugeSmoke.m_dwLevel != m_gaugeSmoke.m_dwLastLevel)
+				m_gaugeSmoke.DrawGauge(&dc, 0);
+			m_gaugeSmoke.DrawGauge(pOffscreenDC, 1);
 		}
 
 		if (*(DWORD*)((BYTE*)pDoc + 0x82BC) != 0)
 		{
-			if (dwFlag == 0 && m_obj0400.m_dwUnk24 != m_obj0400.m_dwUnk28)
-				m_obj0400.Sub_401AD0(&dc, 0);
-			m_obj0400.Sub_401AD0(pOffscreenDC, 1);
+			if (dwFlag == 0 && m_gaugeTempWall.m_dwLevel != m_gaugeTempWall.m_dwLastLevel)
+				m_gaugeTempWall.DrawGauge(&dc, 0);
+			m_gaugeTempWall.DrawGauge(pOffscreenDC, 1);
 		}
 
 		// Flush the batched GDI calls that filled the offscreen DC before
@@ -4316,13 +4366,13 @@ void CBumperView::Sub_407430()
 		// Blit the projected scene into the client area unless the
 		// WM_COPYDATA path will handle it.
 		if (dwFlag == 0)
-			m_obj0150.Sub_42D3E0(&dc);
+			m_map.PresentMap(&dc);
 
 		// Optional final overlay using the zone descriptor's base size.
-		if (g_dwUnk_4C4CA8 != 0)
+		if (g_bFullFramePresent != 0)
 		{
-			HOVER_PRESENT_BLIT(dc, 0, 0, pZone->m_dwWidth,
-				pZone->m_dwHeight);
+			HOVER_PRESENT_BLIT(dc, 0, 0, pZone->m_size.cx,
+				pZone->m_size.cy);
 		}
 
 		// WM_COPYDATA path (only when dwFlag != 0). The original calls
@@ -4336,8 +4386,8 @@ void CBumperView::Sub_407430()
 			HWND hwndTarget;
 			void* lpBits;
 
-			lpBits = (void*)m_pUnk00D0->m_dwUnk04;
-			hwndTarget = (HWND)theApp.m_dwUnk03F0;
+			lpBits = (void*)m_pRasterizer->m_pBits;
+			hwndTarget = theApp.m_hwndDisplayDib;
 			cds.dwData = 0x401;
 			cds.cbData = 0x12C00;
 			if (lpBits == NULL)
@@ -4348,30 +4398,30 @@ void CBumperView::Sub_407430()
 			if (pfnSendMessage(hwndTarget, WM_COPYDATA, 0,
 					(LPARAM)&cds) != 0)
 			{
-				if (theApp.m_dwUnk03F0 != 0)
+				if (theApp.m_hwndDisplayDib != 0)
 				{
-					if (theApp.m_dwUnk03E8 != 0)
+					if (theApp.m_bDisplayDibActive != 0)
 					{
-						pfnSendMessage((HWND)theApp.m_dwUnk03F0, 0x404, 0,
+						pfnSendMessage(theApp.m_hwndDisplayDib, 0x404, 0,
 							0);
-						theApp.m_dwUnk03E8 = 0;
+						theApp.m_bDisplayDibActive = 0;
 					}
-					pfnSendMessage((HWND)theApp.m_dwUnk03F0, 0x402, 0, 0);
-					theApp.m_dwUnk03F0 = 0;
+					pfnSendMessage(theApp.m_hwndDisplayDib, 0x402, 0, 0);
+					theApp.m_hwndDisplayDib = 0;
 				}
 
-				theApp.m_dwUnk03E4 = 0;
-				theApp.m_dwUnk03E0 = 0;
+				theApp.m_bUseDisplayDib = 0;
+				theApp.m_bDisplayDibAvailable = 0;
 
-				HOVER_PRESENT_BLIT(dc, 0, 0, pZone->m_dwWidth,
-					pZone->m_dwHeight);
+				HOVER_PRESENT_BLIT(dc, 0, 0, pZone->m_size.cx,
+					pZone->m_size.cy);
 				return;
 			}
 		}
 	}
 	else
 	{
-		m_obj0150.Sub_42D3E0(&dc);
+		m_map.PresentMap(&dc);
 	}
 
 	dc.SelectPalette(pOldPal, TRUE);
@@ -4384,10 +4434,10 @@ void CBumperView::Sub_407430()
 
 // hover.exe:0x41ECC0
 // FUNCTION: HOVER 0x41ecc0
-UINT AFX_CDECL Hover_sub_41ECC0(LPVOID pParam)
+UINT AFX_CDECL Hover_RenderThreadProc(LPVOID pParam)
 {
 	GdiSetBatchLimit(1);
-	((CBumperView*)pParam)->Sub_41ECE0();
+	((CBumperView*)pParam)->WorkerThreadMain();
 	return 0;
 }
 
@@ -4409,80 +4459,80 @@ void CBumperView::OnInitialUpdate()
 	g_dwUnk_4C57CC = 0x50;
 	g_dwUnk_4C57D0 = 0x64;
 
-	m_dwUnk021C = 0;
-	m_dwUnk0084 = 0;
+	m_bSmokeBlind = 0;
+	m_bInitialized = 0;
 
-	if (m_dwUnk0040 == 0)
+	if (m_pRenderThread == 0)
 	{
 		GdiSetBatchLimit(1);
 
-		m_dwUnk0048 = (DWORD)CreateEventA(NULL, TRUE, FALSE, NULL);
-		m_hUnk004C = CreateEventA(NULL, TRUE, FALSE, NULL);
-		m_hUnk0050 = CreateEventA(NULL, TRUE, FALSE, NULL);
-		m_hUnk0054 = CreateEventA(NULL, TRUE, TRUE, NULL);
-		m_hUnk0058 = CreateEventA(NULL, TRUE, FALSE, NULL);
-		m_hUnk005C = CreateEventA(NULL, TRUE, FALSE, NULL);
+		m_hEvtCommand = CreateEventA(NULL, TRUE, FALSE, NULL);
+		m_hEvtWorkerBusy = CreateEventA(NULL, TRUE, FALSE, NULL);
+		m_hEvtWorkerIdle = CreateEventA(NULL, TRUE, FALSE, NULL);
+		m_hEvtCommandAck = CreateEventA(NULL, TRUE, TRUE, NULL);
+		m_hEvtUnused1 = CreateEventA(NULL, TRUE, FALSE, NULL);
+		m_hEvtUnused2 = CreateEventA(NULL, TRUE, FALSE, NULL);
 
 		// The worker is an MFC CWinThread kept alive by the view (the
-		// teardown in Sub_41F350 waits on its m_hThread and deletes it).
-		m_dwUnk0040 = (DWORD)AfxBeginThread(Hover_sub_41ECC0, this);
-		((CWinThread*)m_dwUnk0040)->m_bAutoDelete = FALSE;
+		// teardown in DestroyRenderer waits on its m_hThread and deletes it).
+		m_pRenderThread = AfxBeginThread(Hover_RenderThreadProc, this);
+		(m_pRenderThread)->m_bAutoDelete = FALSE;
 
-		m_dcUnk00B4.Attach(::CreateCompatibleDC(NULL));
-		m_dwUnk00C4 = 0;
+		m_dcOffscreen.Attach(::CreateCompatibleDC(NULL));
+		m_hOldBitmap = 0;
 
-		if (m_pUnk00C8 != NULL)
-			delete m_pUnk00C8;
-		if (m_pUnk00CC != NULL)
-			delete m_pUnk00CC;
+		if (m_pViewCtx != NULL)
+			delete m_pViewCtx;
+		if (m_pMirrorCtx != NULL)
+			delete m_pMirrorCtx;
 
-		m_pUnk00C8 = new CSub410F20();
+		m_pViewCtx = new CRenderContext();
 
-		if (theApp.m_dwUnk01D0 != 0)
-			m_pUnk00CC = new CSub410F20();
+		if (theApp.m_bRearView != 0)
+			m_pMirrorCtx = new CRenderContext();
 	}
 
-	// Initialize the CSub422C30 dashboard elements: enabled, and the
+	// Initialize the CFlagStrip dashboard elements: enabled, and the
 	// "changed" flag clamped like the gauges below (rule 22).
-	m_obj0430.m_dwUnk00 = 1;
-	m_obj0430.m_dwUnk44 = m_obj0430.m_dwUnk3C;
-	if ((long)m_obj0430.m_dwUnk44 > 0)
-		m_obj0430.m_dwUnk44 = 0;
+	m_flagsPlayer.m_bFlagsDirty = 1;
+	m_flagsPlayer.m_dwFilled = m_flagsPlayer.m_dwSlots;
+	if ((long)m_flagsPlayer.m_dwFilled > 0)
+		m_flagsPlayer.m_dwFilled = 0;
 
-	m_obj0480.m_dwUnk00 = 1;
-	m_obj0480.m_dwUnk44 = m_obj0480.m_dwUnk3C;
-	if ((long)m_obj0480.m_dwUnk44 > 0)
-		m_obj0480.m_dwUnk44 = 0;
+	m_flagsRobot.m_bFlagsDirty = 1;
+	m_flagsRobot.m_dwFilled = m_flagsRobot.m_dwSlots;
+	if ((long)m_flagsRobot.m_dwFilled > 0)
+		m_flagsRobot.m_dwFilled = 0;
 
 	// Initialize the gauge current values to the clamped maximums.
-	m_obj02E0.m_dwUnk24 = m_obj02E0.m_dwUnk1C;
-	if ((long)m_obj02E0.m_dwUnk24 > 0)
-		m_obj02E0.m_dwUnk24 = 0;
-	m_obj0310.m_dwUnk24 = m_obj0310.m_dwUnk1C;
-	if ((long)m_obj0310.m_dwUnk24 > 0)
-		m_obj0310.m_dwUnk24 = 0;
-	m_obj0340.m_dwUnk24 = m_obj0340.m_dwUnk1C;
-	if ((long)m_obj0340.m_dwUnk24 > 0)
-		m_obj0340.m_dwUnk24 = 0;
-	m_obj0370.m_dwUnk24 = m_obj0370.m_dwUnk1C;
-	if ((long)m_obj0370.m_dwUnk24 > 0)
-		m_obj0370.m_dwUnk24 = 0;
-	m_obj03A0.m_dwUnk24 = m_obj03A0.m_dwUnk1C;
-	if ((long)m_obj03A0.m_dwUnk24 > 0)
-		m_obj03A0.m_dwUnk24 = 0;
-	m_obj03D0.m_dwUnk24 = m_obj03D0.m_dwUnk1C;
-	if ((long)m_obj03D0.m_dwUnk24 > 0)
-		m_obj03D0.m_dwUnk24 = 0;
-	m_obj0400.m_dwUnk24 = m_obj0400.m_dwUnk1C;
-	if ((long)m_obj0400.m_dwUnk24 > 0)
-		m_obj0400.m_dwUnk24 = 0;
+	m_gaugeSpeed.m_dwLevel = m_gaugeSpeed.m_dwSegments;
+	if ((long)m_gaugeSpeed.m_dwLevel > 0)
+		m_gaugeSpeed.m_dwLevel = 0;
+	m_gaugeInvincible.m_dwLevel = m_gaugeInvincible.m_dwSegments;
+	if ((long)m_gaugeInvincible.m_dwLevel > 0)
+		m_gaugeInvincible.m_dwLevel = 0;
+	m_gaugeSlow.m_dwLevel = m_gaugeSlow.m_dwSegments;
+	if ((long)m_gaugeSlow.m_dwLevel > 0)
+		m_gaugeSlow.m_dwLevel = 0;
+	m_gaugeSpeedPod.m_dwLevel = m_gaugeSpeedPod.m_dwSegments;
+	if ((long)m_gaugeSpeedPod.m_dwLevel > 0)
+		m_gaugeSpeedPod.m_dwLevel = 0;
+	m_gaugeAltitude.m_dwLevel = m_gaugeAltitude.m_dwSegments;
+	if ((long)m_gaugeAltitude.m_dwLevel > 0)
+		m_gaugeAltitude.m_dwLevel = 0;
+	m_gaugeSmoke.m_dwLevel = m_gaugeSmoke.m_dwSegments;
+	if ((long)m_gaugeSmoke.m_dwLevel > 0)
+		m_gaugeSmoke.m_dwLevel = 0;
+	m_gaugeTempWall.m_dwLevel = m_gaugeTempWall.m_dwSegments;
+	if ((long)m_gaugeTempWall.m_dwLevel > 0)
+		m_gaugeTempWall.m_dwLevel = 0;
 
 	pfnProgress = g_pfnUnk_4C4DAC;
 	if (pfnProgress != NULL)
 		pfnProgress(1, 0x0A);
 
 	::GetClientRect(m_hWnd, &rcClient);
-	Sub_4274B0(rcClient.right - rcClient.left,
+	RequestResize(rcClient.right - rcClient.left,
 		rcClient.bottom - rcClient.top, 1);
 
 	pfnProgress = g_pfnUnk_4C4DAC;
@@ -4490,49 +4540,49 @@ void CBumperView::OnInitialUpdate()
 		pfnProgress(4, 0x0A);
 
 	pDoc = (CBumperDoc*)m_pDocument;
-	m_dwUnk0080 = 1;
+	m_bNeedRepaint = 1;
 
-	if (pDoc->m_dwUnk0184 != 0)
+	if (pDoc->m_bLevelLoaded != 0)
 	{
-		EnterCriticalSection(&theApp.m_csUnk00D4);
-		Hover_sub_408780();
-		LeaveCriticalSection(&theApp.m_csUnk00D4);
+		EnterCriticalSection(&theApp.m_csScene);
+		Hover_CommitDirtyObjects();
+		LeaveCriticalSection(&theApp.m_csScene);
 
 		pfnProgress = g_pfnUnk_4C4DAC;
 		if (pfnProgress != NULL)
 			pfnProgress(5, 0x0A);
 
-		if (theApp.m_dwUnk01B8 == 3)
+		if (theApp.m_dwGameState == 3)
 		{
-			m_dwUnk0500 = 0;
-			m_dwUnk00A0 = (DWORD)-1;
+			m_dwMessageState = 0;
+			m_rcMessage.bottom = -1;
 		}
 
-		Sub_40DC20(1);
+		RequestRenderFrame(1);
 
 		pfnProgress = g_pfnUnk_4C4DAC;
 		if (pfnProgress != NULL)
 			pfnProgress(8, 0x0A);
 
 		pfnProgress = g_pfnUnk_4C4DAC;
-		if (theApp.m_pBumperDoc->m_dwUnk8498 == 0)
+		if (theApp.m_pBumperDoc->m_bAttractMode == 0)
 		{
-			theApp.m_dwUnk01B8 = 2;
-			m_dwUnk007C = 0x28;
-			Sub_4126C0();
+			theApp.m_dwGameState = 2;
+			m_dwStateCountdown = 0x28;
+			StartGameTimer();
 			pfnProgress = g_pfnUnk_4C4DAC;
 		}
 		else
 		{
-			theApp.m_dwUnk01B8 = 0;
-			m_dwUnk007C = 0x3C;
+			theApp.m_dwGameState = 0;
+			m_dwStateCountdown = 0x3C;
 		}
 	}
 
 	if (pfnProgress != NULL)
 		pfnProgress(9, 0x0A);
 
-	m_dwUnk0084 = 1;
+	m_bInitialized = 1;
 
 	CView::OnInitialUpdate();
 
@@ -4540,24 +4590,23 @@ void CBumperView::OnInitialUpdate()
 	if (pfnProgress != NULL)
 		pfnProgress(0x0A, 0x0A);
 
-	((CMainFrame*)AfxGetApp()->m_pMainWnd)->Sub_426CF0();
+	((CMainFrame*)AfxGetApp()->m_pMainWnd)->RealizeGamePalette();
 
 	::RedrawWindow(m_hWnd, NULL, NULL, 0x105);
 }
 
 // Looks up the zone descriptor whose first two ints match (nWidth,nHeight),
-// records the index in g_dwUnk_460998 and then sets up the render target,
+// records the index in g_dwCurZone and then sets up the render target,
 // the two renderer contexts and the background sampling arrays.
 
 // hover.exe:0x4184B0
 // FUNCTION: HOVER 0x4184b0
-void CBumperView::Sub_4184B0(int nWidth, int nHeight)
+void CBumperView::SetupZone(int nWidth, int nHeight)
 {
 	CObject* pBackground;
 	ZONE_DESCRIPTOR* pZone;
-	int nZoneInts;
 	int nIndex;
-	int* pSearch;
+	ZONE_DESCRIPTOR* pSearch;
 	CBumperDoc* pDoc;
 	DWORD dwColor;
 	int nSub;
@@ -4574,186 +4623,185 @@ void CBumperView::Sub_4184B0(int nWidth, int nHeight)
 	POINT ptOrigin;
 	CPalette* pOldPal;
 
-	nZoneInts = 0x338 / 4;
 	nIndex = 0;
-	pSearch = g_adwUnk_4609A0;
+	pSearch = g_aZones;
 
 	// Bottom-tested walk over the six descriptors: the loop falls straight
 	// out into the "no such mode" return, the match jumps forward.
 	do
 	{
-		if (pSearch[0] == nWidth && pSearch[1] == nHeight)
+		if (pSearch->m_size.cx == nWidth && pSearch->m_size.cy == nHeight)
 			goto Found;
-		pSearch += nZoneInts;
+		pSearch++;
 		nIndex++;
 	}
-	while (pSearch <= g_adwUnk_4609A0 + 5 * nZoneInts);
+	while (pSearch <= &g_aZones[5]);
 
 	return;
 
 Found:
-	g_dwUnk_460998 = nIndex;
+	g_dwCurZone = nIndex;
 
-	pOldPal = m_dcUnk00B4.SelectPalette(&g_paletteUnk_4A1D50, FALSE);
+	pOldPal = m_dcOffscreen.SelectPalette(&g_palGame, FALSE);
 
-	if (m_dwUnk0544 != 0)
-		pZone = (ZONE_DESCRIPTOR*)g_adwUnk_4609A0;
+	if (m_bDoubleSize != 0)
+		pZone = g_aZones;
 	else
-		pZone = (ZONE_DESCRIPTOR*)g_adwUnk_4609A0 + g_dwUnk_460998;
+		pZone = &g_aZones[g_dwCurZone];
 
 	// In 2x stretch mode the render target is always 320x240, whatever mode
 	// was asked for.
-	if (m_dwUnk0544 != 0)
+	if (m_bDoubleSize != 0)
 	{
 		nWidth = 320;
 		nHeight = 240;
 	}
 
-	m_dwUnk0540 = 0;
+	m_bFullMap = 0;
 
 	pDoc = (CBumperDoc*)m_pDocument;
 
 	// Put the previous frame's bitmap back before the render target is
 	// destroyed, so the DIB section is not deleted while selected.
-	if (m_dwUnk00C4 != 0)
-		::SelectObject(m_dcUnk00B4.GetSafeHdc(), (HGDIOBJ)m_dwUnk00C4);
+	if (m_hOldBitmap != 0)
+		::SelectObject(m_dcOffscreen.GetSafeHdc(), (HGDIOBJ)m_hOldBitmap);
 
-	delete m_pUnk00D0;
+	delete m_pRasterizer;
 
-	m_pUnk00D0 = new CSub406090(nWidth, nHeight, pDoc->m_dwUnk0188);
+	m_pRasterizer = new CSpanRasterizer(nWidth, nHeight, pDoc->m_pWorld);
 
 	// The render target's size is copied as one 8-byte object (rule 56).
-	*(SIZE*)&m_dwUnk008C = *(SIZE*)&m_pUnk00D0->m_dwWidth;
+	*(SIZE*)&m_dwOffscreenWidth = *(SIZE*)&m_pRasterizer->m_dwWidth;
 
-	m_rcUnk0220.left = 0;
-	m_rcUnk0220.top = pZone->m_dwTopSplit;
-	m_rcUnk0220.right = m_pUnk00D0->m_dwWidth;
-	m_rcUnk0220.bottom = pZone->m_dwBottomSplit;
+	m_rc3DView.left = 0;
+	m_rc3DView.top = pZone->m_y3DTop;
+	m_rc3DView.right = m_pRasterizer->m_dwWidth;
+	m_rc3DView.bottom = pZone->m_y3DBottom;
 
-	m_pUnk00C8->Sub_410F20(3, m_dwUnk00E4);
-	m_pUnk00C8->Sub_419530(m_pUnk00D0, &g_paletteUnk_4A1D50, 0, 0,
-		(int)m_pUnk00D0->m_dwWidth, (int)m_pUnk00D0->m_dwHeight);
-	m_pUnk00C8->Sub_410EC0();
+	m_pViewCtx->SetMode(3, m_dwDrawerMode);
+	m_pViewCtx->SetViewport(m_pRasterizer, &g_palGame, 0, 0,
+		(int)m_pRasterizer->m_dwWidth, (int)m_pRasterizer->m_dwHeight);
+	m_pViewCtx->BuildMipShiftTable();
 
-	m_pUnk00C8->m_dwUnk60 = (DWORD)pDoc + 0x18C;
+	m_pViewCtx->m_pShade = (DWORD*)pDoc->m_aShade[0].m_abTable;
 
 	// Select the new render target's DIB section into the view's offscreen
 	// DC and remember the bitmap it displaces (CDC::SelectObject(CBitmap*)
 	// inlines to SelectGdiObject(m_hDC, pBitmap->GetSafeHandle()); the
 	// GetSafeHandle() on the result is the NULL test on the returned CBitmap*).
-	// Everything that follows (PatBlt, Sub_410510, the GetPixel edge scans)
+	// Everything that follows (PatBlt, BuildDashboard, the GetPixel edge scans)
 	// reads and writes this DC.
-	m_dwUnk00C4 = (DWORD)m_dcUnk00B4.SelectObject(&m_pUnk00D0->m_bitmap)->GetSafeHandle();
+	m_hOldBitmap = (HBITMAP)m_dcOffscreen.SelectObject(&m_pRasterizer->m_bitmap)->GetSafeHandle();
 
 	// The alternate renderer's viewport is the zone's +0x210 rectangle,
 	// copied field by field (a plain RECT assignment; CRect's operator=
 	// would be a ::CopyRect call).
-	*(RECT*)&m_rcUnk0230 = pZone->m_rcUnk210;
+	*(RECT*)&m_rcMirrorView = pZone->m_rcMirror;
 
-	m_rcUnk0230.left &= ~3;
-	m_rcUnk0230.right &= ~3;
+	m_rcMirrorView.left &= ~3;
+	m_rcMirrorView.right &= ~3;
 
 	nSub = 1;
-	if ((int)m_dwUnk00E4 > 3)
+	if ((int)m_dwDrawerMode > 3)
 	{
 		nSub = 2;
-		if ((int)m_dwUnk00E4 > 5)
+		if ((int)m_dwDrawerMode > 5)
 			nSub = 4;
 	}
 
-	dwLeft = m_rcUnk0230.left;
-	dwSpan = m_rcUnk0230.right - dwLeft;
+	dwLeft = m_rcMirrorView.left;
+	dwSpan = m_rcMirrorView.right - dwLeft;
 	dwMidX = ((dwSpan * 3) / 4) - nSub;
-	dwTopY = (m_rcUnk0230.top + (dwMidX - m_rcUnk0230.bottom)) / 2;
-	dwBottomY = dwTopY - m_rcUnk0230.top + m_rcUnk0230.bottom;
+	dwTopY = (m_rcMirrorView.top + (dwMidX - m_rcMirrorView.bottom)) / 2;
+	dwBottomY = dwTopY - m_rcMirrorView.top + m_rcMirrorView.bottom;
 
-	if (m_rcUnk0230.bottom > m_rcUnk0220.top)
-		m_rcUnk0230.bottom = m_rcUnk0220.top;
+	if (m_rcMirrorView.bottom > m_rc3DView.top)
+		m_rcMirrorView.bottom = m_rc3DView.top;
 
-	ptOrigin = *(POINT*)&m_rcUnk0230;
+	ptOrigin = *(POINT*)&m_rcMirrorView;
 	ptOrigin.y -= dwTopY;
 
-	if (theApp.m_dwUnk01D0 == 0)
+	if (theApp.m_bRearView == 0)
 	{
-		if (m_pUnk00CC != NULL)
+		if (m_pMirrorCtx != NULL)
 		{
-			delete m_pUnk00CC;
-			m_pUnk00CC = NULL;
+			delete m_pMirrorCtx;
+			m_pMirrorCtx = NULL;
 		}
 	}
-	else if (theApp.m_dwUnk01D0 == 1 && m_pUnk00CC == NULL)
+	else if (theApp.m_bRearView == 1 && m_pMirrorCtx == NULL)
 	{
-		m_pUnk00CC = new CSub410F20;
+		m_pMirrorCtx = new CRenderContext;
 	}
 
-	if (m_pUnk00CC != NULL)
+	// i doubles as GetPixel's x below: dwSpan, or where the fill loops
+	// stopped (0 for an empty span), as in hover.exe:0x418866/0x4188B5
+	i = dwSpan;
+	if (m_pMirrorCtx != NULL)
 	{
-		m_pUnk00CC->m_dwUnk68 = 1;
-		m_pUnk00CC->Sub_410F20(3, m_dwUnk00E4);
-		m_pUnk00CC->Sub_419530(m_pUnk00D0, &g_paletteUnk_4A1D50,
+		m_pMirrorCtx->m_bMirror = 1;
+		m_pMirrorCtx->SetMode(3, m_dwDrawerMode);
+		m_pMirrorCtx->SetViewport(m_pRasterizer, &g_palGame,
 			ptOrigin.x, ptOrigin.y, dwSpan, dwMidX);
-		m_pUnk00CC->Sub_410EC0();
-		m_pUnk00CC->m_dwUnk60 = (DWORD)pDoc + 0x18C;
+		m_pMirrorCtx->BuildMipShiftTable();
+		m_pMirrorCtx->m_pShade = (DWORD*)pDoc->m_aShade[0].m_abTable;
 
 		cbArray = dwSpan * sizeof(DWORD);
 		adwTop = (DWORD*)::operator new(cbArray);
 		adwBottom = (DWORD*)::operator new(cbArray);
-		if (dwSpan > 0)
-		{
-			for (i = 0; i < dwSpan; i++)
-				adwBottom[i] = dwTopY;
-			for (i = 0; i < dwSpan; i++)
-				adwTop[i] = dwBottomY;
-		}
-		m_pUnk00CC->Sub_414A10(adwBottom, adwTop);
+		for (i = 0; i < dwSpan; i++)
+			adwBottom[i] = dwTopY;
+		for (i = 0; i < dwSpan; i++)
+			adwTop[i] = dwBottomY;
+		m_pMirrorCtx->SetClipSpans(adwBottom, adwTop);
 		::operator delete(adwTop);
 		::operator delete(adwBottom);
 	}
 
-	::PatBlt(m_dcUnk00B4.m_hDC, 0, 0, m_pUnk00D0->m_dwWidth, nHeight,
+	::PatBlt(m_dcOffscreen.m_hDC, 0, 0, m_pRasterizer->m_dwWidth, nHeight,
 		BLACKNESS);
 
-	Sub_410510();
+	BuildDashboard();
 
-	dwColor = ::GetPixel(m_dcUnk00B4.m_hDC, dwSpan, pZone->m_dwPad34);
+	dwColor = ::GetPixel(m_dcOffscreen.m_hDC, i, pZone->m_yTopDashEdge);
 
-	dwCount = m_pUnk00D0->m_dwWidth;
+	dwCount = m_pRasterizer->m_dwWidth;
 	cbArray = dwCount * sizeof(DWORD);
 	adwTop = (DWORD*)::operator new(cbArray);
 	adwBottom = (DWORD*)::operator new(cbArray);
 
 	for (i = 0; (int)dwCount > i; i++)
 	{
-		adwBottom[i] = pZone->m_dwPad34;
-		while ((DWORD)::GetPixel(m_dcUnk00B4.m_hDC, i, adwBottom[i]) == dwColor)
+		adwBottom[i] = pZone->m_yTopDashEdge;
+		while ((DWORD)::GetPixel(m_dcOffscreen.m_hDC, i, adwBottom[i]) == dwColor)
 			adwBottom[i]--;
 
-		adwTop[i] = pZone->m_dwPad3C;
-		while ((DWORD)::GetPixel(m_dcUnk00B4.m_hDC, i, adwTop[i]) == dwColor)
+		adwTop[i] = pZone->m_yBottomDashEdge;
+		while ((DWORD)::GetPixel(m_dcOffscreen.m_hDC, i, adwTop[i]) == dwColor)
 			adwTop[i]++;
 	}
 
-	m_pUnk00C8->Sub_414A10(adwBottom, adwTop);
+	m_pViewCtx->SetClipSpans(adwBottom, adwTop);
 
 	::operator delete(adwTop);
 	::operator delete(adwBottom);
 
-	m_dcUnk00B4.SelectPalette(pOldPal, TRUE);
+	m_dcOffscreen.SelectPalette(pOldPal, TRUE);
 
-	pBackground = Hover_sub_418A30("BACKGRND");
+	pBackground = Hover_LookupTexture("BACKGRND");
 	if (pBackground != NULL)
 	{
-		m_pUnk00C8->Sub_419940(0, (DWORD)pBackground);
-		if (m_pUnk00CC != NULL)
-			m_pUnk00CC->Sub_419940(0, (DWORD)pBackground);
+		m_pViewCtx->SetSkyTexture(0, (CMerlinTexture*)pBackground);
+		if (m_pMirrorCtx != NULL)
+			m_pMirrorCtx->SetSkyTexture(0, (CMerlinTexture*)pBackground);
 	}
 }
 
 // Worker-thread body for the render state machine. The thread loops, waiting
-// for the main thread to signal a state change on m_dwUnk0048, then dispatches
-// one state per iteration. State 3 sets the exit flag; the others loop back
-// and wait again. The setup pass optionally loads DISPDIB.DLL and creates the
-// DisplayDibWindow. Decompiled from hover.exe:0x41ECE0.
+// for the main thread to signal a state change on m_hEvtCommand, then
+// dispatches one state per iteration. State 3 sets the exit flag; the others
+// loop back and wait again. The setup pass optionally loads DISPDIB.DLL and
+// creates the DisplayDibWindow. Decompiled from hover.exe:0x41ECE0.
 
 #pragma pack(push, 1)
 typedef struct tagLOADPARMS32
@@ -4784,7 +4832,7 @@ inline CHoverApp* HoverWorkerApp()
 
 // hover.exe:0x41ECE0
 // FUNCTION: HOVER 0x41ece0
-void CBumperView::Sub_41ECE0()
+void CBumperView::WorkerThreadMain()
 {
 	DWORD dwState;
 	POINT ptArgs;
@@ -4794,11 +4842,11 @@ void CBumperView::Sub_41ECE0()
 
 	bContinue = TRUE;
 
-	m_dwUnk0528 = GetTickCount();
-	m_dwUnk052C = m_dwUnk0528;
-	m_dwUnk0530 = 0;
+	m_dwFpsBaseTick = GetTickCount();
+	m_dwLastPresentTick = m_dwFpsBaseTick;
+	m_dwPresentCount = 0;
 
-	HoverWorkerApp()->m_dwUnk03E4 = 0;
+	HoverWorkerApp()->m_bUseDisplayDib = 0;
 
 	{
 		LOADPARMS32 loadParams;
@@ -4819,11 +4867,11 @@ void CBumperView::Sub_41ECE0()
 
 		if (LoadModule("DISPDIB.DLL", &loadParams) < 0x20)
 		{
-			HoverWorkerApp()->m_dwUnk03F0 = 0;
+			HoverWorkerApp()->m_hwndDisplayDib = 0;
 		}
 		else
 		{
-			HoverWorkerApp()->m_dwUnk03F0 = (DWORD)::CreateWindowExA(0, "DisplayDibWindow", "",
+			HoverWorkerApp()->m_hwndDisplayDib = ::CreateWindowExA(0, "DisplayDibWindow", "",
 				WS_CHILD, 0, 0,
 				::GetSystemMetrics(SM_CXSCREEN), ::GetSystemMetrics(SM_CYSCREEN),
 				hWnd, NULL,
@@ -4833,96 +4881,96 @@ void CBumperView::Sub_41ECE0()
 		}
 	}
 
-	if (theApp.m_dwUnk03F0 != 0)
-		HoverWorkerApp()->m_dwUnk03E0 = 1;
+	if (theApp.m_hwndDisplayDib != 0)
+		HoverWorkerApp()->m_bDisplayDibAvailable = 1;
 	else
-		HoverWorkerApp()->m_dwUnk03E0 = 0;
+		HoverWorkerApp()->m_bDisplayDibAvailable = 0;
 
 	while (bContinue)
 	{
-		EnterCriticalSection(&theApp.m_csUnk011C);
-			SetEvent(m_hUnk0050);
-			ResetEvent(m_hUnk004C);
-			LeaveCriticalSection(&theApp.m_csUnk011C);
+		EnterCriticalSection(&theApp.m_csWorkerCmd);
+			SetEvent(m_hEvtWorkerIdle);
+			ResetEvent(m_hEvtWorkerBusy);
+			LeaveCriticalSection(&theApp.m_csWorkerCmd);
 
-			WaitForSingleObject((HANDLE)m_dwUnk0048, INFINITE);
+			WaitForSingleObject(m_hEvtCommand, INFINITE);
 
-			EnterCriticalSection(&theApp.m_csUnk011C);
-			dwState = m_dwUnk00AC;
-			switch (m_dwUnk00AC)
+			EnterCriticalSection(&theApp.m_csWorkerCmd);
+			dwState = m_dwWorkerCmd;
+			switch (m_dwWorkerCmd)
 			{
 			case 0:
-				ptArgs = *(POINT*)&m_dwUnk00A4;
+				ptArgs = *(POINT*)&m_dwRequestedWidth;
 				break;
 			case 1:
-				nStateArg = theApp.m_dwUnk01C4;
+				nStateArg = theApp.m_dwSpeedDetail;
 				break;
 			case 5:
-				nScaleArg = m_dwUnk00B0;
+				nScaleArg = m_bZoomIn;
 				break;
 			}
-			ResetEvent(m_hUnk0050);
-			SetEvent(m_hUnk004C);
-			ResetEvent((HANDLE)m_dwUnk0048);
-			SetEvent(m_hUnk0054);
-			LeaveCriticalSection(&theApp.m_csUnk011C);
+			ResetEvent(m_hEvtWorkerIdle);
+			SetEvent(m_hEvtWorkerBusy);
+			ResetEvent(m_hEvtCommand);
+			SetEvent(m_hEvtCommandAck);
+			LeaveCriticalSection(&theApp.m_csWorkerCmd);
 
 		try
 		{
 			switch (dwState)
 			{
 			case 0:
-				Sub_4184B0(ptArgs.x, ptArgs.y);
+				SetupZone(ptArgs.x, ptArgs.y);
 				break;
 			case 1:
-				Sub_413C10(nStateArg);
+				ApplyDetailLevel(nStateArg);
 				break;
 			case 3:
-				Sub_402250();
+				RenderFrame();
 				break;
 			case 2:
 				bContinue = FALSE;
 				break;
 			case 4:
-				Sub_410510();
+				BuildDashboard();
 				break;
 			case 5:
-				Sub_427A80(nScaleArg);
+				ZoomMap(nScaleArg);
 				break;
 			case 6:
-				Sub_427BB0();
+				BeginDispDib();
 				break;
 			case 7:
-				Sub_427CC0();
+				EndDispDib();
 				break;
 			}
 		}
 		catch (CException* e)
 		{
-			Hover_sub_4262B0(e);
+			Hover_FatalException(e);
 		}
 	}
 
-	if (theApp.m_dwUnk03F0 != 0)
+	if (theApp.m_hwndDisplayDib != 0)
 	{
-		if (theApp.m_dwUnk03E8 != 0)
-			::SendMessageA((HWND)theApp.m_dwUnk03F0, 0x404, 0, 0);
-		::SendMessageA((HWND)theApp.m_dwUnk03F0, 0x402, 0, 0);
-		HoverWorkerApp()->m_dwUnk03F0 = 0;
+		if (theApp.m_bDisplayDibActive != 0)
+			::SendMessageA(theApp.m_hwndDisplayDib, 0x404, 0, 0);
+		::SendMessageA(theApp.m_hwndDisplayDib, 0x402, 0, 0);
+		HoverWorkerApp()->m_hwndDisplayDib = 0;
 	}
-	HoverWorkerApp()->m_dwUnk03E0 = 0;
-	ResetEvent(m_hUnk004C);
-	SetEvent(m_hUnk0050);
+	HoverWorkerApp()->m_bDisplayDibAvailable = 0;
+	ResetEvent(m_hEvtWorkerBusy);
+	SetEvent(m_hEvtWorkerIdle);
 }
 
 #pragma optimize("", on)
 
 // Frame-step state 1 handler: load the level-start message strings and
-// dispatch them to Sub_40CCE0. When theApp.m_dwUnk03B4 is set the two-line
+// dispatch them to DrawMessageBox. When theApp.m_bAppActive is set the two-line
 // message is drawn; otherwise a three-line message is drawn.
 // hover.exe:0x40D340
 // FUNCTION: HOVER 0x40d340
-void CBumperView::Sub_40D340()
+void CBumperView::DrawPausedMessage()
 {
 	CString strA;
 	CString strB;
@@ -4931,14 +4979,14 @@ void CBumperView::Sub_40D340()
 	strA.LoadString(0xEF15);
 	strB.LoadString(0xEF16);
 
-	if (theApp.m_dwUnk03B4 != 0)
+	if (theApp.m_bAppActive != 0)
 	{
-		Sub_40CCE0(strA, strB, NULL, NULL);
+		DrawMessageBox(strA, strB, NULL, NULL);
 	}
 	else
 	{
 		strC.LoadString(0xEF54);
-		Sub_40CCE0(strA, strC, strB, NULL);
+		DrawMessageBox(strA, strC, strB, NULL);
 	}
 }
 
@@ -4950,43 +4998,43 @@ void CBumperView::Sub_40D340()
 // state restored.
 // hover.exe:0x427F40
 // FUNCTION: HOVER 0x427f40
-void CBumperView::Sub_427F40(RECT* pRect, int nWidth)
+void CBumperView::DrawBevelBox(RECT* pRect, int nWidth)
 {
 	CBrush brush(::GetSysColor(COLOR_BTNFACE));
 	CPen pen(PS_SOLID, 1, ::GetSysColor(COLOR_BTNSHADOW));
 
-	m_dcUnk00B4.SaveDC();
-	m_dcUnk00B4.SelectObject(&brush);
+	m_dcOffscreen.SaveDC();
+	m_dcOffscreen.SelectObject(&brush);
 
-	::PatBlt(m_dcUnk00B4.m_hDC, pRect->left, pRect->top,
+	::PatBlt(m_dcOffscreen.m_hDC, pRect->left, pRect->top,
 		pRect->right - pRect->left, pRect->bottom - pRect->top, PATCOPY);
 
-	m_dcUnk00B4.SelectObject(&pen);
+	m_dcOffscreen.SelectObject(&pen);
 
 	// Outer bottom/right edges.
-	m_dcUnk00B4.MoveTo(pRect->left, pRect->bottom);
-	m_dcUnk00B4.LineTo(pRect->right, pRect->bottom);
-	m_dcUnk00B4.LineTo(pRect->right, pRect->top);
+	m_dcOffscreen.MoveTo(pRect->left, pRect->bottom);
+	m_dcOffscreen.LineTo(pRect->right, pRect->bottom);
+	m_dcOffscreen.LineTo(pRect->right, pRect->top);
 
 	// Inner left/top edges.
-	m_dcUnk00B4.MoveTo(pRect->left + nWidth, pRect->bottom - nWidth);
-	m_dcUnk00B4.LineTo(pRect->left + nWidth, pRect->top + nWidth);
-	m_dcUnk00B4.LineTo(pRect->right - nWidth + 1, pRect->top + nWidth);
+	m_dcOffscreen.MoveTo(pRect->left + nWidth, pRect->bottom - nWidth);
+	m_dcOffscreen.LineTo(pRect->left + nWidth, pRect->top + nWidth);
+	m_dcOffscreen.LineTo(pRect->right - nWidth + 1, pRect->top + nWidth);
 
-	m_dcUnk00B4.SelectStockObject(WHITE_PEN);
+	m_dcOffscreen.SelectStockObject(WHITE_PEN);
 
 	// Outer left/top edges.
-	m_dcUnk00B4.MoveTo(pRect->left, pRect->bottom);
-	m_dcUnk00B4.LineTo(pRect->left, pRect->top);
-	m_dcUnk00B4.LineTo(pRect->right + 1, pRect->top);
+	m_dcOffscreen.MoveTo(pRect->left, pRect->bottom);
+	m_dcOffscreen.LineTo(pRect->left, pRect->top);
+	m_dcOffscreen.LineTo(pRect->right + 1, pRect->top);
 
 	// Inner bottom/right edges.
-	m_dcUnk00B4.MoveTo(pRect->left + nWidth, pRect->bottom - nWidth);
-	m_dcUnk00B4.LineTo(pRect->right - nWidth, pRect->bottom - nWidth);
-	m_dcUnk00B4.LineTo(pRect->right - nWidth, pRect->top + nWidth);
+	m_dcOffscreen.MoveTo(pRect->left + nWidth, pRect->bottom - nWidth);
+	m_dcOffscreen.LineTo(pRect->right - nWidth, pRect->bottom - nWidth);
+	m_dcOffscreen.LineTo(pRect->right - nWidth, pRect->top + nWidth);
 
-	m_dcUnk00B4.SelectStockObject(WHITE_BRUSH);
-	m_dcUnk00B4.RestoreDC(-1);
+	m_dcOffscreen.SelectStockObject(WHITE_BRUSH);
+	m_dcOffscreen.RestoreDC(-1);
 }
 
 // Frame-step state 2 handler: draw up to four centered message strings in a
@@ -4995,7 +5043,7 @@ void CBumperView::Sub_427F40(RECT* pRect, int nWidth)
 // height is taken from the current zone descriptor.
 // hover.exe:0x40CCE0
 // FUNCTION: HOVER 0x40cce0
-void CBumperView::Sub_40CCE0(const char* pszA, const char* pszB,
+void CBumperView::DrawMessageBox(const char* pszA, const char* pszB,
 	const char* pszC, const char* pszD)
 {
 	CFont* pOldFont;
@@ -5013,17 +5061,17 @@ void CBumperView::Sub_40CCE0(const char* pszA, const char* pszB,
 	COLORREF clrText;
 
 	// Select the zone descriptor: zone 0 is forced in 2x stretch mode.
-	if (m_dwUnk0544 != 0)
-		pZone = (ZONE_DESCRIPTOR*)g_adwUnk_4609A0;
+	if (m_bDoubleSize != 0)
+		pZone = g_aZones;
 	else
-		pZone = (ZONE_DESCRIPTOR*)g_adwUnk_4609A0 + g_dwUnk_460998;
+		pZone = &g_aZones[g_dwCurZone];
 
 	// Create the message font and select it into the offscreen DC.
 	CFont font;
 
-	font.Attach(::CreateFont(pZone->m_dwUnk334, 0, 0, 0, 0x258, 0, 0, 0,
+	font.Attach(::CreateFont(pZone->m_cyMessageFont, 0, 0, 0, 0x258, 0, 0, 0,
 		0, 2, 0, 0, 0x20, "Arial"));
-	pOldFont = m_dcUnk00B4.SelectObject(&font);
+	pOldFont = m_dcOffscreen.SelectObject(&font);
 
 	// Measure every supplied string and keep the widest width.  CDC::
 	// GetTextExtent is an inline that returns a CSize by value through the
@@ -5031,7 +5079,7 @@ void CBumperView::Sub_40CCE0(const char* pszA, const char* pszB,
 	// (rule 118) and reads m_hAttribDC, not GetSafeHdc().
 	nCount = 1;
 
-	CSize sizeA = m_dcUnk00B4.GetTextExtent(pszA, strlen(pszA));
+	CSize sizeA = m_dcOffscreen.GetTextExtent(pszA, strlen(pszA));
 
 	cxMax = sizeA.cx;
 	cyFont = sizeA.cy;
@@ -5039,14 +5087,14 @@ void CBumperView::Sub_40CCE0(const char* pszA, const char* pszB,
 
 	if (pszB != NULL)
 	{
-		CSize sizeB = m_dcUnk00B4.GetTextExtent(pszB, strlen(pszB));
+		CSize sizeB = m_dcOffscreen.GetTextExtent(pszB, strlen(pszB));
 
 		cxMax = (sizeA.cx > sizeB.cx) ? sizeA.cx : sizeB.cx;
 		nCount = 2;
 	}
 	if (pszC != NULL)
 	{
-		CSize sizeC = m_dcUnk00B4.GetTextExtent(pszC, strlen(pszC));
+		CSize sizeC = m_dcOffscreen.GetTextExtent(pszC, strlen(pszC));
 
 		if (sizeC.cx > cxMax)
 			cxMax = sizeC.cx;
@@ -5054,7 +5102,7 @@ void CBumperView::Sub_40CCE0(const char* pszA, const char* pszB,
 	}
 	if (pszD != NULL)
 	{
-		CSize sizeD = m_dcUnk00B4.GetTextExtent(pszD, strlen(pszD));
+		CSize sizeD = m_dcOffscreen.GetTextExtent(pszD, strlen(pszD));
 
 		if (sizeD.cx > cxMax)
 			cxMax = sizeD.cx;
@@ -5064,12 +5112,17 @@ void CBumperView::Sub_40CCE0(const char* pszA, const char* pszB,
 	// Compute the total height of the message block.
 	cyTotal = ((3 * nCount - 1) * cyFont) / 2;
 
+	// Get the system colors used for the shadow/highlight and text
+	// (hover.exe fetches both here, before laying out the box).
+	clrShadow = ::GetSysColor(COLOR_BTNSHADOW);
+	clrText = ::GetSysColor(COLOR_BTNTEXT);
+
 	// Center the block in the view and shift it up by half the absolute zone
 	// composite offset.
-	x = ((int)m_dwUnk008C - cxMax) / 2;
-	y = ((int)m_dwUnk0090 - cyTotal) / 2;
-	y -= abs((pZone->m_rcUnk230.bottom - pZone->m_rcUnk240.top
-		- pZone->m_rcComposite1.top) + pZone->m_rcComposite1.bottom) / 2;
+	x = ((int)m_dwOffscreenWidth - cxMax) / 2;
+	y = ((int)m_dwOffscreenHeight - cyTotal) / 2;
+	y -= abs((pZone->m_rcBottomDashSrc.top - pZone->m_rcBottomDashSrc.bottom
+		- pZone->m_rcTopDashSrc.top) + pZone->m_rcTopDashSrc.bottom) / 2;
 
 	rc.left = x;
 	rc.top = y;
@@ -5080,87 +5133,83 @@ void CBumperView::Sub_40CCE0(const char* pszA, const char* pszB,
 	cyHalfSpacing = cySpacing / 3;
 	::InflateRect(&rc, cyHalfSpacing, cyHalfSpacing);
 
-	// Save the inflated rectangle, doubling it in stretch mode for Sub_427F40.
-	m_rcUnk0094 = rc;
-	if (m_dwUnk0544 != 0)
+	// Save the inflated rectangle, doubling it in stretch mode for
+	// DrawBevelBox.
+	m_rcMessage = rc;
+	if (m_bDoubleSize != 0)
 	{
-		m_rcUnk0094.left <<= 1;
-		m_rcUnk0094.top <<= 1;
-		m_rcUnk0094.right <<= 1;
-		m_rcUnk0094.bottom <<= 1;
+		m_rcMessage.left <<= 1;
+		m_rcMessage.top <<= 1;
+		m_rcMessage.right <<= 1;
+		m_rcMessage.bottom <<= 1;
 	}
 
 	// Draw the raised box (from the un-doubled local rectangle; the doubled
-	// copy in m_rcUnk0094 is for the presenter) and set transparent
+	// copy in m_rcMessage is for the presenter) and set transparent
 	// background for the text.
-	Sub_427F40(&rc, 3);
-	m_dcUnk00B4.SetBkMode(TRANSPARENT);
-
-	// Get the system colors used for the shadow/highlight and text.
-	clrShadow = ::GetSysColor(COLOR_BTNSHADOW);
-	clrText = ::GetSysColor(COLOR_BTNTEXT);
+	DrawBevelBox(&rc, 3);
+	m_dcOffscreen.SetBkMode(TRANSPARENT);
 
 	// Draw each supplied string: the first line sits one margin (cySpacing/3)
 	// below the box top, every further line one full line pitch (3*cyFont/2)
 	// below the previous one (hover.exe:0x40CFC2 adds [ebp-0x18], the three
-	// later sites add [ebp-0x14]).
-	if (pszA != NULL)
-	{
-		rc.top += cyHalfSpacing;
-		Sub_40D0A0(&rc, pszA, clrShadow, clrText);
-	}
+	// later sites add [ebp-0x14]). pszA is drawn unconditionally: the
+	// original never null-checks it (only pszB/pszC/pszD get a guard).
+	rc.top += cyHalfSpacing;
+	DrawMessageLine(&rc, pszA, clrShadow, clrText);
 	if (pszB != NULL)
 	{
 		rc.top += cySpacing;
-		Sub_40D0A0(&rc, pszB, clrShadow, clrText);
+		DrawMessageLine(&rc, pszB, clrShadow, clrText);
 	}
 	if (pszC != NULL)
 	{
 		rc.top += cySpacing;
-		Sub_40D0A0(&rc, pszC, clrShadow, clrText);
+		DrawMessageLine(&rc, pszC, clrShadow, clrText);
 	}
 	if (pszD != NULL)
 	{
 		rc.top += cySpacing;
-		Sub_40D0A0(&rc, pszD, clrShadow, clrText);
+		DrawMessageLine(&rc, pszD, clrShadow, clrText);
 	}
 
 	// Restore the previous font.
-	m_dcUnk00B4.SelectObject(pOldFont);
+	m_dcOffscreen.SelectObject(pOldFont);
 }
 
-// Helper for Sub_40CCE0: draw one message line. In non-stretch mode the text is
-// drawn with a dark shadow at (+1,+1) and a white highlight at (-1,-1) to give
-// a raised appearance; in stretch mode it is drawn once with the text color.
+// Helper for DrawMessageBox: draw one message line. In non-stretch mode the
+// text is drawn with a dark shadow at (+1,+1) and a white highlight at
+// (-1,-1) to give a raised appearance; in stretch mode it is drawn once with
+// the text color.
 // hover.exe:0x40D0A0
 // FUNCTION: HOVER 0x40d0a0
-void CBumperView::Sub_40D0A0(RECT* pRect, const char* psz, COLORREF clrShadow,
+void CBumperView::DrawMessageLine(RECT* pRect, const char* psz, COLORREF clrShadow,
 	COLORREF clrText)
 {
-	if (m_dwUnk0544 == 0)
+	if (m_bDoubleSize == 0)
 	{
 		::OffsetRect(pRect, 1, 1);
-		m_dcUnk00B4.SetTextColor(clrShadow);
-		m_dcUnk00B4.DrawText(psz, -1, pRect, DT_CENTER);
+		m_dcOffscreen.SetTextColor(clrShadow);
+		m_dcOffscreen.DrawText(psz, -1, pRect, DT_CENTER);
 
 		::OffsetRect(pRect, -2, -2);
-		m_dcUnk00B4.SetTextColor(RGB(255, 255, 255));
-		m_dcUnk00B4.DrawText(psz, -1, pRect, DT_CENTER);
+		m_dcOffscreen.SetTextColor(RGB(255, 255, 255));
+		m_dcOffscreen.DrawText(psz, -1, pRect, DT_CENTER);
 
 		::OffsetRect(pRect, 1, 1);
 	}
 
-	m_dcUnk00B4.SetTextColor(clrText);
-	m_dcUnk00B4.DrawText(psz, -1, pRect, DT_CENTER);
+	m_dcOffscreen.SetTextColor(clrText);
+	m_dcOffscreen.DrawText(psz, -1, pRect, DT_CENTER);
 }
 
 // Frame-step state 3 handler: display the end-of-level bonus score.
 // Loads the "Bonus Score" title, formats the remaining-flags score line,
 // the next-level message and an optional level-bonus line, then dispatches
-// the strings to Sub_40CCE0 for centered drawing.
+// the strings to DrawMessageBox for centered drawing.
 // hover.exe:0x4283F0
 // FUNCTION: HOVER 0x4283f0
-void CBumperView::Sub_4283F0()
+void CBumperView::DrawBonusMessage()
 {
 	CString strA;
 	CString strB;
@@ -5171,25 +5220,25 @@ void CBumperView::Sub_4283F0()
 
 	CString strFormat;
 
-	if (m_dwUnk0504 == 1)
+	if (m_dwFlagsLeft == 1)
 		strFormat.LoadString(0xEF3D);
 	else
 		strFormat.LoadString(0xEF62);
 
-	strA.Format(strFormat, m_dwUnk0504, m_dwUnk0508, m_dwUnk050C);
+	strA.Format(strFormat, m_dwFlagsLeft, m_dwPointsPerFlag, m_dwFlagBonus);
 
 	strFormat.LoadString(0xEF3E);
-	strB.Format(strFormat, m_dwUnk0510);
+	strB.Format(strFormat, m_dwNextLevel);
 
-	if (m_dwUnk0514 != 0)
+	if (m_dwLevelBonus != 0)
 	{
 		strFormat.LoadString(0xEF50);
-		strC.Format(strFormat, m_dwUnk0514);
-		Sub_40CCE0(strD, strA, strB, strC);
+		strC.Format(strFormat, m_dwLevelBonus);
+		DrawMessageBox(strD, strA, strB, strC);
 	}
 	else
 	{
-		Sub_40CCE0(strD, strA, strB, NULL);
+		DrawMessageBox(strD, strA, strB, NULL);
 	}
 }
 
@@ -5201,44 +5250,44 @@ void CBumperView::Sub_4283F0()
 
 // hover.exe:0x4274B0
 // FUNCTION: HOVER 0x4274b0
-void CBumperView::Sub_4274B0(int nWidth, int nHeight, int nUnk)
+void CBumperView::RequestResize(int nWidth, int nHeight, int nUnk)
 {
-	WaitForSingleObject((HANDLE)m_dwUnk0048, 0);
-	WaitForSingleObject(m_hUnk004C, 0);
-	WaitForSingleObject(m_hUnk0050, 0);
-	WaitForSingleObject(m_hUnk0054, 0);
-	WaitForSingleObject(m_hUnk0058, 0);
-	WaitForSingleObject(m_hUnk005C, 0);
+	WaitForSingleObject(m_hEvtCommand, 0);
+	WaitForSingleObject(m_hEvtWorkerBusy, 0);
+	WaitForSingleObject(m_hEvtWorkerIdle, 0);
+	WaitForSingleObject(m_hEvtCommandAck, 0);
+	WaitForSingleObject(m_hEvtUnused1, 0);
+	WaitForSingleObject(m_hEvtUnused2, 0);
 
-	if (WaitForSingleObject(m_hUnk0054, 0) == WAIT_TIMEOUT &&
-		m_dwUnk00AC != 0)
+	if (WaitForSingleObject(m_hEvtCommandAck, 0) == WAIT_TIMEOUT &&
+		m_dwWorkerCmd != 0)
 	{
-		Hover_sub_427A10(m_hUnk0054);
+		Hover_WaitPumpCopyData(m_hEvtCommandAck);
 	}
 
-	EnterCriticalSection(&theApp.m_csUnk011C);
-	m_dwUnk00AC = 0;
-	DWORD* pdwSize = &m_dwUnk00A4;
+	EnterCriticalSection(&theApp.m_csWorkerCmd);
+	m_dwWorkerCmd = 0;
+	DWORD* pdwSize = &m_dwRequestedWidth;
 	pdwSize[0] = nWidth;
 	pdwSize[1] = nHeight;
-	LeaveCriticalSection(&theApp.m_csUnk011C);
+	LeaveCriticalSection(&theApp.m_csWorkerCmd);
 
 	if (nUnk != 0)
 	{
-		Hover_sub_427A10(m_hUnk0050);
-		EnterCriticalSection(&theApp.m_csUnk011C);
-		ResetEvent(m_hUnk0054);
-		SetEvent((HANDLE)m_dwUnk0048);
-		LeaveCriticalSection(&theApp.m_csUnk011C);
-		Hover_sub_427A10(m_hUnk0054);
-		Hover_sub_427A10(m_hUnk0050);
+		Hover_WaitPumpCopyData(m_hEvtWorkerIdle);
+		EnterCriticalSection(&theApp.m_csWorkerCmd);
+		ResetEvent(m_hEvtCommandAck);
+		SetEvent(m_hEvtCommand);
+		LeaveCriticalSection(&theApp.m_csWorkerCmd);
+		Hover_WaitPumpCopyData(m_hEvtCommandAck);
+		Hover_WaitPumpCopyData(m_hEvtWorkerIdle);
 	}
 	else
 	{
-		EnterCriticalSection(&theApp.m_csUnk011C);
-		ResetEvent(m_hUnk0054);
-		SetEvent((HANDLE)m_dwUnk0048);
-		LeaveCriticalSection(&theApp.m_csUnk011C);
+		EnterCriticalSection(&theApp.m_csWorkerCmd);
+		ResetEvent(m_hEvtCommandAck);
+		SetEvent(m_hEvtCommand);
+		LeaveCriticalSection(&theApp.m_csWorkerCmd);
 	}
 
 	m_dwUnk0088 = 1;
@@ -5250,10 +5299,10 @@ void CBumperView::Sub_4274B0(int nWidth, int nHeight, int nUnk)
 
 // hover.exe:0x410510
 // FUNCTION: HOVER 0x410510
-void CBumperView::Sub_410510()
+void CBumperView::BuildDashboard()
 {
 	ZONE_DESCRIPTOR* pZone;
-	DWORD* pdwSize;
+	SIZE* psizeDash;
 	HINSTANCE hInst;
 	DWORD dwResId;
 	HRSRC hRsrc;
@@ -5268,28 +5317,28 @@ void CBumperView::Sub_410510()
 	RECT rcTemp;
 	RECT rcA;
 	RECT rcB;
-	pOldPal = m_dcUnk00B4.SelectPalette(&g_paletteUnk_4A1D50, FALSE);
+	pOldPal = m_dcOffscreen.SelectPalette(&g_palGame, FALSE);
 
 	// Select the zone descriptor: zone 0 is forced in 2x stretch mode.  The
 	// base is assigned unconditionally and only the index is guarded, the
-	// way Sub_410380 does it - the original loads `mov ebp,g_adwUnk_4609A0`
+	// way DrawKeyLabels does it - the original loads `mov ebp,g_aZones`
 	// at hover.exe:0x410526, before the `cmp [ebx+0x544],0` that decides
 	// whether to scale the index in at all.
-	pZone = (ZONE_DESCRIPTOR*)g_adwUnk_4609A0;
-	if (m_dwUnk0544 == 0)
-		pZone += g_dwUnk_460998;
+	pZone = g_aZones;
+	if (m_bDoubleSize == 0)
+		pZone += g_dwCurZone;
 
 	hInst = ::LoadLibraryA("dashres.dll");
 
 	// The resource id is the zone index plus 0x81; in 2x stretch mode the
 	// index is 0, so the id is 0x81, not 0 (the original adds the 0x81
 	// after the two arms join, at hover.exe:0x410578).
-	if (m_dwUnk0544 != 0)
+	if (m_bDoubleSize != 0)
 		dwResId = 0;
 	else
-		dwResId = g_dwUnk_460998;
+		dwResId = g_dwCurZone;
 
-	hRsrc = Hover_sub_453352(hInst, (LPCSTR)(dwResId + 0x81), RT_BITMAP);
+	hRsrc = Hover_FindResource(hInst, (LPCSTR)(dwResId + 0x81), RT_BITMAP);
 	hResData = ::LoadResource(hInst, hRsrc);
 	if (hResData == NULL)
 		AfxThrowMemoryException();
@@ -5308,10 +5357,10 @@ void CBumperView::Sub_410510()
 	// DIB, never the file header: the original computes the pixel base once
 	// into esi (`lea esi,[eax+ecx+0x400]` with eax = biSize at
 	// hover.exe:0x4105FC) and pushes that same esi for the palette remap,
-	// for the two Sub_411BB0 sprites, for the four Sub_411A00 digit banks
-	// and for both Hover_sub_411770 composites.
+	// for the two LoadIcons sprites, for the four LoadDigits digit banks
+	// and for both Hover_TransparentBlt8 composites.
 	pDibBits = pBits + ((BITMAPINFOHEADER*)pBits)->biSize + 0x400;
-	Hover_sub_410CE0(pBits, pDibBits, &g_paletteUnk_4A1D50);
+	Hover_RemapDibToPalette(pBits, pDibBits, &g_palGame);
 
 	// The two sprite banks, the four digit banks and both composite passes
 	// all read the descriptor's width/height pair through the same pointer
@@ -5319,26 +5368,26 @@ void CBumperView::Sub_410510()
 	// :0x410721) live as `mov ecx,[edi] / mov edx,[edi+4]` across ten call
 	// sites, all the way down to the spill at 0x4109D2 (rule 94).  It is
 	// set here rather than at its first use so that it and pDibBits hold
-	// the last two callee-saved registers over the seven Sub_411D60 calls:
-	// with one free VC hoists `&m_pen04D0` into it as a common
+	// the last two callee-saved registers over the seven SetStyle calls:
+	// with one free VC hoists `&m_penBlack` into it as a common
 	// subexpression, and the original recomputes `lea ecx,[ebx+0x4d0]` at
 	// every one of the seven sites.
-	pdwSize = &pZone->m_dwUnk08;
+	psizeDash = &pZone->m_sizeDash;
 
-	m_obj02E0.Sub_411D60(pZone->m_adwGaugeParams[0], (DWORD)&m_brush04E8,
-		(DWORD)&m_pen04D0, (DWORD)&m_brush04E0);
-	m_obj0340.Sub_411D60(pZone->m_adwGaugeParams[2], (DWORD)&m_brush04F8,
-		(DWORD)&m_pen04D0, (DWORD)&m_brush04E0);
-	m_obj0370.Sub_411D60(pZone->m_adwGaugeParams[2], (DWORD)&m_brush04F0,
-		(DWORD)&m_pen04D0, (DWORD)&m_brush04E0);
-	m_obj0310.Sub_411D60(pZone->m_adwGaugeParams[1], (DWORD)&m_brush04E8,
-		(DWORD)&m_pen04D0, (DWORD)&m_brush04E0);
-	m_obj03A0.Sub_411D60(pZone->m_adwGaugeParams[3], (DWORD)&m_brush04E8,
-		(DWORD)&m_pen04D0, (DWORD)&m_brush04E0);
-	m_obj03D0.Sub_411D60(pZone->m_adwGaugeParams[5], (DWORD)&m_brush04E8,
-		(DWORD)&m_pen04D0, (DWORD)&m_brush04E0);
-	m_obj0400.Sub_411D60(pZone->m_adwGaugeParams[4], (DWORD)&m_brush04E8,
-		(DWORD)&m_pen04D0, (DWORD)&m_brush04E0);
+	m_gaugeSpeed.SetStyle(pZone->m_anGaugeSegments[0], &m_brushYellow,
+		&m_penBlack, &m_brushBlack);
+	m_gaugeSlow.SetStyle(pZone->m_anGaugeSegments[2], &m_brushRed,
+		&m_penBlack, &m_brushBlack);
+	m_gaugeSpeedPod.SetStyle(pZone->m_anGaugeSegments[2], &m_brushGreen,
+		&m_penBlack, &m_brushBlack);
+	m_gaugeInvincible.SetStyle(pZone->m_anGaugeSegments[1], &m_brushYellow,
+		&m_penBlack, &m_brushBlack);
+	m_gaugeAltitude.SetStyle(pZone->m_anGaugeSegments[3], &m_brushYellow,
+		&m_penBlack, &m_brushBlack);
+	m_gaugeSmoke.SetStyle(pZone->m_anGaugeSegments[5], &m_brushYellow,
+		&m_penBlack, &m_brushBlack);
+	m_gaugeTempWall.SetStyle(pZone->m_anGaugeSegments[4], &m_brushYellow,
+		&m_penBlack, &m_brushBlack);
 
 	// The original reads *both* sprite rectangles through a base of their
 	// own (`lea edx,[ebp+0x1e0]` then `lea ecx,[ebp+0x1b0]`, hover.exe:
@@ -5349,17 +5398,17 @@ void CBumperView::Sub_410510()
 	// across the `idiv` and reloads it for each of its four fields.
 
 	{
-		RECT* prc1 = &pZone->m_rcSpriteParams[0];
+		RECT* prc1 = &pZone->m_arcFlagIcons[0];
 
-		m_obj0480.Sub_411BB0(
-			LVLPARAM((int)g_dwUnk_46049C).m_dwUnk30,
+		m_flagsRobot.LoadIcons(
+			LVLPARAM((int)g_dwLevel).m_dwUnk30,
 			prc1->left, prc1->top, prc1->right, prc1->bottom,
-			pZone->m_rcSpriteParams[3].left,
-			pZone->m_rcSpriteParams[3].top,
-			pZone->m_rcSpriteParams[3].right,
-			pZone->m_rcSpriteParams[3].bottom,
+			pZone->m_arcFlagIcons[3].left,
+			pZone->m_arcFlagIcons[3].top,
+			pZone->m_arcFlagIcons[3].right,
+			pZone->m_arcFlagIcons[3].bottom,
 			pDibBits,
-			pdwSize[0], pZone->m_dwUnk0C);
+			psizeDash->cx, pZone->m_sizeDash.cy);
 		// The height of the *first* sprite bank is the one field the
 		// original still reads off the descriptor itself (`mov edx,
 		// [ebp+0xc]`, hover.exe:0x41071E): the width/height base is born
@@ -5369,59 +5418,49 @@ void CBumperView::Sub_410510()
 	}
 
 	{
-		RECT* prc1 = &pZone->m_rcSpriteParams[1];
+		RECT* prc1 = &pZone->m_arcFlagIcons[1];
 
-		m_obj0430.Sub_411BB0(
-			LVLPARAM((int)g_dwUnk_46049C).m_dwUnk30,
+		m_flagsPlayer.LoadIcons(
+			LVLPARAM((int)g_dwLevel).m_dwUnk30,
 			prc1->left, prc1->top, prc1->right, prc1->bottom,
-			pZone->m_rcSpriteParams[2].left,
-			pZone->m_rcSpriteParams[2].top,
-			pZone->m_rcSpriteParams[2].right,
-			pZone->m_rcSpriteParams[2].bottom,
+			pZone->m_arcFlagIcons[2].left,
+			pZone->m_arcFlagIcons[2].top,
+			pZone->m_arcFlagIcons[2].right,
+			pZone->m_arcFlagIcons[2].bottom,
 			pDibBits,
-			pdwSize[0], pdwSize[1]);
+			psizeDash->cx, psizeDash->cy);
 	}
 
-	m_obj02B8.Sub_411A00(7, &pZone->m_rcWaypointRow1[0], pDibBits,
-		pdwSize[0], pdwSize[1]);
-	m_obj0240.Sub_411A00(1, &pZone->m_rcWaypointRow0[0], pDibBits,
-		pdwSize[0], pdwSize[1]);
-	m_obj0268.Sub_411A00(1, &pZone->m_rcWaypointRow0[0], pDibBits,
-		pdwSize[0], pdwSize[1]);
-	m_obj0290.Sub_411A00(1, &pZone->m_rcWaypointRow0[0], pDibBits,
-		pdwSize[0], pdwSize[1]);
+	m_score.LoadDigits(7, &pZone->m_arcScoreDigits[0], pDibBits,
+		psizeDash->cx, psizeDash->cy);
+	m_ctrJumpPods.LoadDigits(1, &pZone->m_arcPodDigits[0], pDibBits,
+		psizeDash->cx, psizeDash->cy);
+	m_ctrSmokeBombs.LoadDigits(1, &pZone->m_arcPodDigits[0], pDibBits,
+		psizeDash->cx, psizeDash->cy);
+	m_ctrTempWalls.LoadDigits(1, &pZone->m_arcPodDigits[0], pDibBits,
+		psizeDash->cx, psizeDash->cy);
 
-	m_obj0240.Sub_411920((RECT*)&pZone->m_adwWaypointMarkers[0]);
-	m_obj0268.Sub_411920((RECT*)&pZone->m_adwWaypointMarkers[4]);
-	m_obj0290.Sub_411920((RECT*)&pZone->m_adwWaypointMarkers[2]);
-	m_obj02B8.Sub_411920(&pZone->m_rcUnk220);
+	m_ctrJumpPods.SetPosition(&pZone->m_aptPodCounters[0]);
+	m_ctrSmokeBombs.SetPosition(&pZone->m_aptPodCounters[2]);
+	m_ctrTempWalls.SetPosition(&pZone->m_aptPodCounters[1]);
+	m_score.SetPosition(&pZone->m_ptScore);
 
-	m_obj0430.Sub_411CF0(&pZone->m_rcUnk228);
-	m_obj0480.Sub_411CF0(&pZone->m_rcUnk230);
+	m_flagsPlayer.SetPosition(&pZone->m_ptPlayerFlags);
+	m_flagsRobot.SetPosition(&pZone->m_ptRobotFlags);
 
-	((CSub423030*)&m_obj02E0)->Sub_411D10(&pZone->m_rcGaugeRects[0]);
-	((CSub423030*)&m_obj0340)->Sub_411D10(&pZone->m_rcGaugeRects[2]);
-	((CSub423030*)&m_obj0370)->Sub_411D10(&pZone->m_rcGaugeRects[2]);
-	((CSub423030*)&m_obj0310)->Sub_411D10(&pZone->m_rcGaugeRects[1]);
-	((CSub423030*)&m_obj03A0)->Sub_411D10(&pZone->m_rcGaugeRects2[0]);
-	((CSub423030*)&m_obj03D0)->Sub_411D10(&pZone->m_rcGaugeRects2[2]);
-	((CSub423030*)&m_obj0400)->Sub_411D10(&pZone->m_rcGaugeRects2[1]);
+	m_gaugeSpeed.SetLayout(&pZone->m_arcGauges[0]);
+	m_gaugeSlow.SetLayout(&pZone->m_arcGauges[2]);
+	m_gaugeSpeedPod.SetLayout(&pZone->m_arcGauges[2]);
+	m_gaugeInvincible.SetLayout(&pZone->m_arcGauges[1]);
+	m_gaugeAltitude.SetLayout(&pZone->m_arcPodGauges[0]);
+	m_gaugeSmoke.SetLayout(&pZone->m_arcPodGauges[2]);
+	m_gaugeTempWall.SetLayout(&pZone->m_arcPodGauges[1]);
 
-	{
-		RECT* prc = &pZone->m_rcViewport;
+	m_map.SetViewport(&m_dcOffscreen, this, theApp.m_pBumperDoc,
+		pZone->m_rcMap);
+	m_needle.CreateTile(&m_dcOffscreen, pBits, pZone->m_rcNeedle);
 
-		m_obj0150.Sub_40FEE0(&m_dcUnk00B4, this, theApp.m_pBumperDoc,
-			prc->left, prc->top, prc->right, prc->bottom);
-	}
-
-	{
-		RECT* prc = &pZone->m_rcUnk278;
-
-		m_obj00E8.Sub_411D80(&m_dcUnk00B4, pBits,
-			prc->left, prc->top, prc->right, prc->bottom);
-	}
-
-	m_obj00E8.m_pUnk64 = &m_pen04D8;
+	m_needle.m_pPen = &m_penYellow;
 	::GetClientRect(m_hWnd, &rcTemp);
 
 	// The two extents are statements of their own: the original subtracts
@@ -5432,7 +5471,7 @@ void CBumperView::Sub_410510()
 	// bottom-top into eax and only then right-left into ecx.
 	nHeight = rcTemp.bottom - rcTemp.top;
 	nWidth = rcTemp.right - rcTemp.left;
-	::PatBlt(m_dcUnk00B4.m_hDC, rcTemp.left, rcTemp.top, nWidth, nHeight,
+	::PatBlt(m_dcOffscreen.m_hDC, rcTemp.left, rcTemp.top, nWidth, nHeight,
 		BLACKNESS);
 	::GdiFlush();
 
@@ -5441,38 +5480,38 @@ void CBumperView::Sub_410510()
 	// into the frame slots at +0x18/+0x1C): both composite passes read the
 	// scalars, and edi is free again for the rectangle copies below.  These
 	// two slots are what makes the frame 0x40 rather than 0x38 bytes.
-	HOVER_ZONESIZE zone = Hover_ZoneSize(pdwSize);
+	HOVER_ZONESIZE zone = Hover_ZoneSize(psizeDash);
 
 	// First composite pass (zone descriptor rects at +0x1f0/+0x200).
-	rcA = pZone->m_rcComposite1;
-	rcB = pZone->m_rcComposite2;
+	rcA = pZone->m_rcTopDashSrc;
+	rcB = pZone->m_rcTopDashDst;
 
-	Hover_sub_411770(
+	Hover_TransparentBlt8(
 		rcA.left, rcA.top, rcA.right, rcA.bottom,
 		zone.cx, zone.cy,
 		rcB.left, rcB.top, rcB.right, rcB.bottom,
-		m_pUnk00D0->m_dwWidth, m_pUnk00D0->m_dwHeight,
-		pDibBits, (BYTE*)m_pUnk00D0->m_dwUnk04, -1);
+		m_pRasterizer->m_dwWidth, m_pRasterizer->m_dwHeight,
+		pDibBits, m_pRasterizer->m_pBits, -1);
 
 	// Second composite pass (zone descriptor rects at +0x238/+0x248).
-	rcA = pZone->m_rcUnk238;
-	rcB = pZone->m_rcUnk248;
+	rcA = pZone->m_rcBottomDashSrc;
+	rcB = pZone->m_rcBottomDashDst;
 
-	Hover_sub_411770(
+	Hover_TransparentBlt8(
 		rcA.left, rcA.top, rcA.right, rcA.bottom,
 		zone.cx, zone.cy,
 		rcB.left, rcB.top, rcB.right, rcB.bottom,
-		m_pUnk00D0->m_dwWidth, m_pUnk00D0->m_dwHeight,
-		pDibBits, (BYTE*)m_pUnk00D0->m_dwUnk04, -1);
+		m_pRasterizer->m_dwWidth, m_pRasterizer->m_dwHeight,
+		pDibBits, m_pRasterizer->m_pBits, -1);
 
-	m_obj02E0.Sub_401AD0(&m_dcUnk00B4, 1);
-	m_obj0370.Sub_401AD0(&m_dcUnk00B4, 1);
-	m_obj0340.Sub_401AD0(&m_dcUnk00B4, 1);
-	m_obj0310.Sub_401AD0(&m_dcUnk00B4, 1);
-	m_obj03A0.Sub_401AD0(&m_dcUnk00B4, 1);
-	m_obj03D0.Sub_401AD0(&m_dcUnk00B4, 1);
-	m_obj0400.Sub_401AD0(&m_dcUnk00B4, 1);
-	m_obj00E8.Sub_401E80(&m_dcUnk00B4, 1);
+	m_gaugeSpeed.DrawGauge(&m_dcOffscreen, 1);
+	m_gaugeSpeedPod.DrawGauge(&m_dcOffscreen, 1);
+	m_gaugeSlow.DrawGauge(&m_dcOffscreen, 1);
+	m_gaugeInvincible.DrawGauge(&m_dcOffscreen, 1);
+	m_gaugeAltitude.DrawGauge(&m_dcOffscreen, 1);
+	m_gaugeSmoke.DrawGauge(&m_dcOffscreen, 1);
+	m_gaugeTempWall.DrawGauge(&m_dcOffscreen, 1);
+	m_needle.DrawNeedle(&m_dcOffscreen, 1);
 	::GdiFlush();
 
 	// Each of the six element uploads reads the render target's size pair
@@ -5482,83 +5521,83 @@ void CBumperView::Sub_410510()
 	{
 		HOVER_ZONESIZE size;
 
-		size = Hover_ZoneSize(&m_pUnk00D0->m_dwWidth);
-		m_obj0430.Sub_40E9A0(m_pUnk00D0->m_dwUnk04, size.cx, size.cy);
-		size = Hover_ZoneSize(&m_pUnk00D0->m_dwWidth);
-		m_obj0480.Sub_40E9A0(m_pUnk00D0->m_dwUnk04, size.cx, size.cy);
+		size = Hover_ZoneSize(&m_pRasterizer->m_dwWidth);
+		m_flagsPlayer.DrawFlags(m_pRasterizer->m_pBits, size.cx, size.cy);
+		size = Hover_ZoneSize(&m_pRasterizer->m_dwWidth);
+		m_flagsRobot.DrawFlags(m_pRasterizer->m_pBits, size.cx, size.cy);
 
-		size = Hover_ZoneSize(&m_pUnk00D0->m_dwWidth);
-		m_obj02B8.Sub_40FCE0(m_pUnk00D0->m_dwUnk04, size.cx, size.cy);
-		size = Hover_ZoneSize(&m_pUnk00D0->m_dwWidth);
-		m_obj0240.Sub_40FCE0(m_pUnk00D0->m_dwUnk04, size.cx, size.cy);
-		size = Hover_ZoneSize(&m_pUnk00D0->m_dwWidth);
-		m_obj0268.Sub_40FCE0(m_pUnk00D0->m_dwUnk04, size.cx, size.cy);
-		size = Hover_ZoneSize(&m_pUnk00D0->m_dwWidth);
-		m_obj0290.Sub_40FCE0(m_pUnk00D0->m_dwUnk04, size.cx, size.cy);
+		size = Hover_ZoneSize(&m_pRasterizer->m_dwWidth);
+		m_score.DrawDigits(m_pRasterizer->m_pBits, size.cx, size.cy);
+		size = Hover_ZoneSize(&m_pRasterizer->m_dwWidth);
+		m_ctrJumpPods.DrawDigits(m_pRasterizer->m_pBits, size.cx, size.cy);
+		size = Hover_ZoneSize(&m_pRasterizer->m_dwWidth);
+		m_ctrSmokeBombs.DrawDigits(m_pRasterizer->m_pBits, size.cx, size.cy);
+		size = Hover_ZoneSize(&m_pRasterizer->m_dwWidth);
+		m_ctrTempWalls.DrawDigits(m_pRasterizer->m_pBits, size.cx, size.cy);
 	}
 
 	::operator delete(pBits);
 
-	if (theApp.m_dwUnk03B0 != 0)
-		Sub_428120();
+	if (theApp.m_bFullScreen != 0)
+		DrawF4Hint();
 
-	Sub_410380();
+	DrawKeyLabels();
 
-	m_dcUnk00B4.SelectPalette(pOldPal, TRUE);
+	m_dcOffscreen.SelectPalette(pOldPal, TRUE);
 }
 
-// FUNCTION: CBumperView::Sub_410380
+// FUNCTION: CBumperView::DrawKeyLabels
 // hover.exe:0x410380
 // FUNCTION: HOVER 0x410380
-void CBumperView::Sub_410380()
+void CBumperView::DrawKeyLabels()
 {
 	CString strLabel;
 	CFont font;
 	ZONE_DESCRIPTOR* pZone;
 
 	// Select the zone descriptor: zone 0 is forced in 2x stretch mode.
-	pZone = (ZONE_DESCRIPTOR*)g_adwUnk_4609A0;
-	if (m_dwUnk0544 == 0)
-		pZone += g_dwUnk_460998;
+	pZone = g_aZones;
+	if (m_bDoubleSize == 0)
+		pZone += g_dwCurZone;
 
 	// Create the dashboard-label font and select it into the offscreen DC.
-	font.Attach(::CreateFont(pZone->m_dwUnk2D0, 0, 0, 0, 0x258, 0, 0, 0,
+	font.Attach(::CreateFont(pZone->m_cyKeyFont, 0, 0, 0, 0x258, 0, 0, 0,
 		0, 2, 0, 0, 0x20, "Arial"));
 
-	m_dcUnk00B4.SaveDC();
-	m_dcUnk00B4.SelectObject(&font);
-	m_dcUnk00B4.SetBkMode(TRANSPARENT);
-	m_dcUnk00B4.SetTextColor(0);
+	m_dcOffscreen.SaveDC();
+	m_dcOffscreen.SelectObject(&font);
+	m_dcOffscreen.SetBkMode(TRANSPARENT);
+	m_dcOffscreen.SetTextColor(0);
 
 	// Draw the three dashboard labels into their zone rectangles.  The
 	// labels are the configured control keys themselves: the VK codes in
 	// theApp.m_avkControls equal the ASCII letter for A-Z and 0-9, and
 	// CString::operator=(char) turns each into a one-character string.
 	strLabel = (char)theApp.m_avkControls[2];
-	m_dcUnk00B4.DrawText(strLabel, -1, &pZone->m_rcUnk2D4,
+	m_dcOffscreen.DrawText(strLabel, -1, &pZone->m_rcKeyJump,
 		DT_SINGLELINE | DT_CENTER | DT_VCENTER);
 
 	strLabel = (char)theApp.m_avkControls[0];
-	m_dcUnk00B4.DrawText(strLabel, -1, &pZone->m_rcUnk2F4,
+	m_dcOffscreen.DrawText(strLabel, -1, &pZone->m_rcKeyCloak,
 		DT_SINGLELINE | DT_CENTER | DT_VCENTER);
 
 	strLabel = (char)theApp.m_avkControls[1];
-	m_dcUnk00B4.DrawText(strLabel, -1, &pZone->m_rcUnk2E4,
+	m_dcOffscreen.DrawText(strLabel, -1, &pZone->m_rcKeyWall,
 		DT_SINGLELINE | DT_CENTER | DT_VCENTER);
 
-	m_dcUnk00B4.RestoreDC(-1);
+	m_dcOffscreen.RestoreDC(-1);
 }
 
 // Draws the small "F4" dashboard overlay in the bottom-right corner of the
 // offscreen DC.  In 2x stretch mode a custom 10pt "Small Font" is created
 // and selected; otherwise the ANSI variable-width stock font is used.  The
 // text is measured, a raised box is drawn around it, the rectangle is shrunk
-// and the label is drawn shadowed with Sub_40D0A0.
+// and the label is drawn shadowed with DrawMessageLine.
 
-// FUNCTION: CBumperView::Sub_428120
+// FUNCTION: CBumperView::DrawF4Hint
 // hover.exe:0x428120
 // FUNCTION: HOVER 0x428120
-void CBumperView::Sub_428120()
+void CBumperView::DrawF4Hint()
 {
 	CFont font;
 	CSize size;
@@ -5567,171 +5606,170 @@ void CBumperView::Sub_428120()
 
 	nMargin = 3;
 
-	m_dcUnk00B4.SaveDC();
+	m_dcOffscreen.SaveDC();
 
-	if (m_dwUnk0544 != 0)
+	if (m_bDoubleSize != 0)
 	{
 		font.Attach(::CreateFontA(-10, 0, 0, 0, 400, 0, 0, 0, 0, 0, 0, 0, 0,
 			"Small Font"));
 		nMargin = 2;
-		m_dcUnk00B4.SelectObject(&font);
+		m_dcOffscreen.SelectObject(&font);
 	}
 	else
 	{
-		m_dcUnk00B4.SelectStockObject(ANSI_VAR_FONT);
+		m_dcOffscreen.SelectStockObject(ANSI_VAR_FONT);
 	}
 
 	// The inner inset is written out at both use sites (the original
 	// re-emits the cmp/adc pair for the InflateRect call).
-	size = m_dcUnk00B4.GetTextExtent("F4", 2);
+	size = m_dcOffscreen.GetTextExtent("F4", 2);
 	size.cy += nMargin * 2;
-	size.cx += (((m_dwUnk0544 < 1) ? 2 : 1) + nMargin) * 2;
+	size.cx += (((m_bDoubleSize < 1) ? 2 : 1) + nMargin) * 2;
 
-	rc.right = m_dwUnk008C;
+	rc.right = m_dwOffscreenWidth;
 	rc.left = rc.right - size.cx;
-	rc.bottom = m_dwUnk0090;
+	rc.bottom = m_dwOffscreenHeight;
 	rc.top = rc.bottom - size.cy;
 
-	Sub_427F40(&rc, nMargin);
-	::InflateRect(&rc, -(((int)(m_dwUnk0544 < 1) ? 2 : 1) + nMargin),
+	DrawBevelBox(&rc, nMargin);
+	::InflateRect(&rc, -(((int)(m_bDoubleSize < 1) ? 2 : 1) + nMargin),
 		-nMargin);
 
-	Sub_40D0A0(&rc, "F4", ::GetSysColor(COLOR_BTNSHADOW),
+	DrawMessageLine(&rc, "F4", ::GetSysColor(COLOR_BTNSHADOW),
 		::GetSysColor(COLOR_BTNTEXT));
 
-	m_dcUnk00B4.SelectStockObject(ANSI_VAR_FONT);
-	m_dcUnk00B4.RestoreDC(-1);
+	m_dcOffscreen.SelectStockObject(ANSI_VAR_FONT);
+	m_dcOffscreen.RestoreDC(-1);
 }
 
 // Re-selects the span drawers after the speed/detail slider moved. The
-// slider position indexes g_adwUnk_4C4CC8, whose value is the *mode*
-// argument of Sub_410F20 (1..6 = the texel/row subsampling family); the
+// slider position indexes g_adwDrawerModeForDetail, whose value is the *mode*
+// argument of SetMode (1..6 = the texel/row subsampling family); the
 // flags argument is always 3, so both option bits are set and the full
 // drawer table is installed. Passing these the other way round leaves the
 // context permanently in mode 3 and pairs a shaded span walker with the
-// unshaded flat drawer Hover_sub_42A330, which then writes past the end of
+// unshaded flat drawer Sky4x1, which then writes past the end of
 // the render target.
 
-// FUNCTION: CBumperView::Sub_413C10
+// FUNCTION: CBumperView::ApplyDetailLevel
 // hover.exe:0x413C10
 // FUNCTION: HOVER 0x413c10
-void CBumperView::Sub_413C10(int nUnk)
+void CBumperView::ApplyDetailLevel(int nUnk)
 {
-	m_dwUnk00E4 = g_adwUnk_4C4CC8[nUnk];
+	m_dwDrawerMode = g_adwDrawerModeForDetail[nUnk];
 
-	m_pUnk00C8->Sub_410F20(3, m_dwUnk00E4);
-	m_pUnk00C8->Sub_410EC0();
+	m_pViewCtx->SetMode(3, m_dwDrawerMode);
+	m_pViewCtx->BuildMipShiftTable();
 
-	if (m_pUnk00CC != NULL)
+	if (m_pMirrorCtx != NULL)
 	{
-		m_pUnk00CC->Sub_410F20(3, m_dwUnk00E4);
-		m_pUnk00CC->Sub_410EC0();
+		m_pMirrorCtx->SetMode(3, m_dwDrawerMode);
+		m_pMirrorCtx->BuildMipShiftTable();
 	}
 }
 
-// FUNCTION: CBumperView::Sub_4126C0
+// FUNCTION: CBumperView::StartGameTimer
 // hover.exe:0x4126C0
 // FUNCTION: HOVER 0x4126c0
-void CBumperView::Sub_4126C0()
+void CBumperView::StartGameTimer()
 {
+	BOOL bWasSet;
 	LPTIMECALLBACK lpfnTimer;
 
-	g_dwUnk_4C4CE0 = 1;
+	g_bStartingTimer = 1;
 
-	if (theApp.m_dwUnk03B0 != 0)
+	if (theApp.m_bFullScreen != 0)
 	{
-		if (theApp.m_dwUnk03E4 != 0 && theApp.m_dwUnk03E8 == 0)
+		if (theApp.m_bUseDisplayDib != 0 && theApp.m_bDisplayDibActive == 0)
 		{
-			Sub_4277E0(1);
+			RequestDispDibBegin(1);
 		}
 		else
 		{
 			::SetMenu(AfxGetApp()->m_pMainWnd->m_hWnd, NULL);
 		}
 
-		if (m_dwUnk0034 != 0)
+		if (m_bCursorShown != 0)
 		{
 			::ShowCursor(FALSE);
-			m_dwUnk0034 = 0;
+			m_bCursorShown = 0;
 		}
 	}
 
-	if (theApp.m_dwUnk040C != 0 && theApp.m_dwUnk01B8 == 3)
+	if (theApp.m_bMusic != 0 && theApp.m_dwGameState == 3)
 	{
 		::SetThreadPriority((HANDLE)theApp.m_hThread, THREAD_PRIORITY_NORMAL);
-		theApp.m_pBumperDoc->m_obj0060.Sub_413710();
+		theApp.m_pBumperDoc->m_music.ResumeMusic();
 	}
 
-	Hover_sub_40E560(1);
+	Hover_WaveMixActivate(1);
 
-	if (theApp.m_dwUnk0404 != 0)
+	if (theApp.m_bEngineSound != 0)
 	{
-		((CSub40B800*)theApp.m_pBumperDoc->m_adwUnk83EC[0x1A])->Sub_40B800(
+		((CSoundSlot*)theApp.m_pBumperDoc->m_adwSounds[0x1A])->PlayWave(
 			5, 5, 0xFFFF);
 	}
 
 	::SetThreadPriority((HANDLE)theApp.m_hThread, THREAD_PRIORITY_ABOVE_NORMAL);
 
-	if (m_dwUnk0040 != 0)
+	if (m_pRenderThread != 0)
 	{
-		::SetThreadPriority(((CWinThread*)m_dwUnk0040)->m_hThread,
+		::SetThreadPriority((m_pRenderThread)->m_hThread,
 			THREAD_PRIORITY_NORMAL);
 	}
 
-	if (g_pThreadUnk_4C56E0 != NULL)
+	if (g_pSoundThread != NULL)
 	{
-		::SetThreadPriority(g_pThreadUnk_4C56E0->m_hThread,
+		::SetThreadPriority(g_pSoundThread->m_hThread,
 			THREAD_PRIORITY_ABOVE_NORMAL);
 	}
 
-	if (m_dwUnk0500 == 1)
+	// hover.exe tests the flag for nonzero (cmp/sbb/inc into a boolean)
+	// before clearing it, not for == 1
+	bWasSet = (m_dwMessageState != 0);
+	m_dwMessageState = 0;
+	m_rcMessage.bottom = -1;
+	if (bWasSet)
 	{
-		m_dwUnk0500 = 0;
-		m_dwUnk00A0 = 0xFFFFFFFF;
-		m_dwUnk0080 = 1;
-		Sub_40DC20(1);
+		m_bNeedRepaint = 1;
+		RequestRenderFrame(1);
 		RedrawWindow();
 	}
-	else
-	{
-		m_dwUnk0500 = 0;
-		m_dwUnk00A0 = 0xFFFFFFFF;
-	}
 
-	if (m_dwUnk0060 == 0)
+	if (m_dwTimerID == 0)
 	{
 		DWORD dwTick;
 
-		lpfnTimer = Hover_sub_408AA0;
-		m_dwUnk0060 = timeSetEvent(0x32, 0x0A, lpfnTimer, 0, TIME_PERIODIC);
-		if (m_dwUnk0060 == 0)
+		lpfnTimer = Hover_GameTimerProc;
+		m_dwTimerID = timeSetEvent(0x32, 0x0A, lpfnTimer, 0, TIME_PERIODIC);
+		if (m_dwTimerID == 0)
 			AfxMessageBox("Timer could not be started", 0, 0);
 		dwTick = GetTickCount();
-		m_dwUnk053C = 0;
-		m_dwUnk0534 = dwTick;
+		m_dwStepCount = 0;
+		m_dwStepRateBaseTick = dwTick;
 	}
 	else
 	{
 		AfxMessageBox("Timer tried to start twice", 0, 0);
 	}
 
-	g_dwUnk_4C4CE0 = 0;
+	g_bStartingTimer = 0;
 }
 
-// FUNCTION: CBumperView::Sub_427A80
+// FUNCTION: CBumperView::ZoomMap
 // hover.exe:0x427A80
 // FUNCTION: HOVER 0x427a80
-void CBumperView::Sub_427A80(int nUnk)
+void CBumperView::ZoomMap(int nUnk)
 {
 	ZONE_DESCRIPTOR* pZone;
 	DWORD dwMul;
 	RECT rcClient;
 
-	pZone = (ZONE_DESCRIPTOR*)g_adwUnk_4609A0;
-	if (m_dwUnk0544 == 0)
-		pZone += g_dwUnk_460998;
+	pZone = g_aZones;
+	if (m_bDoubleSize == 0)
+		pZone += g_dwCurZone;
 
-	DWORD* pdwVal = &m_obj0150.m_dwUnk00C8;
+	DWORD* pdwVal = &m_map.m_dwZoom;
 	if (nUnk != 0)
 	{
 		if ((long)*pdwVal < 0xA0000)
@@ -5751,24 +5789,22 @@ ComputeMul:
 		dwMul = 0xC000;
 	HOVER_FIXMULPP(pdwVal, dwMul);
 
-	if (m_dwUnk0540 == 0)
+	if (m_bFullMap == 0)
 	{
-		m_obj0150.Sub_40FEE0(&m_dcUnk00B4, this, theApp.m_pBumperDoc,
-			(DWORD)pZone->m_rcViewport.left, (DWORD)pZone->m_rcViewport.top,
-			(DWORD)pZone->m_rcViewport.right, (DWORD)pZone->m_rcViewport.bottom);
+		m_map.SetViewport(&m_dcOffscreen, this, theApp.m_pBumperDoc,
+			pZone->m_rcMap);
 	}
 	else
 	{
 		::GetClientRect(m_hWnd, &rcClient);
-		m_obj0150.Sub_40FEE0(&m_dcUnk00B4, this, theApp.m_pBumperDoc,
-			(DWORD)rcClient.left, (DWORD)rcClient.top,
-			(DWORD)rcClient.right, (DWORD)rcClient.bottom);
+		m_map.SetViewport(&m_dcOffscreen, this, theApp.m_pBumperDoc,
+			rcClient);
 	}
 }
 
 // hover.exe:0x40FB00
 // FUNCTION: HOVER 0x40fb00
-void CSub422F50::Sub_40FB00(DWORD dwBits, DWORD dwWidth, DWORD dwHeight)
+void CMapRenderer::SetBits(BYTE* pBits, DWORD dwWidth, DWORD dwHeight)
 {
 	long lWidth;
 	long lRem;
@@ -5776,66 +5812,64 @@ void CSub422F50::Sub_40FB00(DWORD dwBits, DWORD dwWidth, DWORD dwHeight)
 
 	// The width/height pair is written through a pointer over the two
 	// members and the width read back out of it (rule 94).
-	m_pUnk10 = (BYTE*)dwBits;
-	pdwDim = (DWORD*)&m_dwUnk14;
+	m_pBits = pBits;
+	pdwDim = (DWORD*)&m_dwBitsWidth;
 	pdwDim[0] = dwWidth;
 	pdwDim[1] = dwHeight;
 
 	lWidth = (long)pdwDim[0];
-	m_dwUnk24 = (DWORD)lWidth;
+	m_dwPitch = (DWORD)lWidth;
 	lRem = lWidth % 4;
 	if (lRem != 0)
 		lWidth += lRem;
-	m_dwUnk28 = (DWORD)(lWidth >> 2);
+	m_dwPitchDwords = (DWORD)(lWidth >> 2);
 }
 
 // hover.exe:0x40FBB0
 // FUNCTION: HOVER 0x40fbb0
-void CSub422F50::Sub_40FBB0(DWORD dwBottom, DWORD dwRight, DWORD dwTop,
-	DWORD dwRight2)
+void CMapRenderer::SetClipRect(RECT rc)
 {
-	long lBottom;
-	long lTop;
-	long lHeightMinusRight;
+	long lLeft;
+	long lRight;
+	long lFlipTop;
 	long lRem;
 	long lBits;
 
-	// The four arguments are copied into +0x00..+0x0C as one 16-byte
-	// block through a pointer over the argument home.
-	*(RECT*)&m_dwUnk00 = *(RECT*)&dwBottom;
+	// The rectangle arrives by value and is copied whole.
+	m_rcClip = rc;
 
-	lHeightMinusRight = (long)m_dwUnk18 - (long)dwRight;
-	m_dwUnk08--;
-	lHeightMinusRight--;
-	m_dwUnk0C--;
+	lFlipTop = (long)m_dwBitsHeight - rc.top;
+	m_rcClip.right--;
+	lFlipTop--;
+	m_rcClip.bottom--;
 
-	m_dwUnk48 = (DWORD)lHeightMinusRight;
-	m_dwUnk44 = (DWORD)(lHeightMinusRight + (long)dwRight - (long)dwRight2);
+	m_dwFlipTop = (DWORD)lFlipTop;
+	m_dwFlipBottom = (DWORD)(lFlipTop + rc.top - rc.bottom);
 
 	// The two dword-alignment flags are "the coordinate is a multiple of
 	// four", not "leaves remainder one".
-	lBottom = (long)dwBottom;
-	lRem = lBottom % 4;
-	m_dwUnk34 = (lRem == 0) ? 1 : 0;
+	lLeft = rc.left;
+	lRem = lLeft % 4;
+	m_bLeftAligned = (lRem == 0) ? 1 : 0;
 
-	// Only the flag looks at dwTop+1; the two derived pointers below use
-	// dwTop itself.
-	lTop = (long)dwTop;
-	lRem = (lTop + 1) % 4;
-	m_dwUnk38 = (lRem == 0) ? 1 : 0;
+	// Only the flag looks at right+1; the two derived addresses below use
+	// right itself.
+	lRight = rc.right;
+	lRem = (lRight + 1) % 4;
+	m_bRightAligned = (lRem == 0) ? 1 : 0;
 
-	lBits = (long)m_pUnk10;
-	if (m_dwUnk34 != 0)
-		m_dwUnk54 = (DWORD)((lBottom & ~3L) + lBits);
+	lBits = (long)m_pBits;
+	if (m_bLeftAligned != 0)
+		m_dwLeftAligned = (DWORD)((lLeft & ~3L) + lBits);
 	else
-		m_dwUnk54 = (DWORD)((lBottom & ~3L) + lBits + 4);
+		m_dwLeftAligned = (DWORD)((lLeft & ~3L) + lBits + 4);
 
-	m_dwUnk4C = (DWORD)(lBits + lBottom);
-	m_dwUnk58 = (DWORD)((lTop & ~3L) + lBits);
-	m_dwUnk50 = (DWORD)(lBits + lTop - 4);
+	m_dwLeftEdge = (DWORD)(lBits + lLeft);
+	m_dwRightAligned = (DWORD)((lRight & ~3L) + lBits);
+	m_dwRightEdge4 = (DWORD)(lBits + lRight - 4);
 
-	m_dwUnk40 = m_dwUnk24 * (DWORD)lHeightMinusRight;
-	m_dwUnk3C = m_dwUnk28 * (DWORD)lHeightMinusRight;
+	m_dwTopOffset = m_dwPitch * (DWORD)lFlipTop;
+	m_dwTopOffsetDw = m_dwPitchDwords * (DWORD)lFlipTop;
 }
 
 // The renderer's camera fields are 16.16 fixed point and hover.exe reads
@@ -5856,25 +5890,25 @@ typedef union tagCAMFIXED
 // Sets up the renderer viewport/scaling state from the supplied rectangle,
 // the owning DC and the view's offscreen render target.
 //
-// The four dword camera fields inside m_awUnk006C are 16.16 fixed point and
-// are built a word at a time: the width goes into the high half of the
-// dword at +0x70 and the height into the high half of the one at +0x6C, so
-// halving them gives the half-extents at +0x78 (x) and +0x74 (y) without a
-// shift. The projection base at +0x7C is the width scaled by the zoom
-// factor m_dwUnk00C8; the divisor at +0x80 is the world size (0x5A00.0000)
-// over it, and the base is then recomputed as the world size over the
-// divisor so the two are exact inverses of each other in 16.16. The
-// viewport extent at +0x88 is the larger of the two half-extents after they
-// have been scaled by the divisor and by 1.4199 (0x16b85), i.e. the radius
-// of the circle that encloses the viewport.
+// The four dword camera fields (m_fxHalfHeight .. m_fxProjBase) are 16.16
+// fixed point and are built a word at a time: the width goes into the high
+// half of the dword at +0x70 and the height into the high half of the one at
+// +0x6C, so halving them gives the half-extents at +0x78 (x) and +0x74 (y)
+// without a shift. The projection base at +0x7C is the width scaled by the
+// zoom factor m_dwZoom; the divisor at +0x80 is the world size (0x5A00.0000)
+// over it, and the base is then recomputed as the world size over the divisor
+// so the two are exact inverses of each other in 16.16. The viewport extent
+// at +0x88 is the larger of the two half-extents after they have been scaled
+// by the divisor and by 1.4199 (0x16b85), i.e. the radius of the circle that
+// encloses the viewport.
 //
 // Every one of those updates goes through HOVER_FIXMULP/HOVER_FIXDIVPP,
 // which take the destination by pointer, as the original does.
 
 // hover.exe:0x40FEE0
 // FUNCTION: HOVER 0x40fee0
-void CSub422F50::Sub_40FEE0(CDC* pDC, CBumperView* pView, CBumperDoc* pDoc,
-	DWORD dwLeft, DWORD dwTop, DWORD dwRight, DWORD dwBottom)
+void CMapRenderer::SetViewport(CDC* pDC, CBumperView* pView, CBumperDoc* pDoc,
+	RECT rc)
 {
 	CAMFIXED fxWorld;
 	CAMFIXED fxY;
@@ -5888,52 +5922,50 @@ void CSub422F50::Sub_40FEE0(CDC* pDC, CBumperView* pView, CBumperDoc* pDoc,
 	short sExtent;
 	POSITION pos;
 	CGameObj* pObj;
-	CSub406090* pRenderTarget;
+	CSpanRasterizer* pRenderTarget;
 
 	fxWorld.s.wFrac = 0;
 	fxWorld.s.sInt = 0x5A00;
 
-	// The four parameters are contiguous, and so are the four members: the
-	// original copies them as one rectangle.
-	*(RECT*)&m_dwUnk5C = *(RECT*)&dwLeft;
+	m_rcView = rc;
 
 	// Build the 16.16 half-extents at +0x78 and +0x74. The width and the
 	// height are stored as the integer part of the dwords at +0x70/+0x6C,
 	// so the halves are a plain signed /2.
-	m_awUnk006C[2] = 0;
-	m_awUnk006C[3] = (short)(dwRight - dwLeft);
-	dwWidth = *(DWORD*)&m_awUnk006C[2];
-	*(DWORD*)&m_awUnk006C[6] = dwWidth;
-	*(DWORD*)&m_awUnk006C[6] = (long)dwWidth / 2;
+	m_wWidthFrac = 0;
+	m_wWidth = (short)(rc.right - rc.left);
+	dwWidth = m_fxWidth;
+	m_fxHalfWidth = dwWidth;
+	m_fxHalfWidth = (long)dwWidth / 2;
 
-	m_awUnk006C[0] = 0;
-	m_awUnk006C[1] = (short)(dwBottom - dwTop);
-	dwHeight = *(DWORD*)&m_awUnk006C[0];
-	*(DWORD*)&m_awUnk006C[4] = dwHeight;
-	*(DWORD*)&m_awUnk006C[4] = (long)dwHeight / 2;
+	m_wHeightFrac = 0;
+	m_wHeight = (short)(rc.bottom - rc.top);
+	dwHeight = m_fxHeight;
+	m_fxHalfHeight = dwHeight;
+	m_fxHalfHeight = (long)dwHeight / 2;
 
 	// Projection base at +0x7C = width * zoom.
-	pdw = (DWORD*)&m_awUnk006C[8];
+	pdw = &m_fxProjBase;
 	*pdw = dwWidth;
-	HOVER_FIXMULPP(pdw, m_dwUnk00C8);
+	HOVER_FIXMULPP(pdw, m_dwZoom);
 
 	// Divisor at +0x80 = worldSize / base, then base = worldSize / divisor.
-	pdw = (DWORD*)&m_wUnk0080;
+	pdw = &m_fxScale;
 	*pdw = fxWorld.dw;
-	HOVER_FIXDIVPP(pdw, *(DWORD*)&m_awUnk006C[8]);
+	HOVER_FIXDIVPP(pdw, m_fxProjBase);
 
-	pdw = (DWORD*)&m_awUnk006C[8];
+	pdw = &m_fxProjBase;
 	*pdw = fxWorld.dw;
-	HOVER_FIXDIVPP(pdw, *(DWORD*)&m_wUnk0080);
+	HOVER_FIXDIVPP(pdw, m_fxScale);
 
 	// The enclosing radius: the larger scaled half-extent.
-	dwScaledX = *(DWORD*)&m_awUnk006C[6];
-	dwDiv = *(DWORD*)&m_wUnk0080;
+	dwScaledX = m_fxHalfWidth;
+	dwDiv = m_fxScale;
 	HOVER_FIXMULPP(&dwScaledX, dwDiv);
 	fxX.dw = dwScaledX;
 	HOVER_FIXMULPP(&fxX.dw, 0x16b85);
 
-	dwScaledY = *(DWORD*)&m_awUnk006C[4];
+	dwScaledY = m_fxHalfHeight;
 	HOVER_FIXMULPP(&dwScaledY, dwDiv);
 	fxY.dw = dwScaledY;
 	HOVER_FIXMULPP(&fxY.dw, 0x16b85);
@@ -5941,52 +5973,52 @@ void CSub422F50::Sub_40FEE0(CDC* pDC, CBumperView* pView, CBumperDoc* pDoc,
 	sExtent = fxX.s.sInt;
 	if (fxY.s.sInt > sExtent)
 		sExtent = fxY.s.sInt;
-	m_wUnk0088 = sExtent;
+	m_wViewRadius = sExtent;
 
 	// Set up the render target bits and the span clip state.
-	pRenderTarget = pView->m_pUnk00D0;
-	m_pUnk0084 = pDC;
-	Sub_40FB00(pRenderTarget->m_dwUnk04, pRenderTarget->m_dwWidth,
+	pRenderTarget = pView->m_pRasterizer;
+	m_pMapDC = pDC;
+	SetBits(pRenderTarget->m_pBits, pRenderTarget->m_dwWidth,
 		pRenderTarget->m_dwHeight);
-	Sub_40FBB0(dwLeft, dwTop, dwRight, dwBottom);
+	SetClipRect(rc);
 
 	// Clear the per-object flag in the doc's static object list.
-	for (pos = theApp.m_pBumperDoc->m_list838C.GetHeadPosition(); pos != NULL; )
+	for (pos = theApp.m_pBumperDoc->m_listMazeObjs.GetHeadPosition(); pos != NULL; )
 	{
-		pObj = (CGameObj*)theApp.m_pBumperDoc->m_list838C.GetNext(pos);
-		pObj->m_dwUnk3C = 0;
+		pObj = (CGameObj*)theApp.m_pBumperDoc->m_listMazeObjs.GetNext(pos);
+		pObj->m_bOnMap = 0;
 	}
 
 	// Resolve the draw colors through the game palette.
-	m_dwUnk008C = g_paletteUnk_4A1D50.GetNearestPaletteIndex(0x000000FF);
-	m_dwUnk0090 = g_paletteUnk_4A1D50.GetNearestPaletteIndex(0x00FF0000);
-	m_dwUnk0094 = g_paletteUnk_4A1D50.GetNearestPaletteIndex(0x00009200);
-	m_dwUnk0098 = g_paletteUnk_4A1D50.GetNearestPaletteIndex(0x0000FFFF);
-	m_dwUnk009C = g_paletteUnk_4A1D50.GetNearestPaletteIndex(0x00FFFFFF);
-	m_dwUnk00A0 = g_paletteUnk_4A1D50.GetNearestPaletteIndex(0x00000000);
-	m_dwUnk00A4 = g_paletteUnk_4A1D50.GetNearestPaletteIndex(0x00A4A4A4);
-	m_dwUnk00A8 = g_paletteUnk_4A1D50.GetNearestPaletteIndex(0x00808080);
+	m_dwColorHuman = g_palGame.GetNearestPaletteIndex(0x000000FF);
+	m_dwColorRobot = g_palGame.GetNearestPaletteIndex(0x00FF0000);
+	m_dwColorRobotAlt = g_palGame.GetNearestPaletteIndex(0x00009200);
+	m_dwColorYellow = g_palGame.GetNearestPaletteIndex(0x0000FFFF);
+	m_dwColorWhite = g_palGame.GetNearestPaletteIndex(0x00FFFFFF);
+	m_dwColorBlack = g_palGame.GetNearestPaletteIndex(0x00000000);
+	m_dwColorLightGray = g_palGame.GetNearestPaletteIndex(0x00A4A4A4);
+	m_dwColorGray = g_palGame.GetNearestPaletteIndex(0x00808080);
 }
 
-// FUNCTION: CBumperView::Sub_427BB0
+// FUNCTION: CBumperView::BeginDispDib
 // hover.exe:0x427BB0
 // FUNCTION: HOVER 0x427bb0
-void CBumperView::Sub_427BB0()
+void CBumperView::BeginDispDib()
 {
 	int i;
 	PALETTEENTRY pe;
 	BYTE* pColor;
-	DWORD adwMsg[3];
+	COPYDATASTRUCT cds;
 	BITMAPINFO* pBmi;
 
-	if (theApp.m_dwUnk03E4 == 0)
+	if (theApp.m_bUseDisplayDib == 0)
 		return;
-	if (theApp.m_dwUnk03E8 != 0)
+	if (theApp.m_bDisplayDibActive != 0)
 		return;
 
-	// The original caches theApp.m_pUnk03EC in a pointer local across this
-	// run of field writes.
-	pBmi = theApp.m_pUnk03EC;
+	// The original caches theApp.m_pbmiDisplayDib in a pointer local across
+	// this run of field writes.
+	pBmi = theApp.m_pbmiDisplayDib;
 
 	// The original writes the BITMAPINFOHEADER fields in this order.
 	pBmi->bmiHeader.biPlanes = 1;
@@ -6008,7 +6040,7 @@ void CBumperView::Sub_427BB0()
 
 	for (i = 0; i < 256; i++)
 	{
-		::GetPaletteEntries((HPALETTE)g_paletteUnk_4A1D50.m_hObject, i, 1, &pe);
+		::GetPaletteEntries((HPALETTE)g_palGame.m_hObject, i, 1, &pe);
 		pColor += 4;
 		pColor[-2] = pe.peRed;
 		pColor[-3] = pe.peGreen;
@@ -6016,329 +6048,331 @@ void CBumperView::Sub_427BB0()
 		pColor[-1] = pe.peFlags;
 	}
 
-	adwMsg[0] = 0x400;
-	adwMsg[1] = 0x428;
-	if (theApp.m_pUnk03EC == NULL)
-		adwMsg[1] = 0;
-	adwMsg[2] = (DWORD)theApp.m_pUnk03EC;
+	cds.dwData = 0x400;
+	cds.cbData = BMI8_SIZE;
+	if (theApp.m_pbmiDisplayDib == NULL)
+		cds.cbData = 0;
+	cds.lpData = theApp.m_pbmiDisplayDib;
 
-	if (::SendMessageA((HWND)theApp.m_dwUnk03F0, 0x4a, 0, (LPARAM)adwMsg) != 0)
+	if (::SendMessageA(theApp.m_hwndDisplayDib, 0x4a, 0, (LPARAM)&cds) != 0)
 		return;
-	if (::SendMessageA((HWND)theApp.m_dwUnk03F0, 0x403, 0, 0) != 0)
+	if (::SendMessageA(theApp.m_hwndDisplayDib, 0x403, 0, 0) != 0)
 		return;
-	theApp.m_dwUnk03E8 = 1;
+	theApp.m_bDisplayDibActive = 1;
 }
 
-// FUNCTION: CBumperView::Sub_427CC0
+// FUNCTION: CBumperView::EndDispDib
 // hover.exe:0x427CC0
 // FUNCTION: HOVER 0x427cc0
-void CBumperView::Sub_427CC0()
+void CBumperView::EndDispDib()
 {
-	if (theApp.m_dwUnk03E8 != 0)
+	if (theApp.m_bDisplayDibActive != 0)
 	{
-		if (::SendMessageA((HWND)theApp.m_dwUnk03F0, 0x404, 0, 0) == 0)
-			theApp.m_dwUnk03E8 = 0;
+		if (::SendMessageA(theApp.m_hwndDisplayDib, 0x404, 0, 0) == 0)
+			theApp.m_bDisplayDibActive = 0;
 	}
 }
 
-// Marks the view inactive (m_dwUnk0500 = 1) when the game state allows a
-// transition (bit 0x80000000 of theApp.m_dwUnk01B8 clear, state > 1) and, on
-// an actual transition with dwUnk nonzero, sets m_dwUnk0080, calls
-// Sub_40DC20(1) and forces a full window redraw.
+// Marks the view inactive (m_dwMessageState = 1) when the game state allows a
+// transition (bit 0x80000000 of theApp.m_dwGameState clear, state > 1) and, on
+// an actual transition with dwUnk nonzero, sets m_bNeedRepaint, calls
+// RequestRenderFrame(1) and forces a full window redraw.
 
 // hover.exe:0x40EE90
 // FUNCTION: HOVER 0x40ee90
-void CBumperView::Sub_40EE90(DWORD dwUnk)
+void CBumperView::SuspendGame(DWORD dwUnk)
 {
 	BOOL bRedraw;
 
-	if (this == NULL || g_dwUnk_4C4CE0 != 0)
+	if (this == NULL || g_bStartingTimer != 0)
 		return;
-	if (m_dwUnk0060 != 0)
-		Sub_410280();
-	if ((theApp.m_dwUnk01B8 & 0x80000000) != 0)
+	if (m_dwTimerID != 0)
+		StopGameTimer();
+	if ((theApp.m_dwGameState & 0x80000000) != 0)
 		return;
-	if (theApp.m_dwUnk01B8 == 0 || theApp.m_dwUnk01B8 == 1)
+	if (theApp.m_dwGameState == 0 || theApp.m_dwGameState == 1)
 		return;
-	theApp.m_dwUnk01B8 |= 0x80000000;
-	bRedraw = (m_dwUnk0500 != 1 && dwUnk != 0);
-	m_dwUnk0500 = 1;
+	theApp.m_dwGameState |= 0x80000000;
+	bRedraw = (m_dwMessageState != 1 && dwUnk != 0);
+	m_dwMessageState = 1;
 	if (bRedraw)
 	{
-		m_dwUnk0080 = 1;
-		Sub_40DC20(1);
+		m_bNeedRepaint = 1;
+		RequestRenderFrame(1);
 		RedrawWindow();
 	}
 }
 
 // hover.exe:0x410280
 // FUNCTION: HOVER 0x410280
-void CBumperView::Sub_410280()
+void CBumperView::StopGameTimer()
 {
 	CMenu* pMenu;
 
-	if (m_dwUnk0060 != 0)
-		timeKillEvent(m_dwUnk0060);
-	m_dwUnk0060 = 0;
-	Sub_4279E0();
-	if (theApp.m_dwUnk0404 != 0)
-		((CSub40B800*)theApp.m_pBumperDoc->m_adwUnk83EC[0x1A])->Sub_4118A0(5, 1);
-	if (theApp.m_dwUnk040C != 0)
-		theApp.m_pBumperDoc->m_obj0060.Sub_412220();
-	Hover_sub_40E560(0);
-	timeKillEvent(m_dwUnk0060);
-	if (theApp.m_dwUnk03B0 != 0)
+	if (m_dwTimerID != 0)
+		timeKillEvent(m_dwTimerID);
+	m_dwTimerID = 0;
+	WaitWorkerIdle();
+	if (theApp.m_bEngineSound != 0)
+		((CSoundSlot*)theApp.m_pBumperDoc->m_adwSounds[0x1A])->StopWave(5, 1);
+	if (theApp.m_bMusic != 0)
+		theApp.m_pBumperDoc->m_music.PauseMusic();
+	Hover_WaveMixActivate(0);
+	timeKillEvent(m_dwTimerID);
+	if (theApp.m_bFullScreen != 0)
 	{
-		if (theApp.m_dwUnk03E8 != 0)
+		if (theApp.m_bDisplayDibActive != 0)
 		{
-			Sub_4278E0(1);
+			RequestDispDibEnd(1);
 		}
 		else
 		{
-			pMenu = CMenu::FromHandle((HMENU)theApp.m_adwUnk03C0[6]);
+			pMenu = CMenu::FromHandle((HMENU)theApp.m_adwSavedWindowState[6]);
 			::SetMenu(AfxGetApp()->m_pMainWnd->m_hWnd,
 				(pMenu != NULL) ? pMenu->m_hMenu : NULL);
 		}
 	}
-	if (m_dwUnk0034 == 0)
+	if (m_bCursorShown == 0)
 	{
 		ShowCursor(TRUE);
-		m_dwUnk0034 = 1;
+		m_bCursorShown = 1;
 	}
 	SetThreadPriority((HANDLE)theApp.m_hThread, THREAD_PRIORITY_NORMAL);
-	if (m_dwUnk0040 != 0)
-		SetThreadPriority(((CWinThread*)m_dwUnk0040)->m_hThread,
+	if (m_pRenderThread != 0)
+		SetThreadPriority((m_pRenderThread)->m_hThread,
 			THREAD_PRIORITY_NORMAL);
-	if (g_pThreadUnk_4C56E0 != NULL)
-		SetThreadPriority(g_pThreadUnk_4C56E0->m_hThread,
+	if (g_pSoundThread != NULL)
+		SetThreadPriority(g_pSoundThread->m_hThread,
 			THREAD_PRIORITY_NORMAL);
 }
 
 // Waits (non-blocking) on the six synchronization events, pumps
-// m_hUnk0054 through Hover_sub_427A10 when it stays signaled, then
-// transitions m_dwUnk00AC to state 3 under theApp.m_csUnk011C. When nUnk is
-// nonzero the m_hUnk0050/m_hUnk0054 handshake pair runs around the
-// ResetEvent/SetEvent pulse on m_hUnk0054/m_dwUnk0048.
+// m_hEvtCommandAck through Hover_WaitPumpCopyData when it stays signaled, then
+// transitions m_dwWorkerCmd to state 3 under theApp.m_csWorkerCmd. When nUnk is
+// nonzero the m_hEvtWorkerIdle/m_hEvtCommandAck handshake pair runs around the
+// ResetEvent/SetEvent pulse on m_hEvtCommandAck/m_hEvtCommand.
 
 // hover.exe:0x40DC20
 // FUNCTION: HOVER 0x40dc20
-void CBumperView::Sub_40DC20(int nUnk)
+void CBumperView::RequestRenderFrame(int nUnk)
 {
-	WaitForSingleObject((HANDLE)m_dwUnk0048, 0);
-	WaitForSingleObject(m_hUnk004C, 0);
-	WaitForSingleObject(m_hUnk0050, 0);
-	WaitForSingleObject(m_hUnk0054, 0);
-	WaitForSingleObject(m_hUnk0058, 0);
-	WaitForSingleObject(m_hUnk005C, 0);
-	if (WaitForSingleObject(m_hUnk0054, 0) == WAIT_TIMEOUT &&
-		m_dwUnk00AC != 3)
-		Hover_sub_427A10(m_hUnk0054);
-	EnterCriticalSection(&theApp.m_csUnk011C);
-	m_dwUnk00AC = 3;
-	LeaveCriticalSection(&theApp.m_csUnk011C);
+	WaitForSingleObject(m_hEvtCommand, 0);
+	WaitForSingleObject(m_hEvtWorkerBusy, 0);
+	WaitForSingleObject(m_hEvtWorkerIdle, 0);
+	WaitForSingleObject(m_hEvtCommandAck, 0);
+	WaitForSingleObject(m_hEvtUnused1, 0);
+	WaitForSingleObject(m_hEvtUnused2, 0);
+	if (WaitForSingleObject(m_hEvtCommandAck, 0) == WAIT_TIMEOUT &&
+		m_dwWorkerCmd != 3)
+		Hover_WaitPumpCopyData(m_hEvtCommandAck);
+	EnterCriticalSection(&theApp.m_csWorkerCmd);
+	m_dwWorkerCmd = 3;
+	LeaveCriticalSection(&theApp.m_csWorkerCmd);
 	if (nUnk != 0)
 	{
-		Hover_sub_427A10(m_hUnk0050);
-		EnterCriticalSection(&theApp.m_csUnk011C);
-		ResetEvent(m_hUnk0054);
-		SetEvent((HANDLE)m_dwUnk0048);
-		LeaveCriticalSection(&theApp.m_csUnk011C);
-		Hover_sub_427A10(m_hUnk0054);
-		Hover_sub_427A10(m_hUnk0050);
+		Hover_WaitPumpCopyData(m_hEvtWorkerIdle);
+		EnterCriticalSection(&theApp.m_csWorkerCmd);
+		ResetEvent(m_hEvtCommandAck);
+		SetEvent(m_hEvtCommand);
+		LeaveCriticalSection(&theApp.m_csWorkerCmd);
+		Hover_WaitPumpCopyData(m_hEvtCommandAck);
+		Hover_WaitPumpCopyData(m_hEvtWorkerIdle);
 	}
 	else
 	{
-		EnterCriticalSection(&theApp.m_csUnk011C);
-		ResetEvent(m_hUnk0054);
-		SetEvent((HANDLE)m_dwUnk0048);
-		LeaveCriticalSection(&theApp.m_csUnk011C);
+		EnterCriticalSection(&theApp.m_csWorkerCmd);
+		ResetEvent(m_hEvtCommandAck);
+		SetEvent(m_hEvtCommand);
+		LeaveCriticalSection(&theApp.m_csWorkerCmd);
 	}
 }
 
-// Sets the render state m_dwUnk0500. State 0 (the "no game" state) also
-// invalidates the cached colour at +0xA0. When the state actually changed
-// and nRedraw is set, the worker thread is pushed through Sub_40DC20 and
+// Sets the render state m_dwMessageState. State 0 (the "no game" state) also
+// invalidates the cached colour at +0xA0. When the state actually changed and
+// nRedraw is set, the worker thread is pushed through RequestRenderFrame and
 // the window is repainted synchronously.
 
 // hover.exe:0x41F4E0
 // FUNCTION: HOVER 0x41f4e0
-void CBumperView::Sub_41F4E0(DWORD dwState, int nRedraw)
+void CBumperView::SetMessageState(DWORD dwState, int nRedraw)
 {
 	BOOL bRedraw;
 
-	bRedraw = (m_dwUnk0500 != dwState && nRedraw != 0);
-	m_dwUnk0500 = dwState;
+	bRedraw = (m_dwMessageState != dwState && nRedraw != 0);
+	m_dwMessageState = dwState;
 	if (dwState == 0)
-		m_dwUnk00A0 = 0xFFFFFFFF;
+		m_rcMessage.bottom = -1;
 	if (bRedraw)
 	{
-		m_dwUnk0080 = 1;
-		Sub_40DC20(1);
+		m_bNeedRepaint = 1;
+		RequestRenderFrame(1);
 		RedrawWindow();
 	}
 }
 
-// Same sequence as Sub_40DC20, but transitions m_dwUnk00AC to state 6.
+// Same sequence as RequestRenderFrame, but transitions m_dwWorkerCmd to state
+// 6.
 
 // hover.exe:0x4277E0
 // FUNCTION: HOVER 0x4277e0
-void CBumperView::Sub_4277E0(int nUnk)
+void CBumperView::RequestDispDibBegin(int nUnk)
 {
-	WaitForSingleObject((HANDLE)m_dwUnk0048, 0);
-	WaitForSingleObject(m_hUnk004C, 0);
-	WaitForSingleObject(m_hUnk0050, 0);
-	WaitForSingleObject(m_hUnk0054, 0);
-	WaitForSingleObject(m_hUnk0058, 0);
-	WaitForSingleObject(m_hUnk005C, 0);
-	if (WaitForSingleObject(m_hUnk0054, 0) == WAIT_TIMEOUT &&
-		m_dwUnk00AC != 3)
-		Hover_sub_427A10(m_hUnk0054);
-	EnterCriticalSection(&theApp.m_csUnk011C);
-	m_dwUnk00AC = 6;
-	LeaveCriticalSection(&theApp.m_csUnk011C);
+	WaitForSingleObject(m_hEvtCommand, 0);
+	WaitForSingleObject(m_hEvtWorkerBusy, 0);
+	WaitForSingleObject(m_hEvtWorkerIdle, 0);
+	WaitForSingleObject(m_hEvtCommandAck, 0);
+	WaitForSingleObject(m_hEvtUnused1, 0);
+	WaitForSingleObject(m_hEvtUnused2, 0);
+	if (WaitForSingleObject(m_hEvtCommandAck, 0) == WAIT_TIMEOUT &&
+		m_dwWorkerCmd != 3)
+		Hover_WaitPumpCopyData(m_hEvtCommandAck);
+	EnterCriticalSection(&theApp.m_csWorkerCmd);
+	m_dwWorkerCmd = 6;
+	LeaveCriticalSection(&theApp.m_csWorkerCmd);
 	if (nUnk != 0)
 	{
-		Hover_sub_427A10(m_hUnk0050);
-		EnterCriticalSection(&theApp.m_csUnk011C);
-		ResetEvent(m_hUnk0054);
-		SetEvent((HANDLE)m_dwUnk0048);
-		LeaveCriticalSection(&theApp.m_csUnk011C);
-		Hover_sub_427A10(m_hUnk0054);
-		Hover_sub_427A10(m_hUnk0050);
+		Hover_WaitPumpCopyData(m_hEvtWorkerIdle);
+		EnterCriticalSection(&theApp.m_csWorkerCmd);
+		ResetEvent(m_hEvtCommandAck);
+		SetEvent(m_hEvtCommand);
+		LeaveCriticalSection(&theApp.m_csWorkerCmd);
+		Hover_WaitPumpCopyData(m_hEvtCommandAck);
+		Hover_WaitPumpCopyData(m_hEvtWorkerIdle);
 	}
 	else
 	{
-		EnterCriticalSection(&theApp.m_csUnk011C);
-		ResetEvent(m_hUnk0054);
-		SetEvent((HANDLE)m_dwUnk0048);
-		LeaveCriticalSection(&theApp.m_csUnk011C);
+		EnterCriticalSection(&theApp.m_csWorkerCmd);
+		ResetEvent(m_hEvtCommandAck);
+		SetEvent(m_hEvtCommand);
+		LeaveCriticalSection(&theApp.m_csWorkerCmd);
 	}
 }
 
-// Same sequence as Sub_40DC20, but transitions m_dwUnk00AC to state 7.
+// Same sequence as RequestRenderFrame, but transitions m_dwWorkerCmd to state
+// 7.
 
 // hover.exe:0x4278E0
 // FUNCTION: HOVER 0x4278e0
-void CBumperView::Sub_4278E0(int nUnk)
+void CBumperView::RequestDispDibEnd(int nUnk)
 {
-	WaitForSingleObject((HANDLE)m_dwUnk0048, 0);
-	WaitForSingleObject(m_hUnk004C, 0);
-	WaitForSingleObject(m_hUnk0050, 0);
-	WaitForSingleObject(m_hUnk0054, 0);
-	WaitForSingleObject(m_hUnk0058, 0);
-	WaitForSingleObject(m_hUnk005C, 0);
-	if (WaitForSingleObject(m_hUnk0054, 0) == WAIT_TIMEOUT &&
-		m_dwUnk00AC != 3)
-		Hover_sub_427A10(m_hUnk0054);
-	EnterCriticalSection(&theApp.m_csUnk011C);
-	m_dwUnk00AC = 7;
-	LeaveCriticalSection(&theApp.m_csUnk011C);
+	WaitForSingleObject(m_hEvtCommand, 0);
+	WaitForSingleObject(m_hEvtWorkerBusy, 0);
+	WaitForSingleObject(m_hEvtWorkerIdle, 0);
+	WaitForSingleObject(m_hEvtCommandAck, 0);
+	WaitForSingleObject(m_hEvtUnused1, 0);
+	WaitForSingleObject(m_hEvtUnused2, 0);
+	if (WaitForSingleObject(m_hEvtCommandAck, 0) == WAIT_TIMEOUT &&
+		m_dwWorkerCmd != 3)
+		Hover_WaitPumpCopyData(m_hEvtCommandAck);
+	EnterCriticalSection(&theApp.m_csWorkerCmd);
+	m_dwWorkerCmd = 7;
+	LeaveCriticalSection(&theApp.m_csWorkerCmd);
 	if (nUnk != 0)
 	{
-		Hover_sub_427A10(m_hUnk0050);
-		EnterCriticalSection(&theApp.m_csUnk011C);
-		ResetEvent(m_hUnk0054);
-		SetEvent((HANDLE)m_dwUnk0048);
-		LeaveCriticalSection(&theApp.m_csUnk011C);
-		Hover_sub_427A10(m_hUnk0054);
-		Hover_sub_427A10(m_hUnk0050);
+		Hover_WaitPumpCopyData(m_hEvtWorkerIdle);
+		EnterCriticalSection(&theApp.m_csWorkerCmd);
+		ResetEvent(m_hEvtCommandAck);
+		SetEvent(m_hEvtCommand);
+		LeaveCriticalSection(&theApp.m_csWorkerCmd);
+		Hover_WaitPumpCopyData(m_hEvtCommandAck);
+		Hover_WaitPumpCopyData(m_hEvtWorkerIdle);
 	}
 	else
 	{
-		EnterCriticalSection(&theApp.m_csUnk011C);
-		ResetEvent(m_hUnk0054);
-		SetEvent((HANDLE)m_dwUnk0048);
-		LeaveCriticalSection(&theApp.m_csUnk011C);
+		EnterCriticalSection(&theApp.m_csWorkerCmd);
+		ResetEvent(m_hEvtCommandAck);
+		SetEvent(m_hEvtCommand);
+		LeaveCriticalSection(&theApp.m_csWorkerCmd);
 	}
 }
 
-// Same sequence as Sub_40DC20, but transitions m_dwUnk00AC to state 1 and
-// publishes the new speed/detail level in theApp.m_dwUnk01C4 while the
-// worker thread is parked inside the critical section. Called by the
+// Same sequence as RequestRenderFrame, but transitions m_dwWorkerCmd to state
+// 1 and publishes the new speed/detail level in theApp.m_dwSpeedDetail while
+// the worker thread is parked inside the critical section. Called by the
 // "Customize Game" dialog when the speed/detail slider moved.
 
 // hover.exe:0x413A00
 // FUNCTION: HOVER 0x413a00
-void CBumperView::Sub_413A00(int nLevel, int nUnk)
+void CBumperView::RequestDetailLevel(int nLevel, int nUnk)
 {
-	WaitForSingleObject((HANDLE)m_dwUnk0048, 0);
-	WaitForSingleObject(m_hUnk004C, 0);
-	WaitForSingleObject(m_hUnk0050, 0);
-	WaitForSingleObject(m_hUnk0054, 0);
-	WaitForSingleObject(m_hUnk0058, 0);
-	WaitForSingleObject(m_hUnk005C, 0);
-	if (WaitForSingleObject(m_hUnk0054, 0) == WAIT_TIMEOUT &&
-		m_dwUnk00AC != 1)
-		Hover_sub_427A10(m_hUnk0054);
-	EnterCriticalSection(&theApp.m_csUnk011C);
-	theApp.m_dwUnk01C4 = nLevel;
-	m_dwUnk00AC = 1;
-	LeaveCriticalSection(&theApp.m_csUnk011C);
+	WaitForSingleObject(m_hEvtCommand, 0);
+	WaitForSingleObject(m_hEvtWorkerBusy, 0);
+	WaitForSingleObject(m_hEvtWorkerIdle, 0);
+	WaitForSingleObject(m_hEvtCommandAck, 0);
+	WaitForSingleObject(m_hEvtUnused1, 0);
+	WaitForSingleObject(m_hEvtUnused2, 0);
+	if (WaitForSingleObject(m_hEvtCommandAck, 0) == WAIT_TIMEOUT &&
+		m_dwWorkerCmd != 1)
+		Hover_WaitPumpCopyData(m_hEvtCommandAck);
+	EnterCriticalSection(&theApp.m_csWorkerCmd);
+	theApp.m_dwSpeedDetail = nLevel;
+	m_dwWorkerCmd = 1;
+	LeaveCriticalSection(&theApp.m_csWorkerCmd);
 	if (nUnk != 0)
 	{
-		Hover_sub_427A10(m_hUnk0050);
-		EnterCriticalSection(&theApp.m_csUnk011C);
-		ResetEvent(m_hUnk0054);
-		SetEvent((HANDLE)m_dwUnk0048);
-		LeaveCriticalSection(&theApp.m_csUnk011C);
-		Hover_sub_427A10(m_hUnk0054);
-		Hover_sub_427A10(m_hUnk0050);
+		Hover_WaitPumpCopyData(m_hEvtWorkerIdle);
+		EnterCriticalSection(&theApp.m_csWorkerCmd);
+		ResetEvent(m_hEvtCommandAck);
+		SetEvent(m_hEvtCommand);
+		LeaveCriticalSection(&theApp.m_csWorkerCmd);
+		Hover_WaitPumpCopyData(m_hEvtCommandAck);
+		Hover_WaitPumpCopyData(m_hEvtWorkerIdle);
 	}
 	else
 	{
-		EnterCriticalSection(&theApp.m_csUnk011C);
-		ResetEvent(m_hUnk0054);
-		SetEvent((HANDLE)m_dwUnk0048);
-		LeaveCriticalSection(&theApp.m_csUnk011C);
+		EnterCriticalSection(&theApp.m_csWorkerCmd);
+		ResetEvent(m_hEvtCommandAck);
+		SetEvent(m_hEvtCommand);
+		LeaveCriticalSection(&theApp.m_csWorkerCmd);
 	}
 }
 
-// Same sequence as Sub_40DC20, but transitions m_dwUnk00AC to state 4.
-// Run after the player control bindings changed so the worker thread picks
+// Same sequence as RequestRenderFrame, but transitions m_dwWorkerCmd to state
+// 4. Run after the player control bindings changed so the worker thread picks
 // up the new ones.
 
 // hover.exe:0x413B10
 // FUNCTION: HOVER 0x413b10
-void CBumperView::Sub_413B10(int nUnk)
+void CBumperView::RequestDashboardRebuild(int nUnk)
 {
-	WaitForSingleObject((HANDLE)m_dwUnk0048, 0);
-	WaitForSingleObject(m_hUnk004C, 0);
-	WaitForSingleObject(m_hUnk0050, 0);
-	WaitForSingleObject(m_hUnk0054, 0);
-	WaitForSingleObject(m_hUnk0058, 0);
-	WaitForSingleObject(m_hUnk005C, 0);
-	if (WaitForSingleObject(m_hUnk0054, 0) == WAIT_TIMEOUT &&
-		m_dwUnk00AC != 4)
-		Hover_sub_427A10(m_hUnk0054);
-	EnterCriticalSection(&theApp.m_csUnk011C);
-	m_dwUnk00AC = 4;
-	LeaveCriticalSection(&theApp.m_csUnk011C);
+	WaitForSingleObject(m_hEvtCommand, 0);
+	WaitForSingleObject(m_hEvtWorkerBusy, 0);
+	WaitForSingleObject(m_hEvtWorkerIdle, 0);
+	WaitForSingleObject(m_hEvtCommandAck, 0);
+	WaitForSingleObject(m_hEvtUnused1, 0);
+	WaitForSingleObject(m_hEvtUnused2, 0);
+	if (WaitForSingleObject(m_hEvtCommandAck, 0) == WAIT_TIMEOUT &&
+		m_dwWorkerCmd != 4)
+		Hover_WaitPumpCopyData(m_hEvtCommandAck);
+	EnterCriticalSection(&theApp.m_csWorkerCmd);
+	m_dwWorkerCmd = 4;
+	LeaveCriticalSection(&theApp.m_csWorkerCmd);
 	if (nUnk != 0)
 	{
-		Hover_sub_427A10(m_hUnk0050);
-		EnterCriticalSection(&theApp.m_csUnk011C);
-		ResetEvent(m_hUnk0054);
-		SetEvent((HANDLE)m_dwUnk0048);
-		LeaveCriticalSection(&theApp.m_csUnk011C);
-		Hover_sub_427A10(m_hUnk0054);
-		Hover_sub_427A10(m_hUnk0050);
+		Hover_WaitPumpCopyData(m_hEvtWorkerIdle);
+		EnterCriticalSection(&theApp.m_csWorkerCmd);
+		ResetEvent(m_hEvtCommandAck);
+		SetEvent(m_hEvtCommand);
+		LeaveCriticalSection(&theApp.m_csWorkerCmd);
+		Hover_WaitPumpCopyData(m_hEvtCommandAck);
+		Hover_WaitPumpCopyData(m_hEvtWorkerIdle);
 	}
 	else
 	{
-		EnterCriticalSection(&theApp.m_csUnk011C);
-		ResetEvent(m_hUnk0054);
-		SetEvent((HANDLE)m_dwUnk0048);
-		LeaveCriticalSection(&theApp.m_csUnk011C);
+		EnterCriticalSection(&theApp.m_csWorkerCmd);
+		ResetEvent(m_hEvtCommandAck);
+		SetEvent(m_hEvtCommand);
+		LeaveCriticalSection(&theApp.m_csWorkerCmd);
 	}
 }
 
 // hover.exe:0x4279E0
 // FUNCTION: HOVER 0x4279e0
-void CBumperView::Sub_4279E0()
+void CBumperView::WaitWorkerIdle()
 {
-	ResetEvent((HANDLE)m_dwUnk0048);
-	Hover_sub_427A10(m_hUnk0050);
-	SetEvent(m_hUnk0054);
+	ResetEvent(m_hEvtCommand);
+	Hover_WaitPumpCopyData(m_hEvtWorkerIdle);
+	SetEvent(m_hEvtCommandAck);
 }
 
 // Re-establishes the offscreen surfaces for the current client size and
@@ -6346,21 +6380,21 @@ void CBumperView::Sub_4279E0()
 // CMainFrame::OnExitSizeMove once the frame has settled on its new size.
 // hover.exe:0x41F480
 // FUNCTION: HOVER 0x41f480
-void CBumperView::Sub_41F480()
+void CBumperView::OnFrameResized()
 {
 	RECT rect;
 	int cx;
 	int cy;
 
-	if (m_dwUnk0084 == 0)
+	if (m_bInitialized == 0)
 		return;
 
 	::GetClientRect(m_hWnd, &rect);
-	Sub_4279E0();
+	WaitWorkerIdle();
 	cy = rect.bottom - rect.top;
 	cx = rect.right - rect.left;
-	Sub_4274B0(cx, cy, 1);
-	Sub_40DC20(1);
+	RequestResize(cx, cy, 1);
+	RequestRenderFrame(1);
 }
 
 // hover.exe:0x40C480
@@ -6372,110 +6406,111 @@ void CBumperView::OnDraw(CDC* pDC)
 	int cx;
 	int cy;
 
-	if (theApp.m_dwUnk03E8 != 0)
+	if (theApp.m_bDisplayDibActive != 0)
 		return;
-	if (m_dwUnk0084 == 0)
+	if (m_bInitialized == 0)
 		return;
-	if (m_dwUnk0040 == 0)
+	if (m_pRenderThread == 0)
 		return;
-	pOldPal = pDC->SelectPalette(&g_paletteUnk_4A1D50, TRUE);
+	pOldPal = pDC->SelectPalette(&g_palGame, TRUE);
 	pDC->RealizePalette();
 	::GetClientRect(m_hWnd, &rect);
-	if (m_dwUnk0060 == 0 &&
-		WaitForSingleObject(m_hUnk0050, 0) == WAIT_TIMEOUT)
+	if (m_dwTimerID == 0 &&
+		WaitForSingleObject(m_hEvtWorkerIdle, 0) == WAIT_TIMEOUT)
 	{
-		m_dwUnk0080 = 1;
+		m_bNeedRepaint = 1;
 	}
 	else
 	{
-		EnterCriticalSection(&theApp.m_csUnk00EC);
-		cx = (int)m_dwUnk008C;
-		cy = (int)m_dwUnk0090;
-		if (m_dwUnk0544 != 0)
+		EnterCriticalSection(&theApp.m_csOffscreen);
+		cx = (int)m_dwOffscreenWidth;
+		cy = (int)m_dwOffscreenHeight;
+		if (m_bDoubleSize != 0)
 			StretchBlt(pDC->m_hDC, 0, 0, cx * 2, cy * 2,
-				m_dcUnk00B4.GetSafeHdc(), 0, 0, cx, cy, SRCCOPY);
+				m_dcOffscreen.GetSafeHdc(), 0, 0, cx, cy, SRCCOPY);
 		else
 			BitBlt(pDC->m_hDC, 0, 0, cx, cy,
-				m_dcUnk00B4.GetSafeHdc(), 0, 0, SRCCOPY);
-		LeaveCriticalSection(&theApp.m_csUnk00EC);
+				m_dcOffscreen.GetSafeHdc(), 0, 0, SRCCOPY);
+		LeaveCriticalSection(&theApp.m_csOffscreen);
 	}
 	pDC->SelectPalette(pOldPal, TRUE);
 }
 
-// Same handshake sequence as Sub_40DC20, but transitions m_dwUnk00AC to
-// state 5 and records nUnk in m_dwUnk00B0 (the requested view scale).
+// Same handshake sequence as RequestRenderFrame, but transitions
+// m_dwWorkerCmd to state 5 and records nUnk in m_bZoomIn (the requested view
+// scale).
 
 // hover.exe:0x4275D0
 // FUNCTION: HOVER 0x4275d0
-void CBumperView::Sub_4275D0(int nUnk, int nHandshake)
+void CBumperView::RequestMapZoom(int nUnk, int nHandshake)
 {
-	WaitForSingleObject((HANDLE)m_dwUnk0048, 0);
-	WaitForSingleObject(m_hUnk004C, 0);
-	WaitForSingleObject(m_hUnk0050, 0);
-	WaitForSingleObject(m_hUnk0054, 0);
-	WaitForSingleObject(m_hUnk0058, 0);
-	WaitForSingleObject(m_hUnk005C, 0);
-	if (WaitForSingleObject(m_hUnk0054, 0) == WAIT_TIMEOUT &&
-		m_dwUnk00AC != 5)
-		Hover_sub_427A10(m_hUnk0054);
-	EnterCriticalSection(&theApp.m_csUnk011C);
-	m_dwUnk00B0 = nUnk;
-	m_dwUnk00AC = 5;
-	LeaveCriticalSection(&theApp.m_csUnk011C);
+	WaitForSingleObject(m_hEvtCommand, 0);
+	WaitForSingleObject(m_hEvtWorkerBusy, 0);
+	WaitForSingleObject(m_hEvtWorkerIdle, 0);
+	WaitForSingleObject(m_hEvtCommandAck, 0);
+	WaitForSingleObject(m_hEvtUnused1, 0);
+	WaitForSingleObject(m_hEvtUnused2, 0);
+	if (WaitForSingleObject(m_hEvtCommandAck, 0) == WAIT_TIMEOUT &&
+		m_dwWorkerCmd != 5)
+		Hover_WaitPumpCopyData(m_hEvtCommandAck);
+	EnterCriticalSection(&theApp.m_csWorkerCmd);
+	m_bZoomIn = nUnk;
+	m_dwWorkerCmd = 5;
+	LeaveCriticalSection(&theApp.m_csWorkerCmd);
 	if (nHandshake != 0)
 	{
-		Hover_sub_427A10(m_hUnk0050);
-		EnterCriticalSection(&theApp.m_csUnk011C);
-		ResetEvent(m_hUnk0054);
-		SetEvent((HANDLE)m_dwUnk0048);
-		LeaveCriticalSection(&theApp.m_csUnk011C);
-		Hover_sub_427A10(m_hUnk0054);
-		Hover_sub_427A10(m_hUnk0050);
+		Hover_WaitPumpCopyData(m_hEvtWorkerIdle);
+		EnterCriticalSection(&theApp.m_csWorkerCmd);
+		ResetEvent(m_hEvtCommandAck);
+		SetEvent(m_hEvtCommand);
+		LeaveCriticalSection(&theApp.m_csWorkerCmd);
+		Hover_WaitPumpCopyData(m_hEvtCommandAck);
+		Hover_WaitPumpCopyData(m_hEvtWorkerIdle);
 	}
 	else
 	{
-		EnterCriticalSection(&theApp.m_csUnk011C);
-		ResetEvent(m_hUnk0054);
-		SetEvent((HANDLE)m_dwUnk0048);
-		LeaveCriticalSection(&theApp.m_csUnk011C);
+		EnterCriticalSection(&theApp.m_csWorkerCmd);
+		ResetEvent(m_hEvtCommandAck);
+		SetEvent(m_hEvtCommand);
+		LeaveCriticalSection(&theApp.m_csWorkerCmd);
 	}
 }
 
-// Same sequence as Sub_40DC20, but transitions m_dwUnk00AC to state 2
+// Same sequence as RequestRenderFrame, but transitions m_dwWorkerCmd to state 2
 // (the worker thread's "stop" state, used when the renderer is torn down).
 
 // hover.exe:0x4276E0
 // FUNCTION: HOVER 0x4276e0
-void CBumperView::Sub_4276E0(int nUnk)
+void CBumperView::RequestWorkerExit(int nUnk)
 {
-	WaitForSingleObject((HANDLE)m_dwUnk0048, 0);
-	WaitForSingleObject(m_hUnk004C, 0);
-	WaitForSingleObject(m_hUnk0050, 0);
-	WaitForSingleObject(m_hUnk0054, 0);
-	WaitForSingleObject(m_hUnk0058, 0);
-	WaitForSingleObject(m_hUnk005C, 0);
-	if (WaitForSingleObject(m_hUnk0054, 0) == WAIT_TIMEOUT &&
-		m_dwUnk00AC != 2)
-		Hover_sub_427A10(m_hUnk0054);
-	EnterCriticalSection(&theApp.m_csUnk011C);
-	m_dwUnk00AC = 2;
-	LeaveCriticalSection(&theApp.m_csUnk011C);
+	WaitForSingleObject(m_hEvtCommand, 0);
+	WaitForSingleObject(m_hEvtWorkerBusy, 0);
+	WaitForSingleObject(m_hEvtWorkerIdle, 0);
+	WaitForSingleObject(m_hEvtCommandAck, 0);
+	WaitForSingleObject(m_hEvtUnused1, 0);
+	WaitForSingleObject(m_hEvtUnused2, 0);
+	if (WaitForSingleObject(m_hEvtCommandAck, 0) == WAIT_TIMEOUT &&
+		m_dwWorkerCmd != 2)
+		Hover_WaitPumpCopyData(m_hEvtCommandAck);
+	EnterCriticalSection(&theApp.m_csWorkerCmd);
+	m_dwWorkerCmd = 2;
+	LeaveCriticalSection(&theApp.m_csWorkerCmd);
 	if (nUnk != 0)
 	{
-		Hover_sub_427A10(m_hUnk0050);
-		EnterCriticalSection(&theApp.m_csUnk011C);
-		ResetEvent(m_hUnk0054);
-		SetEvent((HANDLE)m_dwUnk0048);
-		LeaveCriticalSection(&theApp.m_csUnk011C);
-		Hover_sub_427A10(m_hUnk0054);
-		Hover_sub_427A10(m_hUnk0050);
+		Hover_WaitPumpCopyData(m_hEvtWorkerIdle);
+		EnterCriticalSection(&theApp.m_csWorkerCmd);
+		ResetEvent(m_hEvtCommandAck);
+		SetEvent(m_hEvtCommand);
+		LeaveCriticalSection(&theApp.m_csWorkerCmd);
+		Hover_WaitPumpCopyData(m_hEvtCommandAck);
+		Hover_WaitPumpCopyData(m_hEvtWorkerIdle);
 	}
 	else
 	{
-		EnterCriticalSection(&theApp.m_csUnk011C);
-		ResetEvent(m_hUnk0054);
-		SetEvent((HANDLE)m_dwUnk0048);
-		LeaveCriticalSection(&theApp.m_csUnk011C);
+		EnterCriticalSection(&theApp.m_csWorkerCmd);
+		ResetEvent(m_hEvtCommandAck);
+		SetEvent(m_hEvtCommand);
+		LeaveCriticalSection(&theApp.m_csWorkerCmd);
 	}
 }
 
@@ -6485,48 +6520,48 @@ void CBumperView::Sub_4276E0(int nUnk)
 
 // hover.exe:0x41F350
 // FUNCTION: HOVER 0x41f350
-void CBumperView::Sub_41F350()
+void CBumperView::DestroyRenderer()
 {
-	CSub410F20* pCtx;
-	CSub406090* pTarget;
+	CRenderContext* pCtx;
+	CSpanRasterizer* pTarget;
 
-	if (m_dwUnk0040 != 0)
+	if (m_pRenderThread != 0)
 	{
-		Sub_4276E0(1);
-		Hover_sub_427A10(((CWinThread*)m_dwUnk0040)->m_hThread);
-		if (m_dwUnk0040 != 0)
-			delete (CWinThread*)m_dwUnk0040;
-		m_dwUnk0040 = 0;
+		RequestWorkerExit(1);
+		Hover_WaitPumpCopyData((m_pRenderThread)->m_hThread);
+		if (m_pRenderThread != 0)
+			delete m_pRenderThread;
+		m_pRenderThread = 0;
 	}
-	if (m_dwUnk0048 != 0)
+	if (m_hEvtCommand != 0)
 	{
-		CloseHandle((HANDLE)m_dwUnk0048);
-		CloseHandle(m_hUnk004C);
-		CloseHandle(m_hUnk0050);
-		CloseHandle(m_hUnk0054);
-		CloseHandle(m_hUnk0058);
-		CloseHandle(m_hUnk005C);
-		m_dwUnk0048 = 0;
-		m_hUnk004C = NULL;
-		m_hUnk0050 = NULL;
-		m_hUnk0054 = NULL;
-		m_hUnk0058 = NULL;
-		m_hUnk005C = NULL;
+		CloseHandle(m_hEvtCommand);
+		CloseHandle(m_hEvtWorkerBusy);
+		CloseHandle(m_hEvtWorkerIdle);
+		CloseHandle(m_hEvtCommandAck);
+		CloseHandle(m_hEvtUnused1);
+		CloseHandle(m_hEvtUnused2);
+		m_hEvtCommand = 0;
+		m_hEvtWorkerBusy = NULL;
+		m_hEvtWorkerIdle = NULL;
+		m_hEvtCommandAck = NULL;
+		m_hEvtUnused1 = NULL;
+		m_hEvtUnused2 = NULL;
 	}
-	pCtx = m_pUnk00C8;
+	pCtx = m_pViewCtx;
 	if (pCtx != NULL)
 		delete pCtx;
-	pCtx = m_pUnk00CC;
+	pCtx = m_pMirrorCtx;
 	if (pCtx != NULL)
 		delete pCtx;
-	pTarget = m_pUnk00D0;
+	pTarget = m_pRasterizer;
 	if (pTarget != NULL)
 		delete pTarget;
-	m_pUnk00C8 = NULL;
-	m_pUnk00CC = NULL;
-	m_pUnk00D0 = NULL;
-	::SelectObject(m_dcUnk00B4.GetSafeHdc(), (HGDIOBJ)m_dwUnk00C4);
-	m_dcUnk00B4.DeleteDC();
+	m_pViewCtx = NULL;
+	m_pMirrorCtx = NULL;
+	m_pRasterizer = NULL;
+	::SelectObject(m_dcOffscreen.GetSafeHdc(), (HGDIOBJ)m_hOldBitmap);
+	m_dcOffscreen.DeleteDC();
 }
 
 // Reset the dashboard objects for a new game: the three digit displays and
@@ -6541,143 +6576,144 @@ void CBumperView::Sub_41F350()
 // first). See rule 22 in notes/perfect-match.md.
 #define HOVER_RESET_GAUGE(obj)						\
 	do {											\
-		long _nSeg = (long)(obj).m_dwUnk1C;			\
+		long _nSeg = (long)(obj).m_dwSegments;			\
 		if (_nSeg > 0)								\
 		{											\
-			(obj).m_dwUnk24 = _nSeg;				\
-			(obj).m_dwUnk24 = 0;					\
+			(obj).m_dwLevel = _nSeg;				\
+			(obj).m_dwLevel = 0;					\
 		}											\
 		else										\
 		{											\
-			(obj).m_dwUnk24 = _nSeg;				\
+			(obj).m_dwLevel = _nSeg;				\
 		}											\
 	} while (0)
 
 #define HOVER_RESET_SPRITE(obj)						\
 	do {											\
-		long _nSpr = (long)(obj).m_dwUnk3C;			\
+		long _nSpr = (long)(obj).m_dwSlots;			\
 		if (_nSpr > 0)								\
 		{											\
-			(obj).m_dwUnk44 = _nSpr;				\
-			(obj).m_dwUnk44 = 0;					\
+			(obj).m_dwFilled = _nSpr;				\
+			(obj).m_dwFilled = 0;					\
 		}											\
 		else										\
 		{											\
-			(obj).m_dwUnk44 = _nSpr;				\
+			(obj).m_dwFilled = _nSpr;				\
 		}											\
 	} while (0)
 
 // hover.exe:0x41E5B0
 // FUNCTION: HOVER 0x41e5b0
-void CBumperView::Sub_41E5B0()
+void CBumperView::ResetDashboard()
 {
-	m_obj0240.m_dwUnk00 = 1;
-	m_obj0240.m_dwUnk08 = 0;
-	m_obj0268.m_dwUnk00 = 1;
-	m_obj0268.m_dwUnk08 = 0;
-	m_obj0290.m_dwUnk00 = 1;
-	m_obj0290.m_dwUnk08 = 0;
-	HOVER_RESET_GAUGE(m_obj02E0);
-	HOVER_RESET_GAUGE(m_obj0310);
-	HOVER_RESET_GAUGE(m_obj0340);
-	HOVER_RESET_GAUGE(m_obj0370);
-	HOVER_RESET_GAUGE(m_obj03A0);
-	HOVER_RESET_GAUGE(m_obj03D0);
-	HOVER_RESET_GAUGE(m_obj0400);
-	m_obj0430.m_dwUnk00 = 1;
-	HOVER_RESET_SPRITE(m_obj0430);
-	m_obj0480.m_dwUnk00 = 1;
-	HOVER_RESET_SPRITE(m_obj0480);
-	m_obj02B8.m_dwUnk00 = 1;
-	theApp.m_pBumperDoc->m_dwUnk83E4 = 0;
-	m_obj02B8.m_dwUnk08 = 0;
+	m_ctrJumpPods.m_bDigitsDirty = 1;
+	m_ctrJumpPods.m_dwDisplayValue = 0;
+	m_ctrSmokeBombs.m_bDigitsDirty = 1;
+	m_ctrSmokeBombs.m_dwDisplayValue = 0;
+	m_ctrTempWalls.m_bDigitsDirty = 1;
+	m_ctrTempWalls.m_dwDisplayValue = 0;
+	HOVER_RESET_GAUGE(m_gaugeSpeed);
+	HOVER_RESET_GAUGE(m_gaugeInvincible);
+	HOVER_RESET_GAUGE(m_gaugeSlow);
+	HOVER_RESET_GAUGE(m_gaugeSpeedPod);
+	HOVER_RESET_GAUGE(m_gaugeAltitude);
+	HOVER_RESET_GAUGE(m_gaugeSmoke);
+	HOVER_RESET_GAUGE(m_gaugeTempWall);
+	m_flagsPlayer.m_bFlagsDirty = 1;
+	HOVER_RESET_SPRITE(m_flagsPlayer);
+	m_flagsRobot.m_bFlagsDirty = 1;
+	HOVER_RESET_SPRITE(m_flagsRobot);
+	m_score.m_bDigitsDirty = 1;
+	theApp.m_pBumperDoc->m_dwScore = 0;
+	m_score.m_dwDisplayValue = 0;
 }
 
-// Awards the end-of-level score. m_dwUnk0504 is the number of ticks left on
+// Awards the end-of-level score. m_dwFlagsLeft is the number of ticks left on
 // the level clock (the level's tick allowance minus the elapsed ticks),
-// m_dwUnk0508 the per-tick value for the current skill level and m_dwUnk050C
-// their product; m_dwUnk0510 is the number of the level that follows and
-// m_dwUnk0514 the flat level bonus, which is only awarded when bLevelBonus
-// is set (the caller clears it when the level was restarted). Both go into
-// the document's running total, which is then shown on the scoreboard.
+// m_dwPointsPerFlag the per-tick value for the current skill level and
+// m_dwFlagBonus their product; m_dwNextLevel is the number of the level that
+// follows and m_dwLevelBonus the flat level bonus, which is only awarded when
+// bLevelBonus is set (the caller clears it when the level was restarted).
+// Both go into the document's running total, which is then shown on the
+// scoreboard.
 //
 // The original spells the LVLPARAM index expression out three times rather
 // than computing it once.
 
 // hover.exe:0x4282F0
 // FUNCTION: HOVER 0x4282f0
-void CBumperView::Sub_4282F0(DWORD bLevelBonus)
+void CBumperView::ComputeLevelBonus(DWORD bLevelBonus)
 {
-	int nLevel = (int)g_dwUnk_46049C;
+	int nLevel = (int)g_dwLevel;
 	DWORD dwPerTick;
 
-	m_dwUnk0504 = LVLPARAM(nLevel).m_dwUnk30
-		- theApp.m_pBumperDoc->m_dwUnk83E8;
-	dwPerTick = (&LVLPARAM(nLevel).m_dwUnk4C)[theApp.m_dwUnk01C8];
-	m_dwUnk0508 = dwPerTick;
-	m_dwUnk0510 = (DWORD)(nLevel + 2);
-	m_dwUnk050C = dwPerTick * m_dwUnk0504;
+	m_dwFlagsLeft = LVLPARAM(nLevel).m_dwUnk30
+		- theApp.m_pBumperDoc->m_dwRobotFlags;
+	dwPerTick = LVLPARAM(nLevel).m_anRemainingScore[theApp.m_dwSkill];
+	m_dwPointsPerFlag = dwPerTick;
+	m_dwNextLevel = (DWORD)(nLevel + 2);
+	m_dwFlagBonus = dwPerTick * m_dwFlagsLeft;
 
 	if (bLevelBonus == 0)
-		m_dwUnk0514 = 0;
+		m_dwLevelBonus = 0;
 	else
-		m_dwUnk0514 = (&LVLPARAM(nLevel).m_dwUnk34)[theApp.m_dwUnk01C8];
+		m_dwLevelBonus = LVLPARAM(nLevel).m_anLevelScore[theApp.m_dwSkill];
 
-	theApp.m_pBumperDoc->m_dwUnk83E4 += m_dwUnk0514 + m_dwUnk050C;
-	m_obj02B8.m_dwUnk00 = 1;
-	m_obj02B8.m_dwUnk08 = theApp.m_pBumperDoc->m_dwUnk83E4;
+	theApp.m_pBumperDoc->m_dwScore += m_dwLevelBonus + m_dwFlagBonus;
+	m_score.m_bDigitsDirty = 1;
+	m_score.m_dwDisplayValue = theApp.m_pBumperDoc->m_dwScore;
 }
 
 // The two per-frame steps run from the WM_USER+0 handler (the multimedia
-// timer posts it twenty times a second): Sub_408D00 advances the game, and
-// Sub_408DF0 refreshes the two debug panes of the status bar.
+// timer posts it twenty times a second): GameStep advances the game, and
+// UpdateStatusBar refreshes the two debug panes of the status bar.
 
-// The timed game states run their countdown in m_dwUnk007C here. State 2 is
-// the pre-game countdown - the "get set" sound fires at tick 40 and the
-// state flips to 3 (playing) at 0, restarting the level music; states 4 and
-// 5 wait out the end-of-game / end-of-level delay, stop the music and post
-// WM_USER+1 / WM_USER+2 so the high-score or next-level flow runs outside
-// the timer callback. State 2 falls through into the state 3 step, so the
+// The timed game states run their countdown in m_dwStateCountdown here. State
+// 2 is the pre-game countdown - the "get set" sound fires at tick 40 and the
+// state flips to 3 (playing) at 0, restarting the level music; states 4 and 5
+// wait out the end-of-game / end-of-level delay, stop the music and post
+// WM_USER+1 / WM_USER+2 so the high-score or next-level flow runs outside the
+// timer callback. State 2 falls through into the state 3 step, so the
 // countdown frames are played as usual.
 
 // hover.exe:0x408D00
 // FUNCTION: HOVER 0x408d00
-void CBumperView::Sub_408D00()
+void CBumperView::GameStep()
 {
-	switch (theApp.m_dwUnk01B8)
+	switch (theApp.m_dwGameState)
 	{
 	case 2:
-		if (m_dwUnk007C == 0x28 && theApp.m_dwUnk0408 != 0)
-			((CSub40B800*)theApp.m_pBumperDoc->m_adwUnk83EC[1])->Sub_40B800(0, 5, 0);
-		if (--m_dwUnk007C == 0)
+		if (m_dwStateCountdown == 0x28 && theApp.m_bGameSounds != 0)
+			((CSoundSlot*)theApp.m_pBumperDoc->m_adwSounds[1])->PlayWave(0, 5, 0);
+		if (--m_dwStateCountdown == 0)
 		{
-			theApp.m_dwUnk01B8 = 3;
-			m_dwUnk007C = 0x3C;
-			if (theApp.m_dwUnk040C != 0)
-				theApp.m_pBumperDoc->m_obj0060.Sub_413710();
+			theApp.m_dwGameState = 3;
+			m_dwStateCountdown = 0x3C;
+			if (theApp.m_bMusic != 0)
+				theApp.m_pBumperDoc->m_music.ResumeMusic();
 		}
 		// falls through into the state 3 step
 
 	case 3:
-		Sub_427D40();
+		StepObjects();
 		break;
 
 	case 4:
-		if (m_dwUnk007C == 0x3C)
-			theApp.m_pBumperDoc->m_obj0060.Sub_412220();
-		if (--m_dwUnk007C == 0)
+		if (m_dwStateCountdown == 0x3C)
+			theApp.m_pBumperDoc->m_music.PauseMusic();
+		if (--m_dwStateCountdown == 0)
 		{
-			Sub_410280();
+			StopGameTimer();
 			::PostMessage(m_hWnd, WM_USER + 1, 0, 0);
 		}
 		break;
 
 	case 5:
-		if (m_dwUnk007C == 0x3C)
-			theApp.m_pBumperDoc->m_obj0060.Sub_412220();
-		if (--m_dwUnk007C == 0)
+		if (m_dwStateCountdown == 0x3C)
+			theApp.m_pBumperDoc->m_music.PauseMusic();
+		if (--m_dwStateCountdown == 0)
 		{
-			Sub_410280();
+			StopGameTimer();
 			::PostMessage(m_hWnd, WM_USER + 2, 0, 0);
 		}
 		break;
@@ -6685,19 +6721,19 @@ void CBumperView::Sub_408D00()
 }
 
 // Refresh the two debug panes of the status bar, at most once every 58
-// ticks (~3 s) and only while a game is running - m_dwUnk01B8's top bit
+// ticks (~3 s) and only while a game is running - m_dwGameState's top bit
 // marks the suspended states, and states 0 and 1 have no game yet.
 //
 // Pane 1 gets "<present rate>/<step rate>", both averaged over the frames
-// counted since the last refresh: m_dwUnk052C/m_dwUnk0530 are the tick and
-// frame counter of CBumperView::Sub_407430 (the present), m_dwUnk0538/
-// m_dwUnk053C those of Sub_427D40 (the game step). The rates are formatted
-// by hand with _fcvt (one fractional digit) rather than with sprintf.
-// Pane 0 gets the human player's position and heading.
+// counted since the last refresh: m_dwLastPresentTick/m_dwPresentCount are
+// the tick and frame counter of CBumperView::PresentFrame (the present),
+// m_dwLastStepTick/ m_dwStepCount those of StepObjects (the game step). The
+// rates are formatted by hand with _fcvt (one fractional digit) rather than
+// with sprintf. Pane 0 gets the human player's position and heading.
 
 // hover.exe:0x408DF0
 // FUNCTION: HOVER 0x408df0
-void CBumperView::Sub_408DF0()
+void CBumperView::UpdateStatusBar()
 {
 	CBumperDoc* pDoc;
 	DWORD dwState;
@@ -6718,31 +6754,31 @@ void CBumperView::Sub_408DF0()
 	char szText[0x2C];
 
 	pDoc = (CBumperDoc*)m_pDocument;
-	dwState = theApp.m_dwUnk01B8 & 0x7FFFFFFF;
+	dwState = theApp.m_dwGameState & 0x7FFFFFFF;
 	if (dwState == 0 || dwState == 1 ||
-		(theApp.m_dwUnk01B8 & 0x80000000) != 0)
+		(theApp.m_dwGameState & 0x80000000) != 0)
 		return;
-	nTicks = g_nUnk_4C4CEC;
-	g_nUnk_4C4CEC = nTicks - 1;
+	nTicks = g_nStatusRefreshCountdown;
+	g_nStatusRefreshCountdown = nTicks - 1;
 	if (nTicks > 0)
 		return;
 
-	dwFrames = m_dwUnk0530;
+	dwFrames = m_dwPresentCount;
 	if (dwFrames == 0)
 		return;
-	if (m_dwUnk053C == 0)
+	if (m_dwStepCount == 0)
 		return;
 
-	dwTick = m_dwUnk052C;
-	m_dwUnk0530 = 0;
-	dwMsPerFrame = (dwTick - m_dwUnk0528) / dwFrames;
-	m_dwUnk0528 = dwTick;
-	dwTick = m_dwUnk0538;
+	dwTick = m_dwLastPresentTick;
+	m_dwPresentCount = 0;
+	dwMsPerFrame = (dwTick - m_dwFpsBaseTick) / dwFrames;
+	m_dwFpsBaseTick = dwTick;
+	dwTick = m_dwLastStepTick;
 	dblFrameRate = 1000.0 / dwMsPerFrame;
-	dwMsPerStep = (dwTick - m_dwUnk0534) / m_dwUnk053C;
-	m_dwUnk0534 = dwTick;
-	g_nUnk_4C4CEC = 0x39;
-	m_dwUnk053C = 0;
+	dwMsPerStep = (dwTick - m_dwStepRateBaseTick) / m_dwStepCount;
+	m_dwStepRateBaseTick = dwTick;
+	g_nStatusRefreshCountdown = 0x39;
+	m_dwStepCount = 0;
 	dblStepRate = 1000.0 / dwMsPerStep;
 
 	// "<frame rate>/<step rate>", one digit after each decimal point.
@@ -6780,19 +6816,19 @@ void CBumperView::Sub_408DF0()
 		*psz++ = '0';
 	psz[0] = *pszDigits;
 	psz[1] = '\0';
-	((CMainFrame*)AfxGetApp()->m_pMainWnd)->Sub_408A70(1, szText);
+	((CMainFrame*)AfxGetApp()->m_pMainWnd)->SetPaneMessage(1, szText);
 
 	// "X:<x>, Y:<y>, A:<heading>" - the position words come back from
-	// CGameObj::Sub_403880 sign-extended, the heading is read directly.
+	// CGameObj::GetCellPos sign-extended, the heading is read directly.
 	strcpy(szText, "X:");
-	_ltoa((long)pDoc->m_humanPlayer.Sub_403880(adwPos)[0], &szText[2], 10);
+	_ltoa((long)pDoc->m_humanPlayer.GetCellPos(adwPos)[0], &szText[2], 10);
 	strcat(&szText[2], ", Y:");
 	psz = &szText[2] + strlen(&szText[2]);
-	_ltoa((long)pDoc->m_humanPlayer.Sub_403880(adwPos)[1], psz, 10);
+	_ltoa((long)pDoc->m_humanPlayer.GetCellPos(adwPos)[1], psz, 10);
 	strcat(psz, ", A:");
 	psz += strlen(psz);
-	_ltoa((long)(short)pDoc->m_humanPlayer.m_awUnk0194[5], psz, 10);
-	((CMainFrame*)AfxGetApp()->m_pMainWnd)->Sub_408A70(0, szText);
+	_ltoa((long)(short)pDoc->m_humanPlayer.m_wHeading, psz, 10);
+	((CMainFrame*)AfxGetApp()->m_pMainWnd)->SetPaneMessage(0, szText);
 }
 
 // The game step proper. While the renderer is in state 3 the worker thread
@@ -6804,32 +6840,32 @@ void CBumperView::Sub_408DF0()
 
 // hover.exe:0x427D40
 // FUNCTION: HOVER 0x427d40
-void CBumperView::Sub_427D40()
+void CBumperView::StepObjects()
 {
 	DWORD dwPressed;
 
-	if (m_dwUnk00AC == 3)
+	if (m_dwWorkerCmd == 3)
 	{
-		EnterCriticalSection(&theApp.m_csUnk011C);
-		ResetEvent((HANDLE)m_dwUnk0048);
-		SetEvent(m_hUnk0054);
-		LeaveCriticalSection(&theApp.m_csUnk011C);
+		EnterCriticalSection(&theApp.m_csWorkerCmd);
+		ResetEvent(m_hEvtCommand);
+		SetEvent(m_hEvtCommandAck);
+		LeaveCriticalSection(&theApp.m_csWorkerCmd);
 	}
 
-	Sub_427E50();
-	Sub_427E90();
+	ThinkAll();
+	RunCollider();
 
-	EnterCriticalSection(&theApp.m_csUnk00D4);
-	Hover_sub_408780();
-	LeaveCriticalSection(&theApp.m_csUnk00D4);
+	EnterCriticalSection(&theApp.m_csScene);
+	Hover_CommitDirtyObjects();
+	LeaveCriticalSection(&theApp.m_csScene);
 
-	Sub_40DC20(0);
+	RequestRenderFrame(0);
 
 	dwPressed = 0;
 	if (theApp.m_avkControls[11] != 0)
 	{
-		dwPressed = ~g_dwUnk_4C4CF0 & theApp.m_adwUnk0378[8];
-		g_dwUnk_4C4CF0 = theApp.m_adwUnk0378[8];
+		dwPressed = ~g_dwPrevJoyButtons & theApp.m_joyInfo.dwButtons;
+		g_dwPrevJoyButtons = theApp.m_joyInfo.dwButtons;
 	}
 	if ((dwPressed & 8) != 0)
 		::SendMessage(m_hWnd, WM_KEYDOWN, theApp.m_avkControls[1], 0);
@@ -6838,8 +6874,8 @@ void CBumperView::Sub_427D40()
 	if ((dwPressed & 1) != 0)
 		::SendMessage(m_hWnd, WM_KEYDOWN, theApp.m_avkControls[2], 0);
 
-	m_dwUnk0538 = GetTickCount();
-	m_dwUnk053C++;
+	m_dwLastStepTick = GetTickCount();
+	m_dwStepCount++;
 }
 
 // Run the input/think virtual (vtable slot 7) on every object in the
@@ -6847,15 +6883,15 @@ void CBumperView::Sub_427D40()
 
 // hover.exe:0x427E50
 // FUNCTION: HOVER 0x427e50
-void CBumperView::Sub_427E50()
+void CBumperView::ThinkAll()
 {
 	CBumperDoc* pDoc;
 	POSITION pos;
 
 	pDoc = (CBumperDoc*)m_pDocument;
-	pos = pDoc->m_list83A8.GetHeadPosition();
+	pos = pDoc->m_listActiveObjs.GetHeadPosition();
 	while (pos != NULL)
-		((CGameObj*)pDoc->m_list83A8.GetNext(pos))->Sub_42AD30();
+		((CGameObj*)pDoc->m_listActiveObjs.GetNext(pos))->Think();
 }
 
 // Clear the four renderer debug counters shown by the ID_DBG_* update
@@ -6863,7 +6899,7 @@ void CBumperView::Sub_427E50()
 
 // hover.exe:0x427E90
 // FUNCTION: HOVER 0x427e90
-void CBumperView::Sub_427E90()
+void CBumperView::RunCollider()
 {
 	CBumperDoc* pDoc;
 	DWORD* pdwCounters;
@@ -6874,7 +6910,7 @@ void CBumperView::Sub_427E90()
 	pdwCounters[1] = 0;
 	pdwCounters[2] = 0;
 	pdwCounters[3] = 0;
-	((CCollider*)pDoc->m_dwUnk8388)->Sub_40A650();
+	(pDoc->m_pCollider)->DetectCollisions();
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -6885,7 +6921,7 @@ void CBumperView::Sub_427E90()
 // original order, by the BEGIN_MESSAGE_MAP block at the top of this file.
 
 // The original module was compiled with automatic inlining on, so
-// CBumperView::Sub_40EE90(1) - the "suspend the game loop" transition, which
+// CBumperView::SuspendGame(1) - the "suspend the game loop" transition, which
 // also exists as an out-of-line function at hover.exe:0x40EE90 because
 // mainfrm.cpp calls it - is expanded inline into the five handlers below.
 // This macro reproduces that expansion; the early exits are `break`s of the
@@ -6896,21 +6932,21 @@ void CBumperView::Sub_427E90()
 	{																\
 		BOOL bSuspended_;											\
 																	\
-		if (this == NULL || g_dwUnk_4C4CE0 != 0)					\
+		if (this == NULL || g_bStartingTimer != 0)					\
 			break;													\
-		if (m_dwUnk0060 != 0)										\
-			Sub_410280();											\
-		if ((theApp.m_dwUnk01B8 & 0x80000000) != 0)					\
+		if (m_dwTimerID != 0)										\
+			StopGameTimer();											\
+		if ((theApp.m_dwGameState & 0x80000000) != 0)					\
 			break;													\
-		if (theApp.m_dwUnk01B8 == 0 || theApp.m_dwUnk01B8 == 1)		\
+		if (theApp.m_dwGameState == 0 || theApp.m_dwGameState == 1)		\
 			break;													\
-		theApp.m_dwUnk01B8 |= 0x80000000;							\
-		bSuspended_ = (m_dwUnk0500 != 1);							\
-		m_dwUnk0500 = 1;											\
+		theApp.m_dwGameState |= 0x80000000;							\
+		bSuspended_ = (m_dwMessageState != 1);							\
+		m_dwMessageState = 1;											\
 		if (bSuspended_)											\
 		{															\
-			m_dwUnk0080 = 1;										\
-			Sub_40DC20(1);											\
+			m_bNeedRepaint = 1;										\
+			RequestRenderFrame(1);											\
 			RedrawWindow();											\
 		}															\
 	} while (0)
@@ -6922,9 +6958,9 @@ void CBumperView::Sub_427E90()
 // FUNCTION: HOVER 0x41e710
 void CBumperView::OnDestroy()
 {
-	if (m_dwUnk0060 != 0)
-		Sub_410280();
-	Sub_41F350();
+	if (m_dwTimerID != 0)
+		StopGameTimer();
+	DestroyRenderer();
 	CView::OnDestroy();
 }
 
@@ -6943,7 +6979,7 @@ void CBumperView::OnSize(UINT nType, int cx, int cy)
 	if (nType == SIZE_RESTORED || nType == SIZE_MAXIMIZED)
 	{
 		wsprintfA(szText, "%4d", cx);
-		((CMainFrame*)GetParentFrame())->Sub_408A70(2, szText);
+		((CMainFrame*)GetParentFrame())->SetPaneMessage(2, szText);
 	}
 }
 
@@ -6964,8 +7000,8 @@ void CBumperView::OnUpdateDbgFlag(CCmdUI* pCmdUI)
 // FUNCTION: HOVER 0x427ec0
 void CBumperView::OnCmd34000()
 {
-	((CBumperDoc*)m_pDocument)->m_humanPlayer.m_dwUnk01DC =
-		(((CBumperDoc*)m_pDocument)->m_humanPlayer.m_dwUnk01DC == 0);
+	((CBumperDoc*)m_pDocument)->m_humanPlayer.m_bSteerAssist =
+		(((CBumperDoc*)m_pDocument)->m_humanPlayer.m_bSteerAssist == 0);
 }
 
 // hover.exe:0x427EE0
@@ -6974,7 +7010,7 @@ void CBumperView::OnUpdateCmd34000(CCmdUI* pCmdUI)
 {
 	CBumperDoc* pDoc = (CBumperDoc*)m_pDocument;
 
-	pCmdUI->SetCheck(pDoc->m_humanPlayer.m_dwUnk01DC);
+	pCmdUI->SetCheck(pDoc->m_humanPlayer.m_bSteerAssist);
 }
 
 // Entries 6/7: ID_CMD_34011 toggles the human player's +0x1E0 flag.
@@ -6983,8 +7019,8 @@ void CBumperView::OnUpdateCmd34000(CCmdUI* pCmdUI)
 // FUNCTION: HOVER 0x427f00
 void CBumperView::OnCmd34011()
 {
-	((CBumperDoc*)m_pDocument)->m_humanPlayer.m_dwUnk01E0 =
-		(((CBumperDoc*)m_pDocument)->m_humanPlayer.m_dwUnk01E0 == 0);
+	((CBumperDoc*)m_pDocument)->m_humanPlayer.m_bFriction =
+		(((CBumperDoc*)m_pDocument)->m_humanPlayer.m_bFriction == 0);
 }
 
 // hover.exe:0x427F20
@@ -6993,7 +7029,7 @@ void CBumperView::OnUpdateCmd34011(CCmdUI* pCmdUI)
 {
 	CBumperDoc* pDoc = (CBumperDoc*)m_pDocument;
 
-	pCmdUI->SetCheck(pDoc->m_humanPlayer.m_dwUnk01E0);
+	pCmdUI->SetCheck(pDoc->m_humanPlayer.m_bFriction);
 }
 
 // Entry 8: WM_ERASEBKGND. The view paints every pixel itself, so the
@@ -7016,119 +7052,119 @@ BOOL CBumperView::OnEraseBkgnd(CDC* /*pDC*/)
 
 // hover.exe:0x428590
 // FUNCTION: HOVER 0x428590
-void CBumperView::OnCmd34014()
+void CBumperView::OnDbgAddSmokePod()
 {
 	CSmokeBombPod* pPod;
 
 	if (m_dwUnk0038 != 0)
 		return;
-	if (theApp.m_pBumperDoc->m_humanPlayer.m_obList00EC.GetCount() >= 9)
+	if (theApp.m_pBumperDoc->m_humanPlayer.m_listSmokeBombPods.GetCount() >= 9)
 		return;
 	pPod = new CSmokeBombPod;
-	pPod->m_dwUnk88 = (DWORD)&theApp.m_pBumperDoc->m_humanPlayer;
-	theApp.m_pBumperDoc->m_humanPlayer.m_obList00EC.AddHead(pPod);
-	m_obj0268.m_dwUnk00 = 1;
-	m_obj0268.m_dwUnk08 = theApp.m_pBumperDoc->m_humanPlayer.m_obList00EC.GetCount();
+	pPod->m_pOwner = &theApp.m_pBumperDoc->m_humanPlayer;
+	theApp.m_pBumperDoc->m_humanPlayer.m_listSmokeBombPods.AddHead(pPod);
+	m_ctrSmokeBombs.m_bDigitsDirty = 1;
+	m_ctrSmokeBombs.m_dwDisplayValue = theApp.m_pBumperDoc->m_humanPlayer.m_listSmokeBombPods.GetCount();
 }
 
 // hover.exe:0x428610
 // FUNCTION: HOVER 0x428610
-void CBumperView::OnCmd34015()
+void CBumperView::OnDbgAddWallPod()
 {
 	CTempWallPod* pPod;
 
 	if (m_dwUnk0038 != 0)
 		return;
-	if (theApp.m_pBumperDoc->m_humanPlayer.m_obList00D0.GetCount() >= 9)
+	if (theApp.m_pBumperDoc->m_humanPlayer.m_listTempWallPods.GetCount() >= 9)
 		return;
 	pPod = new CTempWallPod;
-	pPod->m_dwUnk88 = (DWORD)&theApp.m_pBumperDoc->m_humanPlayer;
-	theApp.m_pBumperDoc->m_humanPlayer.m_obList00D0.AddHead(pPod);
-	m_obj0290.m_dwUnk00 = 1;
-	m_obj0290.m_dwUnk08 = theApp.m_pBumperDoc->m_humanPlayer.m_obList00D0.GetCount();
+	pPod->m_pOwner = &theApp.m_pBumperDoc->m_humanPlayer;
+	theApp.m_pBumperDoc->m_humanPlayer.m_listTempWallPods.AddHead(pPod);
+	m_ctrTempWalls.m_bDigitsDirty = 1;
+	m_ctrTempWalls.m_dwDisplayValue = theApp.m_pBumperDoc->m_humanPlayer.m_listTempWallPods.GetCount();
 }
 
 // hover.exe:0x428690
 // FUNCTION: HOVER 0x428690
-void CBumperView::OnCmd34013()
+void CBumperView::OnDbgAddJumpPod()
 {
 	CJumpPod* pPod;
 
 	if (m_dwUnk0038 != 0)
 		return;
-	if (theApp.m_pBumperDoc->m_humanPlayer.m_obList0108.GetCount() >= 9)
+	if (theApp.m_pBumperDoc->m_humanPlayer.m_listJumpPods.GetCount() >= 9)
 		return;
 	pPod = new CJumpPod;
-	pPod->m_dwUnk88 = (DWORD)&theApp.m_pBumperDoc->m_humanPlayer;
-	theApp.m_pBumperDoc->m_humanPlayer.m_obList0108.AddHead(pPod);
-	m_obj0240.m_dwUnk00 = 1;
-	m_obj0240.m_dwUnk08 = theApp.m_pBumperDoc->m_humanPlayer.m_obList0108.GetCount();
+	pPod->m_pOwner = &theApp.m_pBumperDoc->m_humanPlayer;
+	theApp.m_pBumperDoc->m_humanPlayer.m_listJumpPods.AddHead(pPod);
+	m_ctrJumpPods.m_bDigitsDirty = 1;
+	m_ctrJumpPods.m_dwDisplayValue = theApp.m_pBumperDoc->m_humanPlayer.m_listJumpPods.GetCount();
 }
 
 // Entries 12..15: debug commands that apply a pod effect to the human
 // player immediately (the pod is created, marked "already used" through
-// m_dwUnk98 = 0 and handed straight to its own effect handler).
+// m_dwVStep = 0 and handed straight to its own effect handler).
 
 // hover.exe:0x428710
 // FUNCTION: HOVER 0x428710
-void CBumperView::OnCmd34018()
+void CBumperView::OnDbgApplyInvincible()
 {
 	CInviciblePod* pPod;
 
 	if (m_dwUnk0038 != 0)
 		return;
 	pPod = new CInviciblePod;
-	pPod->m_dwUnk98 = 0;
-	pPod->m_dwUnk88 = (DWORD)&theApp.m_pBumperDoc->m_humanPlayer;
-	pPod->Sub_42AD40(&theApp.m_pBumperDoc->m_humanPlayer, 0);
+	pPod->m_bRespawn = 0;
+	pPod->m_pOwner = &theApp.m_pBumperDoc->m_humanPlayer;
+	pPod->OnTouch(&theApp.m_pBumperDoc->m_humanPlayer, 0);
 }
 
 // hover.exe:0x428770
 // FUNCTION: HOVER 0x428770
-void CBumperView::OnCmd34019()
+void CBumperView::OnDbgApplyMapEraser()
 {
 	CMapEraserPod* pPod;
 
 	if (m_dwUnk0038 != 0)
 		return;
 	pPod = new CMapEraserPod;
-	pPod->m_dwUnk98 = 0;
-	pPod->m_dwUnk88 = (DWORD)&theApp.m_pBumperDoc->m_humanPlayer;
-	pPod->Sub_42AD40(&theApp.m_pBumperDoc->m_humanPlayer, 0);
+	pPod->m_bRespawn = 0;
+	pPod->m_pOwner = &theApp.m_pBumperDoc->m_humanPlayer;
+	pPod->OnTouch(&theApp.m_pBumperDoc->m_humanPlayer, 0);
 }
 
 // hover.exe:0x4287D0
 // FUNCTION: HOVER 0x4287d0
-void CBumperView::OnCmd34017()
+void CBumperView::OnDbgApplySpeed()
 {
 	CSpeedPod* pPod;
 
 	if (m_dwUnk0038 != 0)
 		return;
 	pPod = new CSpeedPod;
-	pPod->m_dwUnk98 = 0;
-	pPod->m_dwUnk88 = (DWORD)&theApp.m_pBumperDoc->m_humanPlayer;
-	pPod->Sub_42AD40(&theApp.m_pBumperDoc->m_humanPlayer, 0);
+	pPod->m_bRespawn = 0;
+	pPod->m_pOwner = &theApp.m_pBumperDoc->m_humanPlayer;
+	pPod->OnTouch(&theApp.m_pBumperDoc->m_humanPlayer, 0);
 }
 
 // hover.exe:0x428830
 // FUNCTION: HOVER 0x428830
-void CBumperView::OnCmd34016()
+void CBumperView::OnDbgApplySlow()
 {
 	CSlowPod* pPod;
 
 	if (m_dwUnk0038 != 0)
 		return;
 	pPod = new CSlowPod;
-	pPod->m_dwUnk98 = 0;
-	pPod->m_dwUnk88 = (DWORD)&theApp.m_pBumperDoc->m_humanPlayer;
-	pPod->Sub_42AD40(&theApp.m_pBumperDoc->m_humanPlayer, 0);
+	pPod->m_bRespawn = 0;
+	pPod->m_pOwner = &theApp.m_pBumperDoc->m_humanPlayer;
+	pPod->OnTouch(&theApp.m_pBumperDoc->m_humanPlayer, 0);
 }
 
-// Entry 16: ID_GAME_PAUSE. Bit 0x80000000 of theApp.m_dwUnk01B8 is the
+// Entry 16: ID_GAME_PAUSE. Bit 0x80000000 of theApp.m_dwGameState is the
 // paused flag; the low bits are the game state. Resuming repaints the seven
 // dashboard gauges and restarts the frame timer, pausing runs the inlined
-// Sub_40EE90(1) transition.
+// SuspendGame(1) transition.
 
 // hover.exe:0x413C70
 // FUNCTION: HOVER 0x413c70
@@ -7136,23 +7172,23 @@ void CBumperView::OnGamePause()
 {
 	DWORD dwState;
 
-	dwState = theApp.m_dwUnk01B8 & 0x7FFFFFFF;
+	dwState = theApp.m_dwGameState & 0x7FFFFFFF;
 	if (dwState == 0 || dwState == 1)
 		return;
 
-	if ((theApp.m_dwUnk01B8 & 0x80000000) != 0)
+	if ((theApp.m_dwGameState & 0x80000000) != 0)
 	{
-		m_obj02E0.Sub_401AD0(&m_dcUnk00B4, 1);
-		m_obj0370.Sub_401AD0(&m_dcUnk00B4, 1);
-		m_obj0340.Sub_401AD0(&m_dcUnk00B4, 1);
-		m_obj0310.Sub_401AD0(&m_dcUnk00B4, 1);
-		m_obj03A0.Sub_401AD0(&m_dcUnk00B4, 1);
-		m_obj03D0.Sub_401AD0(&m_dcUnk00B4, 1);
-		m_obj0400.Sub_401AD0(&m_dcUnk00B4, 1);
-		if ((theApp.m_dwUnk01B8 & 0x80000000) != 0)
+		m_gaugeSpeed.DrawGauge(&m_dcOffscreen, 1);
+		m_gaugeSpeedPod.DrawGauge(&m_dcOffscreen, 1);
+		m_gaugeSlow.DrawGauge(&m_dcOffscreen, 1);
+		m_gaugeInvincible.DrawGauge(&m_dcOffscreen, 1);
+		m_gaugeAltitude.DrawGauge(&m_dcOffscreen, 1);
+		m_gaugeSmoke.DrawGauge(&m_dcOffscreen, 1);
+		m_gaugeTempWall.DrawGauge(&m_dcOffscreen, 1);
+		if ((theApp.m_dwGameState & 0x80000000) != 0)
 		{
-			theApp.m_dwUnk01B8 &= 0x7FFFFFFF;
-			Sub_4126C0();
+			theApp.m_dwGameState &= 0x7FFFFFFF;
+			StartGameTimer();
 		}
 		return;
 	}
@@ -7168,38 +7204,37 @@ void CBumperView::OnUpdateGamePause(CCmdUI* pCmdUI)
 {
 	DWORD dwState;
 
-	dwState = theApp.m_dwUnk01B8 & 0x7FFFFFFF;
+	dwState = theApp.m_dwGameState & 0x7FFFFFFF;
 	pCmdUI->Enable(dwState != 0 && dwState != 1);
-	pCmdUI->SetCheck((theApp.m_dwUnk01B8 & 0x80000000) >> 31);
+	pCmdUI->SetCheck((theApp.m_dwGameState & 0x80000000) >> 31);
 }
 
-// Entries 18/19: ID_CMD_34005 toggles the "render into the full client
-// rectangle" debug mode (m_dwUnk0540). Turning it on re-derives the
+// Entries 18/19: ID_DBG_FULLCLIENT_RENDER toggles the "render into the full
+// client rectangle" debug mode (m_bFullMap). Turning it on re-derives the
 // renderer viewport from the client rectangle, turning it off restores the
 // offscreen bitmap size.
 
 // hover.exe:0x428970
 // FUNCTION: HOVER 0x428970
-void CBumperView::OnCmd34005()
+void CBumperView::OnDbgFullClientRender()
 {
 	RECT rect;
 
-	m_dwUnk0540 = (m_dwUnk0540 == 0);
-	if (m_dwUnk0540 == 0)
+	m_bFullMap = (m_bFullMap == 0);
+	if (m_bFullMap == 0)
 	{
-		Sub_4274B0(m_dwUnk00A4, m_dwUnk00A8, 0);
+		RequestResize(m_dwRequestedWidth, m_dwRequestedHeight, 0);
 		return;
 	}
 	::GetClientRect(m_hWnd, &rect);
-	m_obj0150.Sub_40FEE0(&m_dcUnk00B4, this, (CBumperDoc*)m_pDocument,
-		rect.left, rect.top, rect.right, rect.bottom);
+	m_map.SetViewport(&m_dcOffscreen, this, (CBumperDoc*)m_pDocument, rect);
 }
 
 // hover.exe:0x4289F0
 // FUNCTION: HOVER 0x4289f0
-void CBumperView::OnUpdateCmd34005(CCmdUI* pCmdUI)
+void CBumperView::OnUpdateDbgFullClientRender(CCmdUI* pCmdUI)
 {
-	pCmdUI->SetCheck(m_dwUnk0540);
+	pCmdUI->SetCheck(m_bFullMap);
 }
 
 // Entry 20: WM_KEYDOWN. Only handled while the game is running (state 3):
@@ -7210,7 +7245,7 @@ void CBumperView::OnUpdateCmd34005(CCmdUI* pCmdUI)
 // FUNCTION: HOVER 0x40b540
 void CBumperView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
-	if (theApp.m_dwUnk01B8 != 3)
+	if (theApp.m_dwGameState != 3)
 	{
 		Default();
 		return;
@@ -7220,90 +7255,90 @@ void CBumperView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 		(UINT)(short)::VkKeyScanA('+') == nChar ||
 		(UINT)(short)::VkKeyScanA('=') == nChar)
 	{
-		Sub_4275D0(1, 0);
+		RequestMapZoom(1, 0);
 	}
 	else if (nChar == VK_SUBTRACT ||
 		(UINT)(short)::VkKeyScanA('-') == nChar ||
 		(UINT)(short)::VkKeyScanA('_') == nChar)
 	{
-		Sub_4275D0(0, 0);
+		RequestMapZoom(0, 0);
 	}
 	else if (nChar == theApp.m_avkControls[1])
 	{
-		if (theApp.m_pBumperDoc->m_humanPlayer.m_obList00D0.GetCount() != 0)
+		if (theApp.m_pBumperDoc->m_humanPlayer.m_listTempWallPods.GetCount() != 0)
 		{
-			((CGameObj*)theApp.m_pBumperDoc->m_humanPlayer.m_obList00D0.GetTail())->
-				Sub_42AD50((DWORD)&theApp.m_pBumperDoc->m_humanPlayer);
-			m_obj0290.m_dwUnk00 = 1;
-			m_obj0290.m_dwUnk08 =
-				theApp.m_pBumperDoc->m_humanPlayer.m_obList00D0.GetCount();
+			((CGameObj*)theApp.m_pBumperDoc->m_humanPlayer.m_listTempWallPods.GetTail())->
+				UsePod((DWORD)&theApp.m_pBumperDoc->m_humanPlayer);
+			m_ctrTempWalls.m_bDigitsDirty = 1;
+			m_ctrTempWalls.m_dwDisplayValue =
+				theApp.m_pBumperDoc->m_humanPlayer.m_listTempWallPods.GetCount();
 		}
 	}
 	else if (nChar == theApp.m_avkControls[0])
 	{
-		if (theApp.m_pBumperDoc->m_humanPlayer.m_obList00EC.GetCount() != 0)
+		if (theApp.m_pBumperDoc->m_humanPlayer.m_listSmokeBombPods.GetCount() != 0)
 		{
-			((CGameObj*)theApp.m_pBumperDoc->m_humanPlayer.m_obList00EC.GetTail())->
-				Sub_42AD50((DWORD)&theApp.m_pBumperDoc->m_humanPlayer);
-			m_obj0268.m_dwUnk00 = 1;
-			m_obj0268.m_dwUnk08 =
-				theApp.m_pBumperDoc->m_humanPlayer.m_obList00EC.GetCount();
+			((CGameObj*)theApp.m_pBumperDoc->m_humanPlayer.m_listSmokeBombPods.GetTail())->
+				UsePod((DWORD)&theApp.m_pBumperDoc->m_humanPlayer);
+			m_ctrSmokeBombs.m_bDigitsDirty = 1;
+			m_ctrSmokeBombs.m_dwDisplayValue =
+				theApp.m_pBumperDoc->m_humanPlayer.m_listSmokeBombPods.GetCount();
 		}
 	}
 	else if (nChar == theApp.m_avkControls[2])
 	{
 		// The jump pod additionally needs the player to be on the ground
 		// and not already jumping.
-		if (theApp.m_pBumperDoc->m_humanPlayer.m_obList0108.GetCount() != 0 &&
-			(int)theApp.m_pBumperDoc->m_humanPlayer.m_dwUnk0148 <= 0 &&
-			*(DWORD*)&theApp.m_pBumperDoc->m_humanPlayer.m_awUnk0090[8] ==
-				*(DWORD*)&theApp.m_pBumperDoc->m_humanPlayer.m_awUnk0090[10] &&
-			*(DWORD*)&theApp.m_pBumperDoc->m_humanPlayer.m_pad00A8[0] == 0)
+		if (theApp.m_pBumperDoc->m_humanPlayer.m_listJumpPods.GetCount() != 0 &&
+			(int)theApp.m_pBumperDoc->m_humanPlayer.m_dwHoldTimer <= 0 &&
+			theApp.m_pBumperDoc->m_humanPlayer.m_fxTargetHeight ==
+				theApp.m_pBumperDoc->m_humanPlayer.m_fxHeight &&
+			theApp.m_pBumperDoc->m_humanPlayer.m_bAirborne == 0)
 		{
-			((CGameObj*)theApp.m_pBumperDoc->m_humanPlayer.m_obList0108.GetTail())->
-				Sub_42AD50((DWORD)&theApp.m_pBumperDoc->m_humanPlayer);
-			m_obj0240.m_dwUnk00 = 1;
-			m_obj0240.m_dwUnk08 =
-				theApp.m_pBumperDoc->m_humanPlayer.m_obList0108.GetCount();
+			((CGameObj*)theApp.m_pBumperDoc->m_humanPlayer.m_listJumpPods.GetTail())->
+				UsePod((DWORD)&theApp.m_pBumperDoc->m_humanPlayer);
+			m_ctrJumpPods.m_bDigitsDirty = 1;
+			m_ctrJumpPods.m_dwDisplayValue =
+				theApp.m_pBumperDoc->m_humanPlayer.m_listJumpPods.GetCount();
 		}
 	}
 	Default();
 }
 
-// Entries 21/22: ID_CMD_34029 toggles the human player's +0x144 flag and
+// Entries 21/22: ID_DBG_INVINCIBLE toggles the human player's +0x144 flag and
 // mirrors it into +0x140.
 
 // hover.exe:0x428A10
 // FUNCTION: HOVER 0x428a10
-void CBumperView::OnCmd34029()
+void CBumperView::OnDbgInvincible()
 {
 	if (m_dwUnk0038 != 0)
 		return;
-	theApp.m_pBumperDoc->m_humanPlayer.m_dwUnk0144 =
-		(theApp.m_pBumperDoc->m_humanPlayer.m_dwUnk0144 == 0);
-	theApp.m_pBumperDoc->m_humanPlayer.m_dwUnk0140 =
-		theApp.m_pBumperDoc->m_humanPlayer.m_dwUnk0144;
+	theApp.m_pBumperDoc->m_humanPlayer.m_bGodMode =
+		(theApp.m_pBumperDoc->m_humanPlayer.m_bGodMode == 0);
+	theApp.m_pBumperDoc->m_humanPlayer.m_bInvincible =
+		theApp.m_pBumperDoc->m_humanPlayer.m_bGodMode;
 }
 
 // hover.exe:0x428A40
 // FUNCTION: HOVER 0x428a40
-void CBumperView::OnUpdateCmd34029(CCmdUI* pCmdUI)
+void CBumperView::OnUpdateDbgInvincible(CCmdUI* pCmdUI)
 {
 	DWORD dwState;
 
-	dwState = theApp.m_dwUnk01B8 & 0x7FFFFFFF;
-	pCmdUI->SetCheck(theApp.m_pBumperDoc->m_humanPlayer.m_dwUnk0144);
+	dwState = theApp.m_dwGameState & 0x7FFFFFFF;
+	pCmdUI->SetCheck(theApp.m_pBumperDoc->m_humanPlayer.m_bGodMode);
 	pCmdUI->Enable(dwState != 0 && dwState != 1);
 }
 
-// Entry 23: ID_CMD_34030 restocks the board - one new flag per flag the
-// human player is carrying plus m_dwUnk83E8 robot flags are dropped back on
+// Entry 23: ID_DBG_RESTOCK_FLAGS restocks the board - one new flag per flag the
+// human player is carrying plus m_dwRobotFlags robot flags are dropped back on
 // random pads, every player's carried-object list is emptied and the two
 // dashboard flag sprites are reset.
 
 // hover.exe:0x428A90
 // FUNCTION: HOVER 0x428a90
-void CBumperView::OnCmd34030()
+void CBumperView::OnDbgRestockFlags()
 {
 	CBumperView* pView;
 	POSITION pos;
@@ -7313,47 +7348,47 @@ void CBumperView::OnCmd34030()
 	if (m_dwUnk0038 != 0)
 		return;
 
-	::EnterCriticalSection(&theApp.m_csUnk00EC);
+	::EnterCriticalSection(&theApp.m_csOffscreen);
 
-	nFlags = theApp.m_pBumperDoc->m_humanPlayer.m_obList00B4.GetCount();
+	nFlags = theApp.m_pBumperDoc->m_humanPlayer.m_listFlags.GetCount();
 	while (nFlags != 0)
 	{
-		theApp.m_pBumperDoc->Sub_412250(new CFlag(1), 0);
+		theApp.m_pBumperDoc->PlaceObject(new CFlag(1), 0);
 		nFlags--;
 	}
 
-	nFlags = theApp.m_pBumperDoc->m_dwUnk83E8;
+	nFlags = theApp.m_pBumperDoc->m_dwRobotFlags;
 	while (nFlags != 0)
 	{
-		theApp.m_pBumperDoc->Sub_412250(new CFlag(0), 0);
+		theApp.m_pBumperDoc->PlaceObject(new CFlag(0), 0);
 		nFlags--;
 	}
-	theApp.m_pBumperDoc->m_dwUnk83E8 = 0;
+	theApp.m_pBumperDoc->m_dwRobotFlags = 0;
 
-	pos = theApp.m_pBumperDoc->m_list83A8.GetHeadPosition();
+	pos = theApp.m_pBumperDoc->m_listActiveObjs.GetHeadPosition();
 	while (pos != NULL)
 	{
-		pObj = theApp.m_pBumperDoc->m_list83A8.GetNext(pos);
+		pObj = theApp.m_pBumperDoc->m_listActiveObjs.GetNext(pos);
 		if (pObj->IsKindOf(RUNTIME_CLASS(CPlayer)))
-			((CPlayer*)pObj)->Sub_414BD0(0);
+			((CPlayer*)pObj)->ClearPods(0);
 	}
 
-	// Hover_sub_401140() is expanded inline here in the original.
+	// Hover_GetView() is expanded inline here in the original.
 	pView = (theApp.m_pMainWnd == NULL) ? NULL :
 		(CBumperView*)((CFrameWnd*)theApp.m_pMainWnd)->GetActiveView();
-	pView->m_obj0430.m_dwUnk00 = 1;
-	pView->m_obj0430.m_dwUnk44 = pView->m_obj0430.m_dwUnk3C;
-	if ((int)pView->m_obj0430.m_dwUnk44 > 0)
-		pView->m_obj0430.m_dwUnk44 = 0;
+	pView->m_flagsPlayer.m_bFlagsDirty = 1;
+	pView->m_flagsPlayer.m_dwFilled = pView->m_flagsPlayer.m_dwSlots;
+	if ((int)pView->m_flagsPlayer.m_dwFilled > 0)
+		pView->m_flagsPlayer.m_dwFilled = 0;
 
 	pView = (theApp.m_pMainWnd == NULL) ? NULL :
 		(CBumperView*)((CFrameWnd*)theApp.m_pMainWnd)->GetActiveView();
-	pView->m_obj0480.m_dwUnk00 = 1;
-	pView->m_obj0480.m_dwUnk44 = pView->m_obj0480.m_dwUnk3C;
-	if ((int)pView->m_obj0480.m_dwUnk44 > 0)
-		pView->m_obj0480.m_dwUnk44 = 0;
+	pView->m_flagsRobot.m_bFlagsDirty = 1;
+	pView->m_flagsRobot.m_dwFilled = pView->m_flagsRobot.m_dwSlots;
+	if ((int)pView->m_flagsRobot.m_dwFilled > 0)
+		pView->m_flagsRobot.m_dwFilled = 0;
 
-	::LeaveCriticalSection(&theApp.m_csUnk00EC);
+	::LeaveCriticalSection(&theApp.m_csOffscreen);
 }
 
 // Entries 24..31: eight identical update handlers (one per debug pod
@@ -7362,107 +7397,107 @@ void CBumperView::OnCmd34030()
 
 // hover.exe:0x428C00
 // FUNCTION: HOVER 0x428c00
-void CBumperView::OnUpdateCmd34030(CCmdUI* pCmdUI)
+void CBumperView::OnUpdateDbgRestockFlags(CCmdUI* pCmdUI)
 {
 	DWORD dwState;
 
-	dwState = theApp.m_dwUnk01B8 & 0x7FFFFFFF;
+	dwState = theApp.m_dwGameState & 0x7FFFFFFF;
 	pCmdUI->Enable(dwState != 0 && dwState != 1);
 }
 
 // hover.exe:0x428C30
 // FUNCTION: HOVER 0x428c30
-void CBumperView::OnUpdateCmd34014(CCmdUI* pCmdUI)
+void CBumperView::OnUpdateDbgAddSmokePod(CCmdUI* pCmdUI)
 {
 	DWORD dwState;
 
-	dwState = theApp.m_dwUnk01B8 & 0x7FFFFFFF;
+	dwState = theApp.m_dwGameState & 0x7FFFFFFF;
 	pCmdUI->Enable(dwState != 0 && dwState != 1);
 }
 
 // hover.exe:0x428C60
 // FUNCTION: HOVER 0x428c60
-void CBumperView::OnUpdateCmd34015(CCmdUI* pCmdUI)
+void CBumperView::OnUpdateDbgAddWallPod(CCmdUI* pCmdUI)
 {
 	DWORD dwState;
 
-	dwState = theApp.m_dwUnk01B8 & 0x7FFFFFFF;
+	dwState = theApp.m_dwGameState & 0x7FFFFFFF;
 	pCmdUI->Enable(dwState != 0 && dwState != 1);
 }
 
 // hover.exe:0x428C90
 // FUNCTION: HOVER 0x428c90
-void CBumperView::OnUpdateCmd34013(CCmdUI* pCmdUI)
+void CBumperView::OnUpdateDbgAddJumpPod(CCmdUI* pCmdUI)
 {
 	DWORD dwState;
 
-	dwState = theApp.m_dwUnk01B8 & 0x7FFFFFFF;
+	dwState = theApp.m_dwGameState & 0x7FFFFFFF;
 	pCmdUI->Enable(dwState != 0 && dwState != 1);
 }
 
 // hover.exe:0x428CC0
 // FUNCTION: HOVER 0x428cc0
-void CBumperView::OnUpdateCmd34018(CCmdUI* pCmdUI)
+void CBumperView::OnUpdateDbgApplyInvincible(CCmdUI* pCmdUI)
 {
 	DWORD dwState;
 
-	dwState = theApp.m_dwUnk01B8 & 0x7FFFFFFF;
+	dwState = theApp.m_dwGameState & 0x7FFFFFFF;
 	pCmdUI->Enable(dwState != 0 && dwState != 1);
 }
 
 // hover.exe:0x428CF0
 // FUNCTION: HOVER 0x428cf0
-void CBumperView::OnUpdateCmd34019(CCmdUI* pCmdUI)
+void CBumperView::OnUpdateDbgApplyMapEraser(CCmdUI* pCmdUI)
 {
 	DWORD dwState;
 
-	dwState = theApp.m_dwUnk01B8 & 0x7FFFFFFF;
+	dwState = theApp.m_dwGameState & 0x7FFFFFFF;
 	pCmdUI->Enable(dwState != 0 && dwState != 1);
 }
 
 // hover.exe:0x428D20
 // FUNCTION: HOVER 0x428d20
-void CBumperView::OnUpdateCmd34017(CCmdUI* pCmdUI)
+void CBumperView::OnUpdateDbgApplySpeed(CCmdUI* pCmdUI)
 {
 	DWORD dwState;
 
-	dwState = theApp.m_dwUnk01B8 & 0x7FFFFFFF;
+	dwState = theApp.m_dwGameState & 0x7FFFFFFF;
 	pCmdUI->Enable(dwState != 0 && dwState != 1);
 }
 
 // hover.exe:0x428D50
 // FUNCTION: HOVER 0x428d50
-void CBumperView::OnUpdateCmd34016(CCmdUI* pCmdUI)
+void CBumperView::OnUpdateDbgApplySlow(CCmdUI* pCmdUI)
 {
 	DWORD dwState;
 
-	dwState = theApp.m_dwUnk01B8 & 0x7FFFFFFF;
+	dwState = theApp.m_dwGameState & 0x7FFFFFFF;
 	pCmdUI->Enable(dwState != 0 && dwState != 1);
 }
 
-// Entries 32/33: ID_CMD_34032 toggles the 2x pixel-doubled presentation
-// (m_dwUnk0544); it is only available in a 640-pixel wide client area.
+// Entries 32/33: ID_DBG_PIXEL_DOUBLE toggles the 2x pixel-doubled presentation
+// (m_bDoubleSize); it is only available in a 640-pixel wide client area.
 
 // hover.exe:0x429230
 // FUNCTION: HOVER 0x429230
-void CBumperView::OnCmd34032()
+void CBumperView::OnDbgPixelDouble()
 {
 	HOVER_INLINE_SUB_40EE90_1();
 
-	m_dwUnk0544 = (m_dwUnk0544 == 0);
-	Sub_4274B0(m_dwUnk00A4, m_dwUnk00A8, 1);
-	Sub_40DC20(1);
+	m_bDoubleSize = (m_bDoubleSize == 0);
+	RequestResize(m_dwRequestedWidth, m_dwRequestedHeight, 1);
+	RequestRenderFrame(1);
 }
 
 // hover.exe:0x4292F0
 // FUNCTION: HOVER 0x4292f0
-void CBumperView::OnUpdateCmd34032(CCmdUI* pCmdUI)
+void CBumperView::OnUpdateDbgPixelDouble(CCmdUI* pCmdUI)
 {
 	RECT rect;
 
 	::GetClientRect(m_hWnd, &rect);
 	pCmdUI->Enable(rect.right - rect.left - 640 == 0);
-	pCmdUI->SetCheck(m_dwUnk0544);
+	pCmdUI->SetCheck(m_bDoubleSize);
 }
 
 // Entry 34: WM_CREATE.
@@ -7474,118 +7509,118 @@ int CBumperView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	return (CView::OnCreate(lpCreateStruct) == -1) ? -1 : 0;
 }
 
-// Entries 35/36: ID_CMD_34033 toggles the alternate present path used by
-// CBumperView::Sub_407430.
+// Entries 35/36: ID_DBG_ALT_PRESENT toggles the alternate present path used by
+// CBumperView::PresentFrame.
 
 // hover.exe:0x429340
 // FUNCTION: HOVER 0x429340
-void CBumperView::OnCmd34033()
+void CBumperView::OnDbgAltPresent()
 {
-	g_dwUnk_4C4CA8 = (g_dwUnk_4C4CA8 == 0);
+	g_bFullFramePresent = (g_bFullFramePresent == 0);
 }
 
 // hover.exe:0x429360
 // FUNCTION: HOVER 0x429360
-void CBumperView::OnUpdateCmd34033(CCmdUI* pCmdUI)
+void CBumperView::OnUpdateDbgAltPresent(CCmdUI* pCmdUI)
 {
-	pCmdUI->SetCheck(g_dwUnk_4C4CA8);
+	pCmdUI->SetCheck(g_bFullFramePresent);
 }
 
 // Entry 40: WM_CHAR. Recognizes the five-keystroke cheat sequence Ctrl+I,
 // Ctrl+B, Ctrl+M, Ctrl+A, Ctrl+B (character codes 9, 2, 13, 1, 2), which
-// sets m_dwUnk0038 and forces the game into state 3. m_dwUnk003C is the
+// sets m_dwUnk0038 and forces the game into state 3. m_dwKeySeqPos is the
 // position in the sequence; any wrong key restarts it.
 
 // hover.exe:0x429380
 // FUNCTION: HOVER 0x429380
 void CBumperView::OnChar(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
-	if (theApp.m_pBumperDoc->m_dwUnk8498 == 0)
+	if (theApp.m_pBumperDoc->m_bAttractMode == 0)
 		return;
-	if (theApp.m_dwUnk01B8 == 3)
+	if (theApp.m_dwGameState == 3)
 		return;
 
-	switch (m_dwUnk003C)
+	switch (m_dwKeySeqPos)
 	{
 	case 0:
 		if (nChar == 9)
 		{
-			m_dwUnk003C = m_dwUnk003C + 1;
+			m_dwKeySeqPos = m_dwKeySeqPos + 1;
 			break;
 		}
 		m_dwUnk0038 = 0;
-		m_dwUnk003C = 0;
+		m_dwKeySeqPos = 0;
 		break;
 
 	case 1:
 		if (nChar == 2)
 		{
-			m_dwUnk003C = m_dwUnk003C + 1;
+			m_dwKeySeqPos = m_dwKeySeqPos + 1;
 			break;
 		}
 		m_dwUnk0038 = 0;
-		m_dwUnk003C = 0;
+		m_dwKeySeqPos = 0;
 		break;
 
 	case 2:
 		if (nChar == 13)
 		{
-			m_dwUnk003C = m_dwUnk003C + 1;
+			m_dwKeySeqPos = m_dwKeySeqPos + 1;
 			break;
 		}
 		m_dwUnk0038 = 0;
-		m_dwUnk003C = 0;
+		m_dwKeySeqPos = 0;
 		break;
 
 	case 3:
 		if (nChar == 1)
 		{
-			m_dwUnk003C = m_dwUnk003C + 1;
+			m_dwKeySeqPos = m_dwKeySeqPos + 1;
 			break;
 		}
 		m_dwUnk0038 = 0;
-		m_dwUnk003C = 0;
+		m_dwKeySeqPos = 0;
 		break;
 
 	case 4:
 		if (nChar == 2)
 		{
 			m_dwUnk0038 = 1;
-			m_dwUnk003C = 0;
-			theApp.m_dwUnk01B8 = 3;
-			m_dwUnk007C = 60;
-			Sub_4126C0();
+			m_dwKeySeqPos = 0;
+			theApp.m_dwGameState = 3;
+			m_dwStateCountdown = 60;
+			StartGameTimer();
 			break;
 		}
 		m_dwUnk0038 = 0;
-		m_dwUnk003C = 0;
+		m_dwKeySeqPos = 0;
 		break;
 
 	default:
 		m_dwUnk0038 = 0;
-		m_dwUnk003C = 0;
+		m_dwKeySeqPos = 0;
 		break;
 	}
 	Default();
 }
 
-// The 50 ms multimedia timer callback installed by CBumperView::Sub_4126C0.
-// g_dwUnk_4C4CE4 is the "a frame tick is already in flight" latch: it is
+// The 50 ms multimedia timer callback installed by CBumperView::StartGameTimer.
+// g_bTickPending is the "a frame tick is already in flight" latch: it is
 // raised here and lowered again by CBumperView::OnUserInput, so a tick that
 // arrives while the previous one is still being processed is dropped. The
-// active view is looked up inline (the same expression as Hover_sub_401140)
+// active view is looked up inline (the same expression as Hover_GetView)
 // and told to sample its input with WM_USER.
 
 // hover.exe:0x408AA0
 // FUNCTION: HOVER 0x408aa0
-void CALLBACK Hover_sub_408AA0(UINT uID, UINT uMsg, DWORD dwUser,
+void CALLBACK Hover_GameTimerProc(UINT uID, UINT uMsg, DWORD dwUser,
 	DWORD dw1, DWORD dw2)
 {
 	CBumperView* pView;
 
-	if (g_dwUnk_4C4CE4 != 0)
+	if (g_bTickPending != 0)
 		return;
-	g_dwUnk_4C4CE4 = 1;
+	g_bTickPending = 1;
 	pView = (*(CFrameWnd* volatile*)&theApp.m_pMainWnd != NULL)
 		? (CBumperView*)((CFrameWnd*)theApp.m_pMainWnd)->GetActiveView()
 		: NULL;
@@ -7595,7 +7630,7 @@ void CALLBACK Hover_sub_408AA0(UINT uID, UINT uMsg, DWORD dwUser,
 
 // Entry 41: WM_USER+0, posted by the multimedia timer callback
 // (hover.exe:0x408AA0). Samples the joystick and the four direction keys
-// into the input state at m_dwUnk006C..m_dwUnk0078 and runs the two frame
+// into the input state at m_bInputLeft..m_bInputDown and runs the two frame
 // steps.
 
 // hover.exe:0x408AF0
@@ -7610,33 +7645,32 @@ LRESULT CBumperView::OnUserInput(WPARAM wParam, LPARAM lParam)
 	int bDownLeft;
 	int bDownRight;
 
-	::EnterCriticalSection(&theApp.m_csUnk0134);
-	m_dwUnk006C = 0;
-	m_dwUnk0070 = 0;
-	m_dwUnk0074 = 0;
-	m_dwUnk0078 = 0;
+	::EnterCriticalSection(&theApp.m_csInput);
+	m_bInputLeft = 0;
+	m_bInputRight = 0;
+	m_bInputUp = 0;
+	m_bInputDown = 0;
 
 	pfnJoyGetPosEx = (MMRESULT (WINAPI*)(UINT, LPJOYINFOEX))g_pfnJoyGetPosEx;
 	if (theApp.m_avkControls[11] != 0 && pfnJoyGetPosEx != NULL)
 	{
-		// theApp.m_adwUnk0378 is a JOYINFOEX: [0] dwSize, [1] dwFlags,
-		// [2] dwXpos, [3] dwYpos. The stick is treated as pushed once it
-		// leaves the middle half of its calibrated range.
-		theApp.m_adwUnk0378[0] = 0x34;
-		theApp.m_adwUnk0378[1] = JOY_RETURNX | JOY_RETURNY |
+		// The stick is treated as pushed once it leaves the middle half of
+		// its calibrated range.
+		theApp.m_joyInfo.dwSize = sizeof(JOYINFOEX);
+		theApp.m_joyInfo.dwFlags = JOY_RETURNX | JOY_RETURNY |
 			JOY_RETURNBUTTONS | JOY_RETURNCENTERED;
-		pfnJoyGetPosEx(0, (LPJOYINFOEX)theApp.m_adwUnk0378);
+		pfnJoyGetPosEx(0, &theApp.m_joyInfo);
 
 		dwXMid = (theApp.m_joyCaps.wXmin + theApp.m_joyCaps.wXmax) >> 1;
 		dwYMid = (theApp.m_joyCaps.wYmin + theApp.m_joyCaps.wYmax) >> 1;
-		m_dwUnk006C = (theApp.m_adwUnk0378[2] <
+		m_bInputLeft = (theApp.m_joyInfo.dwXpos <
 			dwXMid - ((dwXMid - theApp.m_joyCaps.wXmin) >> 2));
-		m_dwUnk0070 = (dwXMid + ((theApp.m_joyCaps.wXmax - dwXMid) >> 2) <
-			theApp.m_adwUnk0378[2]);
-		m_dwUnk0074 = (theApp.m_adwUnk0378[3] <
+		m_bInputRight = (dwXMid + ((theApp.m_joyCaps.wXmax - dwXMid) >> 2) <
+			theApp.m_joyInfo.dwXpos);
+		m_bInputUp = (theApp.m_joyInfo.dwYpos <
 			dwYMid - ((dwYMid - theApp.m_joyCaps.wYmin) >> 2));
-		m_dwUnk0078 = (dwYMid + ((theApp.m_joyCaps.wYmax - dwYMid) >> 2) <
-			theApp.m_adwUnk0378[3]);
+		m_bInputDown = (dwYMid + ((theApp.m_joyCaps.wYmax - dwYMid) >> 2) <
+			theApp.m_joyInfo.dwYpos);
 	}
 
 	// The four diagonal keys contribute to two directions each.
@@ -7646,18 +7680,18 @@ LRESULT CBumperView::OnUserInput(WPARAM wParam, LPARAM lParam)
 	bDownRight = (::GetAsyncKeyState(theApp.m_avkControls[10]) < 0);
 
 	if (bUpLeft || bDownLeft || ::GetAsyncKeyState(theApp.m_avkControls[5]) < 0)
-		m_dwUnk006C |= 1;
+		m_bInputLeft |= 1;
 	if (bUpRight || bDownRight || ::GetAsyncKeyState(theApp.m_avkControls[6]) < 0)
-		m_dwUnk0070 |= 1;
+		m_bInputRight |= 1;
 	if (bUpLeft || bUpRight || ::GetAsyncKeyState(theApp.m_avkControls[3]) < 0)
-		m_dwUnk0074 |= 1;
+		m_bInputUp |= 1;
 	if (bDownLeft || bDownRight || ::GetAsyncKeyState(theApp.m_avkControls[4]) < 0)
-		m_dwUnk0078 |= 1;
+		m_bInputDown |= 1;
 
-	::LeaveCriticalSection(&theApp.m_csUnk0134);
-	Sub_408D00();
-	Sub_408DF0();
-	g_dwUnk_4C4CE4 = 0;
+	::LeaveCriticalSection(&theApp.m_csInput);
+	GameStep();
+	UpdateStatusBar();
+	g_bTickPending = 0;
 	return 0;
 }
 
@@ -7667,7 +7701,7 @@ LRESULT CBumperView::OnUserInput(WPARAM wParam, LPARAM lParam)
 // FUNCTION: HOVER 0x427d20
 LRESULT CBumperView::OnUserGameOver(WPARAM wParam, LPARAM lParam)
 {
-	theApp.Sub_425B20();
+	theApp.OnGameOver();
 	return 0;
 }
 
@@ -7677,7 +7711,7 @@ LRESULT CBumperView::OnUserGameOver(WPARAM wParam, LPARAM lParam)
 // FUNCTION: HOVER 0x427d30
 LRESULT CBumperView::OnUserNextLevel(WPARAM wParam, LPARAM lParam)
 {
-	theApp.Sub_425AD0();
+	theApp.OnLevelComplete();
 	return 0;
 }
 
@@ -7690,8 +7724,8 @@ void CBumperView::OnEscape()
 {
 	HOVER_INLINE_SUB_40EE90_1();
 
-	if (theApp.m_dwUnk03B0 != 0)
-		theApp.Sub_425600();
+	if (theApp.m_bFullScreen != 0)
+		theApp.LeaveFullScreen();
 	::ShowWindow(AfxGetApp()->m_pMainWnd->m_hWnd, SW_SHOWMINIMIZED);
 }
 
@@ -7721,9 +7755,8 @@ LRESULT CBumperView::OnHelpMsg(WPARAM wParam, LPARAM lParam)
 
 // The context-menu hit tests index the zone table directly instead of
 // caching a pointer: the original addresses every field as
-// [index*0x338 + g_adwUnk_4609A0 + field], which only comes out of an
-// array subscript on the constant base.
-#define HOVER_ZONE(i)	(((ZONE_DESCRIPTOR*)g_adwUnk_4609A0)[i])
+// [index*0x338 + g_aZones + field], which only comes out of an array
+// subscript on the constant base.
 
 // Entry 47: WM_CONTEXTMENU. Pops up a one-item "What's This?" menu and, if
 // it is chosen, opens the help topic for whichever dashboard element the
@@ -7761,70 +7794,70 @@ LRESULT CBumperView::OnContextMenuMsg(WPARAM wParam, LPARAM lParam)
 		return 1;
 
 	::ScreenToClient(m_hWnd, &point);
-	nZone = (int)g_dwUnk_460998;
+	nZone = (int)g_dwCurZone;
 
-	rcWaypoints.left = HOVER_ZONE(nZone).m_rcUnk228.left;
-	rcWaypoints.top = HOVER_ZONE(nZone).m_rcUnk228.top;
-	rcWaypoints.right = HOVER_ZONE(nZone).m_rcUnk228.left + 6 * HOVER_ZONE(nZone).m_dwUnk28;
-	rcWaypoints.bottom = HOVER_ZONE(nZone).m_rcUnk228.top + 2 * HOVER_ZONE(nZone).m_dwUnk2C;
+	rcWaypoints.left = g_aZones[nZone].m_ptPlayerFlags.x;
+	rcWaypoints.top = g_aZones[nZone].m_ptPlayerFlags.y;
+	rcWaypoints.right = g_aZones[nZone].m_ptPlayerFlags.x + 6 * g_aZones[nZone].m_sizeFlagIcon.cx;
+	rcWaypoints.bottom = g_aZones[nZone].m_ptPlayerFlags.y + 2 * g_aZones[nZone].m_sizeFlagIcon.cy;
 
-	rcMap.left = HOVER_ZONE(nZone).m_rcUnk210.left;
-	rcMap.top = HOVER_ZONE(nZone).m_rcComposite2.top;
-	rcMap.right = HOVER_ZONE(nZone).m_rcUnk210.right;
-	rcMap.bottom = HOVER_ZONE(nZone).m_rcComposite2.bottom;
+	rcMap.left = g_aZones[nZone].m_rcMirror.left;
+	rcMap.top = g_aZones[nZone].m_rcTopDashDst.top;
+	rcMap.right = g_aZones[nZone].m_rcMirror.right;
+	rcMap.bottom = g_aZones[nZone].m_rcTopDashDst.bottom;
 
-	rcPods.left = HOVER_ZONE(nZone).m_rcUnk220.left;
-	rcPods.top = HOVER_ZONE(nZone).m_rcUnk220.top;
+	rcPods.left = g_aZones[nZone].m_ptScore.x;
+	rcPods.top = g_aZones[nZone].m_ptScore.y;
 	{
 		// The pod strip's extents go through two locals of their own: the
 		// original spills the x7 multiplicand to a slot
 		// (mov [t],eax / shl eax,3 / sub eax,[t]) and parks the bottom edge
 		// in a second slot until after the right edge is stored.
-		int cyPods = (int)HOVER_ZONE(nZone).m_dwUnk1C
-			+ HOVER_ZONE(nZone).m_rcUnk220.top;
-		int cxPods = (int)HOVER_ZONE(nZone).m_dwUnk18;
+		int cyPods = (int)g_aZones[nZone].m_sizeScoreDigit.cy
+			+ g_aZones[nZone].m_ptScore.y;
+		int cxPods = (int)g_aZones[nZone].m_sizeScoreDigit.cx;
 
-		rcPods.right = HOVER_ZONE(nZone).m_rcUnk220.left + 7 * cxPods;
+		rcPods.right = g_aZones[nZone].m_ptScore.x + 7 * cxPods;
 		rcPods.bottom = cyPods;
 	}
 
-	rcScore.left = HOVER_ZONE(nZone).m_rcComposite2.left;
-	rcScore.top = HOVER_ZONE(nZone).m_rcComposite2.bottom;
-	rcScore.right = HOVER_ZONE(nZone).m_rcComposite2.right;
-	rcScore.bottom = HOVER_ZONE(nZone).m_rcUnk248.top;
+	rcScore.left = g_aZones[nZone].m_rcTopDashDst.left;
+	rcScore.top = g_aZones[nZone].m_rcTopDashDst.bottom;
+	rcScore.right = g_aZones[nZone].m_rcTopDashDst.right;
+	rcScore.bottom = g_aZones[nZone].m_rcBottomDashDst.top;
 
-	rcGauge1.left = HOVER_ZONE(nZone).m_rcUnk248.left;
-	rcGauge1.top = HOVER_ZONE(nZone).m_rcUnk248.top;
-	rcGauge1.right = HOVER_ZONE(nZone).m_rcViewport.left;
-	rcGauge1.bottom = HOVER_ZONE(nZone).m_rcUnk248.bottom;
+	rcGauge1.left = g_aZones[nZone].m_rcBottomDashDst.left;
+	rcGauge1.top = g_aZones[nZone].m_rcBottomDashDst.top;
+	rcGauge1.right = g_aZones[nZone].m_rcMap.left;
+	rcGauge1.bottom = g_aZones[nZone].m_rcBottomDashDst.bottom;
 
-	rcGauge2.left = HOVER_ZONE(nZone).m_rcViewport.left;
-	rcGauge2.top = HOVER_ZONE(nZone).m_rcUnk248.top;
-	rcGauge2.right = HOVER_ZONE(nZone).m_rcViewport.right;
-	rcGauge2.bottom = HOVER_ZONE(nZone).m_rcUnk248.bottom;
+	rcGauge2.left = g_aZones[nZone].m_rcMap.left;
+	rcGauge2.top = g_aZones[nZone].m_rcBottomDashDst.top;
+	rcGauge2.right = g_aZones[nZone].m_rcMap.right;
+	rcGauge2.bottom = g_aZones[nZone].m_rcBottomDashDst.bottom;
 
-	rcGauge3.left = HOVER_ZONE(nZone).m_rcViewport.right;
-	rcGauge3.top = HOVER_ZONE(nZone).m_rcUnk248.top;
-	rcGauge3.right = HOVER_ZONE(nZone).m_rcUnk248.right;
-	rcGauge3.bottom = HOVER_ZONE(nZone).m_rcUnk248.bottom;
+	rcGauge3.left = g_aZones[nZone].m_rcMap.right;
+	rcGauge3.top = g_aZones[nZone].m_rcBottomDashDst.top;
+	rcGauge3.right = g_aZones[nZone].m_rcBottomDashDst.right;
+	rcGauge3.bottom = g_aZones[nZone].m_rcBottomDashDst.bottom;
 
 	if (rcWaypoints.PtInRect(point))
-		::WinHelp(GetSafeHwnd(), "hover.hlp", HELP_CONTEXT, 0xA3C);
+		::WinHelp(GetSafeHwnd(), "hover.hlp", HELP_CONTEXTPOPUP, 0xA3C);
 	else if (rcMap.PtInRect(point))
 	{
-		if (theApp.m_dwUnk01D0 != 0)
+		if (theApp.m_bRearView != 0)
 			::WinHelp(GetSafeHwnd(), "hover.hlp", HELP_CONTEXTPOPUP, 0xA32);
 	}
 	else if (rcPods.PtInRect(point))
-		::WinHelp(GetSafeHwnd(), "hover.hlp", HELP_CONTEXT, 0xA28);
+		::WinHelp(GetSafeHwnd(), "hover.hlp", HELP_CONTEXTPOPUP, 0xA28);
 	else if (rcScore.PtInRect(point))
-		::WinHelp(GetSafeHwnd(), "hover.hlp", HELP_CONTEXT, 0xA46);
+		::WinHelp(GetSafeHwnd(), "hover.hlp", HELP_CONTEXTPOPUP, 0xA46);
 	else if (rcGauge1.PtInRect(point))
-		::WinHelp(GetSafeHwnd(), "hover.hlp", HELP_CONTEXT, 0xA50);
+		::WinHelp(GetSafeHwnd(), "hover.hlp", HELP_CONTEXTPOPUP, 0xA50);
 	else if (rcGauge2.PtInRect(point))
-		::WinHelp(GetSafeHwnd(), "hover.hlp", HELP_CONTEXT, 0xA5A);
+		::WinHelp(GetSafeHwnd(), "hover.hlp", HELP_CONTEXTPOPUP, 0xA5A);
 	else if (rcGauge3.PtInRect(point))
-		::WinHelp(GetSafeHwnd(), "hover.hlp", HELP_CONTEXT, 0xA64);
+		::WinHelp(GetSafeHwnd(), "hover.hlp", HELP_CONTEXTPOPUP, 0xA64);
 	return 1;
 }
 

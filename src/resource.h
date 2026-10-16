@@ -22,17 +22,18 @@
 #define IDD_KEYBOARD			103	// "Keyboard Settings" dialog (opened from
 									// IDD_PLAYERCONTROLS' "Set Keys..." button)
 #define IDD_DEBUG_SETPOSITION	133	// debug "set player position" dialog used
-									// by CBumperDoc::OnCmd34002; the template
-									// was stripped from the shipped hover.exe,
-									// so DoModal() always fails there
+									// by CBumperDoc::OnDbgSetPosition; the
+									// template was stripped from the shipped
+									// hover.exe, so DoModal() always fails
+									// there
 
 // Dialog templates referenced by the CHoverApp debug command handlers but
 // no longer present in hover.exe's resources (the templates were stripped
 // from the shipped build, so DoModal on them fails).
-#define IDD_DBG_130				130	// opened by ID_CMD_34012
-#define IDD_DBG_148				148	// opened by ID_CMD_34008
-#define IDD_DBG_149				149	// opened by ID_CMD_34009
-#define IDD_DBG_152				152	// opened by ID_CMD_34031
+#define IDD_DBG_PODTIMES				130	// opened by ID_DBG_PODTIMES
+#define IDD_DBG_HUMANPARAMS				148	// opened by ID_DBG_HUMANPARAMS
+#define IDD_DBG_ROBOTPARAMS				149	// opened by ID_DBG_ROBOTPARAMS
+#define IDD_DBG_ROBOTAIPARAMS				152	// opened by ID_DBG_ROBOTAIPARAMS
 
 // Control IDs
 #define IDC_QUICKHELP_SKIP		1008	// "Skip Quick Help at Startup" checkbox
@@ -112,7 +113,7 @@
 #define IDS_MIN_CONFIG			0xEF17	// 61207: "minimum configuration of a 486/33 with 8 MB"
 #define IDS_DUPLICATE_KEYS		0xEF18	// 61208: "One or more keys you have chosen has already been assigned..."
 #define IDS_CLEARSCORES_CONFIRM	0xEF3B	// 61243: "Are you sure you want to clear the high score table?"
-#define IDS_PRESS_F2			0xEF4F	// 61263: "Are  you sure you want to quit
+#define IDS_QUIT_GAME_CONFIRM			0xEF4F	// 61263: "Are  you sure you want to quit
 					// the game in progress?" (the name is a
 					// misnomer: "Press F2 to start" is 0xEF3F)
 #define IDS_QUIT_IN_PROGRESS	0xEF3C	// 61244: "Are  you sure you want to quit
@@ -151,7 +152,7 @@
 #define IDS_EXC_DAO				0xEF6F	// 61295: "failures in data access processing"
 #define IDS_EXC_USER			0xEF70	// 61296: "stop a user-initiated operation"
 
-// Key display names looked up by Hover_sub_42DC50 (61209-61238)
+// Key display names looked up by Hover_KeyNameToVK (61209-61238)
 #define IDS_KEY_BACKSPACE		0xEF19	// 61209: "Back Space"
 #define IDS_KEY_TAB			0xEF1A	// 61210: "Tab"
 #define IDS_KEY_ENTER			0xEF1B	// 61211: "Enter"
@@ -183,7 +184,7 @@
 #define IDS_KEY_DIVIDE			0xEF36	// 61238: "Divide"
 
 // Default key bindings for the 11 in-game actions, loaded by
-// Hover_sub_4232E0 into theApp.m_avkControls (61271-61281)
+// Hover_LoadControls into theApp.m_avkControls (61271-61281)
 #define IDS_DEFKEY_A			0xEF57	// 61271: "A" -> controls[2]
 #define IDS_DEFKEY_S			0xEF58	// 61272: "S" -> controls[1]
 #define IDS_DEFKEY_D			0xEF59	// 61273: "D" -> controls[0]
@@ -218,37 +219,37 @@
 #define ID_HELP_HOWTOPLAY               32787
 #define ID_ESCAPE                       32800
 #define ID_HELP_QUICKHELP               32808
-#define ID_CMD_32821                    32821
+#define ID_DBG_WAVEMIX_CONFIG                    32821
 #define ID_CMD_34000                    34000
-#define ID_CMD_34002                    34002
-#define ID_CMD_34005                    34005
-#define ID_CMD_34006                    34006
-#define ID_CMD_34007                    34007
-#define ID_CMD_34008                    34008
-#define ID_CMD_34009                    34009
-#define ID_CMD_34010                    34010
+#define ID_DBG_SETPOSITION                    34002
+#define ID_DBG_FULLCLIENT_RENDER                    34005
+#define ID_DBG_FULLSCREEN_TOPMOST                    34006
+#define ID_DBG_SHOW_BEACONS                    34007
+#define ID_DBG_HUMANPARAMS                    34008
+#define ID_DBG_ROBOTPARAMS                    34009
+#define ID_DBG_STATUSBAR                    34010
 #define ID_CMD_34011                    34011
-#define ID_CMD_34012                    34012
-#define ID_CMD_34013                    34013
-#define ID_CMD_34014                    34014
-#define ID_CMD_34015                    34015
-#define ID_CMD_34016                    34016
-#define ID_CMD_34017                    34017
-#define ID_CMD_34018                    34018
-#define ID_CMD_34019                    34019
-#define ID_CMD_34021                    34021
-#define ID_CMD_34022                    34022
-#define ID_CMD_34023                    34023
-#define ID_CMD_34024                    34024
-#define ID_CMD_34025                    34025
-#define ID_CMD_34026                    34026
-#define ID_CMD_34027                    34027
-#define ID_CMD_34028                    34028
-#define ID_CMD_34029                    34029
-#define ID_CMD_34030                    34030
-#define ID_CMD_34031                    34031
-#define ID_CMD_34032                    34032
-#define ID_CMD_34033                    34033
+#define ID_DBG_PODTIMES                    34012
+#define ID_DBG_ADD_JUMPPOD                    34013
+#define ID_DBG_ADD_SMOKEPOD                    34014
+#define ID_DBG_ADD_WALLPOD                    34015
+#define ID_DBG_APPLY_SLOW                    34016
+#define ID_DBG_APPLY_SPEED                    34017
+#define ID_DBG_APPLY_INVINCIBLE                    34018
+#define ID_DBG_APPLY_MAPERASER                    34019
+#define ID_DBG_SHADE_BASE_DEC                    34021
+#define ID_DBG_SHADE_RED_INC                    34022
+#define ID_DBG_SHADE_RED_DEC                    34023
+#define ID_DBG_SHADE_BLUE_INC                    34024
+#define ID_DBG_SHADE_BLUE_DEC                    34025
+#define ID_DBG_SHADE_GREEN_INC                    34026
+#define ID_DBG_SHADE_GREEN_DEC                    34027
+#define ID_DBG_SHADE_BASE_INC                    34028
+#define ID_DBG_INVINCIBLE                    34029
+#define ID_DBG_RESTOCK_FLAGS                    34030
+#define ID_DBG_ROBOTAIPARAMS                    34031
+#define ID_DBG_PIXEL_DOUBLE                    34032
+#define ID_DBG_ALT_PRESENT                    34033
 #define ID_CMD_34034                    34034
 #define ID_GAME_HIGHSCORES              40006
 #define ID_OPTIONS_SOUNDS               40009

@@ -84,7 +84,7 @@ public:
 	//}}AFX_DATA
 
 // Implementation
-	int Sub_424F30();		// hover.exe:0x424F30 read the QuickHelpFlag registry value
+	int ReadQuickHelpFlag();		// hover.exe:0x424F30 read the QuickHelpFlag registry value
 
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// hover.exe:0x4342C0
